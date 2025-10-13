@@ -27,7 +27,7 @@ const COLORS = ['#38BDF8', '#FF6B35']
 
 export default function Dashboard() {
   const scanResult = {
-    icName: '74HC595N',
+    icName: 'LM358',
     oem: 'Texas Instruments',
     date: '13 Oct 2025',
     verdict: 'Genuine',
@@ -45,27 +45,55 @@ export default function Dashboard() {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="mx-auto md:mx-0">
               <Image
-                src="/sample-ic.jpg"
+                src="/images/modified.png"
                 alt="Scanned IC"
                 width={400}
                 height={300}
-                className="rounded-lg w-full max-w-[300px] md:max-w-[400px]"
+                className="rounded-lg w-full max-w-[300px] md:max-w-[400px] lg:ml-20"
               />
             </div>
             <div>
-              <h1 className="text-3xl mb-6 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent font-bold">{scanResult.icName}</h1>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-text/80">OEM</span>
-                  <span>{scanResult.oem}</span>
+              <h1 className="text-3xl mb-4 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent font-bold">{scanResult.icName}</h1>
+              
+              <div className="mb-4 p-3 bg-white/5 rounded-lg">
+                <span className="text-text/80 block mb-1 text-sm">Extracted Text from Image:</span>
+                <div className="text-white font-mono text-sm space-y-1">
+                  <div>LM358</div>
+                  <div>18M</div>
+                  <div>GMIC20KG4</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-text/80">Date Scanned</span>
-                  <span>{scanResult.date}</span>
+              </div>
+              
+              <div className="bg-white/5 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-text/80 font-medium">IC Part Number:</span>
+                  <span className="text-white font-semibold">{scanResult.icName}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-text/80">Verdict</span>
-                  <span className="text-green-400">🟢 {scanResult.verdict}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-text/80 font-medium">Manufacturer:</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white">{scanResult.oem}</span>
+                    <a 
+                      href="https://www.ti.com/product/LM358" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 underline text-sm"
+                    >
+                      View Details
+                    </a>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-text/80 font-medium">Scan Date:</span>
+                  <span className="text-white">{scanResult.date}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-text/80 font-medium">Authenticity:</span>
+                  <span className="text-green-400 font-semibold">🟢 {scanResult.verdict}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-text/80 font-medium">Confidence Score:</span>
+                  <span className="text-blue-400 font-bold text-lg">{scanResult.overallScore}%</span>
                 </div>
               </div>
             </div>
@@ -152,7 +180,7 @@ export default function Dashboard() {
               <tbody>
                 <tr className="border-b border-text/10">
                   <td className="py-4">13 Oct 2025</td>
-                  <td className="py-4">74HC595N</td>
+                  <td className="py-4">LM358</td>
                   <td className="py-4 text-green-400">Genuine</td>
                   <td className="py-4">94%</td>
                 </tr>

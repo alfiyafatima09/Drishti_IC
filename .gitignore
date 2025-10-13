@@ -48,3 +48,5 @@ __pycache__/
 .idea/
 .python-version
 .env
+
+images/modified.png

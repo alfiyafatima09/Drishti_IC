@@ -12,7 +12,7 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/95 to-slate-950">
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-blue-950/80 to-slate-950" />
-        
+
         <nav className="fixed top-4 right-4 z-50 md:left-1/2 md:right-auto md:transform md:-translate-x-1/2 md:w-[400px]">
           <div className="md:hidden">
             <motion.button
@@ -21,7 +21,9 @@ export default function Home() {
             >
               <div className="w-6 h-5 flex flex-col justify-between">
                 <motion.div
-                  animate={isMenuOpen ? { rotate: 45, y: 9 } : { rotate: 0, y: 0 }}
+                  animate={
+                    isMenuOpen ? { rotate: 45, y: 9 } : { rotate: 0, y: 0 }
+                  }
                   className="w-full h-0.5 bg-cyan-400 rounded-full origin-left"
                 />
                 <motion.div
@@ -29,7 +31,9 @@ export default function Home() {
                   className="w-full h-0.5 bg-cyan-400 rounded-full"
                 />
                 <motion.div
-                  animate={isMenuOpen ? { rotate: -45, y: -9 } : { rotate: 0, y: 0 }}
+                  animate={
+                    isMenuOpen ? { rotate: -45, y: -9 } : { rotate: 0, y: 0 }
+                  }
                   className="w-full h-0.5 bg-cyan-400 rounded-full origin-left"
                 />
               </div>
@@ -96,8 +100,8 @@ export default function Home() {
           >
             <ul className="flex items-center justify-between px-10 py-3">
               <motion.li>
-                <Link 
-                  href="/" 
+                <Link
+                  href="/"
                   className="relative group text-cyan-400 text-md font-medium transition-colors"
                 >
                   Home
@@ -105,24 +109,24 @@ export default function Home() {
                 </Link>
               </motion.li>
               <motion.li>
-                <Link 
-                  href="/scanner" 
+                <Link
+                  href="/scanner"
                   className="text-gray-300 text-md font-medium hover:text-cyan-400 transition-colors"
                 >
                   Scan
                 </Link>
               </motion.li>
               <motion.li>
-                <Link 
-                  href="#features" 
+                <Link
+                  href="#features"
                   className="text-gray-300 text-md font-medium hover:text-cyan-400 transition-colors"
                 >
                   About
                 </Link>
               </motion.li>
               <motion.li>
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="text-gray-300 text-md font-medium hover:text-cyan-400 transition-colors"
                 >
                   Login
@@ -132,7 +136,27 @@ export default function Home() {
           </motion.div>
         </nav>
 
-        <div className="absolute bottom-0 right-8 z-10 hidden lg:block mr-30">
+        {/* <div className="absolute bottom-0 right-8 z-10 hidden lg:block mr-30">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            whileHover={{ scale: 1.02, rotate: -1 }}
+            className="relative"
+          >
+            <Image
+              src="/images/landing-page-2.jpg"
+              alt="Drishti IC Scanning"
+              width={600}
+              height={350}
+              className="rounded-2xl shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(59,130,246,0.4)] transition-all duration-300"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-blue-600/30 via-blue-400/20 to-transparent blur-3xl -z-10 scale-110" />
+          </motion.div>
+        </div> */}
+
+{/* <div className="absolute bottom-0 right-8 z-10 hidden lg:block mr-30">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -150,15 +174,35 @@ export default function Home() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-blue-600/30 via-blue-400/20 to-transparent blur-3xl -z-10 scale-110" />
           </motion.div>
+        </div> */}
+
+        <div className="absolute top-1/2 right-8 z-10 hidden lg:block mr-30 transform -translate-y-1/2">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            whileHover={{ scale: 1.02, rotate: -1 }}
+            className="relative"
+          >
+            <Image
+              src="/images/langing-page.png"
+              alt="Drishti IC Scanning"
+              width={600}
+              height={350}
+              className="rounded-2xl shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(59,130,246,0.4)] transition-all duration-300"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-blue-600/30 via-blue-400/20 to-transparent blur-3xl -z-10 scale-110" />
+          </motion.div>
         </div>
 
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(20)].map((_, i) => {
-            const left = ((i * 17 + 13) % 100);
-            const top = ((i * 23 + 7) % 100);
-            const duration = 3 + ((i * 13) % 3); 
-            const delay = (i * 7) % 2; 
-            
+            const left = (i * 17 + 13) % 100;
+            const top = (i * 23 + 7) % 100;
+            const duration = 3 + ((i * 13) % 3);
+            const delay = (i * 7) % 2;
+
             return (
               <motion.div
                 key={i}
@@ -213,7 +257,9 @@ export default function Home() {
                 transition={{ delay: 0.5, duration: 0.8 }}
                 className="text-base md:text-lg lg:text-xl mb-12 text-slate-300 max-w-2xl mx-auto lg:mx-0"
               >
-                A complete solution to automatically capture, extract, and verify IC markings against OEM standards, ensuring every component on your production line is genuine.
+                A complete solution to automatically capture, extract, and
+                verify IC markings against OEM standards, ensuring every
+                component on your production line is genuine.
               </motion.p>
 
               <motion.button
@@ -274,10 +320,14 @@ export default function Home() {
                 <span className="text-lg font-semibold text-blue-100 text-center">
                   {oem === "STMicroelectronics" ? (
                     <>
-                      <span className="hidden md:block">STMicroelectronics</span>
+                      <span className="hidden md:block">
+                        STMicroelectronics
+                      </span>
                       <span className="block md:hidden">STM</span>
                     </>
-                  ) : oem}
+                  ) : (
+                    oem
+                  )}
                 </span>
               </motion.div>
             ))}
@@ -336,7 +386,6 @@ export default function Home() {
                 whileHover={{ y: -10 }}
                 className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-400/20 rounded-2xl p-8 hover:border-blue-400/50 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 relative overflow-hidden group"
               >
-
                 <div className="mb-6 relative">
                   <div
                     className={`inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br ${feature.color} shadow-lg`}
@@ -508,7 +557,8 @@ export default function Home() {
               Ready to verify your first IC?
             </h2>
             <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
-              Join the future of IC authentication through automated verification.
+              Join the future of IC authentication through automated
+              verification.
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
