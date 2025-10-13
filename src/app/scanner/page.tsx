@@ -47,11 +47,17 @@ export default function ScannerPage() {
   }
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/95 to-slate-950 py-12">
       <div className="container mx-auto px-4">
+        <Link 
+          href="/" 
+          className="inline-block mb-8 backdrop-blur-md bg-black/40 rounded-full px-4 py-2 shadow-lg shadow-blue-500/10 hover:bg-black/60 transition-all duration-300 text-blue-400"
+        >
+          ← Back
+        </Link>
         <section className="text-center mb-12">
-          <h1 className="font-orbitron text-4xl mb-4">Scan Your IC</h1>
-          <p className="text-text/80">Use your mobile camera for better clarity.</p>
+          <h1 className="text-4xl mb-4 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent font-bold">Scan Your IC</h1>
+          <p className="text-slate-300">Use your mobile camera for better clarity.</p>
         </section>
 
         <motion.div 
@@ -145,7 +151,6 @@ export default function ScannerPage() {
           </motion.div>
         )}
 
-        {/* Tip Bar */}
         <div className="mt-12 text-center text-text/60">
           💡 Ensure the IC marking is clearly visible with neutral lighting for best results.
         </div>

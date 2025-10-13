@@ -1,3 +1,4 @@
+"use client";
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -34,7 +35,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen py-12">
+    <div className="min-h-screen bg-gradient-to-br from-black via-blue-950/95 to-slate-950 py-12">
       <div className="container mx-auto px-4">
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
@@ -52,7 +53,7 @@ export default function Dashboard() {
               />
             </div>
             <div>
-              <h1 className="font-orbitron text-3xl mb-6">{scanResult.icName}</h1>
+              <h1 className="text-3xl mb-6 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent font-bold">{scanResult.icName}</h1>
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-text/80">OEM</span>
@@ -77,7 +78,7 @@ export default function Dashboard() {
           transition={{ delay: 0.2 }}
           className="glass-card p-8 mb-12"
         >
-          <h2 className="font-orbitron text-2xl mb-8">Confidence Breakdown</h2>
+          <h2 className="text-2xl mb-8 text-blue-100 font-bold">Confidence Breakdown</h2>
           
           <div className="grid md:grid-cols-2 gap-8">
             <div className="h-[300px]">
@@ -137,7 +138,7 @@ export default function Dashboard() {
           transition={{ delay: 0.4 }}
           className="glass-card p-8 mb-12"
         >
-          <h2 className="font-orbitron text-2xl mb-6">Recent Scans</h2>
+          <h2 className="text-2xl mb-6 text-blue-100 font-bold">Recent Scans</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
