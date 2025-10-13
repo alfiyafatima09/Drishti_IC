@@ -50,3 +50,4 @@ __pycache__/
 .env
 
 images/modified.png
+backend/.venv
