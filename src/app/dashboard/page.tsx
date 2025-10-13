@@ -27,11 +27,18 @@ const COLORS = ['#38BDF8', '#FF6B35']
 
 export default function Dashboard() {
   const scanResult = {
-    icName: 'LM358',
-    oem: 'Texas Instruments',
+    icName: 'L7805CV',
+    oem: 'STMicroelectronics',
     date: '13 Oct 2025',
     verdict: 'Genuine',
-    overallScore: 94
+    overallScore: 94,
+
+      
+    logoMatch: true,
+    fontSimilarity: 91,
+    pinsVisible: 3,
+    isGenuine: true,
+    score: 94 
   }
 
   return (
@@ -45,7 +52,7 @@ export default function Dashboard() {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="mx-auto md:mx-0">
               <Image
-                src="/images/modified.png"
+                src="/images/modified.jpg"
                 alt="Scanned IC"
                 width={400}
                 height={300}
@@ -71,15 +78,23 @@ export default function Dashboard() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-text/80 font-medium">Manufacturer:</span>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <span className="text-white">{scanResult.oem}</span>
                     <a 
-                      href="https://www.ti.com/product/LM358" 
+                      href="https://www.st.com/resource/en/datasheet/l78.pdf" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 underline text-sm"
+                      className="group relative inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/40 hover:to-cyan-500/40 border border-blue-400/30 hover:border-blue-400/60 rounded-lg text-blue-400 hover:text-blue-300 text-sm font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105"
                     >
-                      View Details
+                      <span>View Details</span>
+                      <svg 
+                        className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
                     </a>
                   </div>
                 </div>
