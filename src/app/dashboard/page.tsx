@@ -40,16 +40,16 @@ export default function Dashboard() {
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-8 mb-12"
+          className="glass-card p-4 sm:p-8 mb-12"
         >
           <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
+            <div className="mx-auto md:mx-0">
               <Image
                 src="/sample-ic.jpg"
                 alt="Scanned IC"
                 width={400}
                 height={300}
-                className="rounded-lg"
+                className="rounded-lg w-full max-w-[300px] md:max-w-[400px]"
               />
             </div>
             <div>
