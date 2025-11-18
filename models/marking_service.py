@@ -1,4 +1,3 @@
-from inference_sdk import InferenceHTTPClient
 from dotenv import load_dotenv
 import os
 import base64
@@ -6,10 +5,14 @@ from typing import Dict, Any, Optional, Tuple
 
 load_dotenv()
 
-CLIENT = InferenceHTTPClient(
-    api_url="https://serverless.roboflow.com",
-    api_key=os.getenv("roboflow_api_key")
-)
+# Inference SDK disabled for Python 3.14 compatibility
+# Uncomment if using Python 3.8-3.12 and need Roboflow integration
+# from inference_sdk import InferenceHTTPClient
+# CLIENT = InferenceHTTPClient(
+#     api_url="https://serverless.roboflow.com",
+#     api_key=os.getenv("roboflow_api_key")
+# )
+CLIENT = None  # Placeholder
 
 
 def _find_values_by_key(obj, search_key):
@@ -51,14 +54,22 @@ def run_workflow_and_save(
     if out_dir is None:
         out_dir = os.path.dirname(__file__)
 
-    result = CLIENT.run_workflow(
-    workspace_name="yuktha-ailil",
-    workflow_id="detect-count-and-visualize-4",
-    images={
-        "image": image['image']
-    },
-    use_cache=True
-    )
+    # Roboflow workflow disabled - using alternative processing
+    if CLIENT is None:
+        # Return mock result for now - replace with actual OCR/processing
+        result = {
+            "output_image": None,
+            "detected_text": "Mock detection - Roboflow SDK not available"
+        }
+    else:
+        result = CLIENT.run_workflow(
+            workspace_name="yuktha-ailil",
+            workflow_id="detect-count-and-visualize-4",
+            images={
+                "image": image['image']
+            },
+            use_cache=True
+        )
 
     # Save image
     output_images = _find_values_by_key(result, "output_image")
