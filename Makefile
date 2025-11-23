@@ -72,7 +72,7 @@ check-python: ## Check Python version and availability
 
 dev: ## Start both backend and frontend in parallel
 	@echo "$(GREEN)Starting development environment...$(NC)"
-	@$(MAKE) -j2 backend frontend
+	@$(MAKE) -j2 backend frontend-ngrok
 
 backend: setup-venv ## Start backend server (FastAPI)
 	@echo "$(GREEN)Starting backend server...$(NC)"
@@ -135,17 +135,46 @@ frontend-ngrok: ## Start frontend with ngrok tunnel (for public access)
 	echo "$(BLUE)Starting ngrok tunnel on port $$FRONTEND_PORT...$(NC)"; \
 	ngrok http $$FRONTEND_PORT --log=stdout > /tmp/ngrok.log 2>&1 &
 	@sleep 5
-	@echo "$(BLUE)Fetching ngrok public URL...$(NC)"
-	@for i in 1 2 3 4 5; do \
-		NGROK_URL=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null | python3 -c "import sys, json; data=json.load(sys.stdin); print(data['tunnels'][0]['public_url'] if data.get('tunnels') else '')" 2>/dev/null); \
-		if [ -z "$$NGROK_URL" ]; then \
-			NGROK_URL=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null | grep -oE '"public_url":"https://[^"]*' | head -1 | sed 's/"public_url":"//' | sed 's/"//'); \
+	@echo "$(BLUE)Waiting for ngrok to start and fetch public URL...$(NC)"
+	@NGROK_URL=""; \
+	for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
+		echo -n "$(BLUE)Attempt $$i/15...$(NC)\r"; \
+		NGROK_RESPONSE=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null); \
+		if [ -n "$$NGROK_RESPONSE" ]; then \
+			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
+			if [ -z "$$NGROK_URL" ]; then \
+				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE '"public_url":"https://[^"]*' | head -1 | sed 's/"public_url":"//'); \
+			fi; \
+			if [ -z "$$NGROK_URL" ]; then \
+				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok-free\.app' | head -1); \
+			fi; \
+			if [ -z "$$NGROK_URL" ]; then \
+				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok\.io' | head -1); \
+			fi; \
 		fi; \
 		if [ -n "$$NGROK_URL" ]; then \
 			break; \
 		fi; \
-		sleep 1; \
+		sleep 2; \
 	done; \
+	echo ""; \
+	if [ -z "$$NGROK_URL" ]; then \
+		echo "$(YELLOW)⚠️  Still waiting for ngrok URL... Trying one more time with longer wait...$(NC)"; \
+		sleep 5; \
+		NGROK_RESPONSE=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null); \
+		if [ -n "$$NGROK_RESPONSE" ]; then \
+			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
+			if [ -z "$$NGROK_URL" ]; then \
+				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE '"public_url":"https://[^"]*' | head -1 | sed 's/"public_url":"//'); \
+			fi; \
+			if [ -z "$$NGROK_URL" ]; then \
+				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok-free\.app' | head -1); \
+			fi; \
+			if [ -z "$$NGROK_URL" ]; then \
+				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok\.io' | head -1); \
+			fi; \
+		fi; \
+	fi; \
 	if [ -n "$$NGROK_URL" ]; then \
 		NGROK_URL_SKIP=$$(echo "$$NGROK_URL" | sed 's|$$|?ngrok-skip-browser-warning=1|'); \
 		echo ""; \
@@ -166,14 +195,28 @@ frontend-ngrok: ## Start frontend with ngrok tunnel (for public access)
 		echo ""; \
 		echo "$(YELLOW)💡 Better option for mobile: Use network IP instead$(NC)"; \
 		echo "  Run: $(BLUE)make frontend$(NC) and access via your local IP"; \
-		echo "  Ngrok dashboard: $(BLUE)http://localhost:4040$(NC)"; \
+		echo ""; \
+		echo "$(BLUE)📋 Quick Actions:$(NC)"; \
+		echo "  • Open in browser: $(GREEN)open $$NGROK_URL_SKIP$(NC)"; \
+		echo "  • Ngrok dashboard: $(GREEN)http://localhost:4040$(NC)"; \
 		echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
 		echo ""; \
+		if command -v open >/dev/null 2>&1; then \
+			echo "$(BLUE)Opening ngrok URL in browser...$(NC)"; \
+			open "$$NGROK_URL_SKIP" 2>/dev/null || true; \
+		fi; \
 	else \
-		echo "$(YELLOW)⚠️  Could not get ngrok URL automatically$(NC)"; \
-		echo "$(BLUE)Check ngrok dashboard: http://localhost:4040$(NC)"; \
-		echo "$(YELLOW)Or check logs: tail -f /tmp/ngrok.log$(NC)"; \
-		echo "$(YELLOW)Frontend logs: tail -f /tmp/nextjs.log$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)⚠️  Could not automatically fetch ngrok URL$(NC)"; \
+		echo "$(BLUE)Please check ngrok dashboard manually:$(NC)"; \
+		echo "  $(GREEN)http://localhost:4040$(NC)"; \
+		echo ""; \
+		echo "$(BLUE)Or check logs:$(NC)"; \
+		echo "  $(YELLOW)tail -f /tmp/ngrok.log$(NC)  # Ngrok logs"; \
+		echo "  $(YELLOW)tail -f /tmp/nextjs.log$(NC)  # Frontend logs"; \
+		echo ""; \
+		echo "$(BLUE)You can also try fetching the URL manually:$(NC)"; \
+		echo "  $(GREEN)curl -s http://localhost:4040/api/tunnels | python3 -m json.tool$(NC)"; \
 	fi
 	@echo "$(BLUE)Frontend running in background. Press Ctrl+C to stop.$(NC)"
 	@wait
