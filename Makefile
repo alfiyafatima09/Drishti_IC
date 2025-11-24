@@ -1,9 +1,64 @@
 # Drishti IC Verification System - Makefile
 # Complete development workflow automation
+# 
+# Cross-platform support:
+# - macOS: Native support
+# - Windows: Works with Git Bash, WSL, or MSYS2
+# - Linux: Native support
+# 
+# Platform-specific features:
+# - Virtual environment paths (bin/ vs Scripts/)
+# - Process management (lsof/pkill vs taskkill)
+# - Temp directories (/tmp vs %TEMP%)
+# - URL opening (open vs start vs xdg-open)
+# - Python detection (python3 vs py)
 
 .PHONY: help install dev backend frontend down clean fmt lint logs db-migrate db-reset docker-build docker-up docker-down contracts-lint contracts-gen
 
-# Colors for output
+# Virtual environment directory (must be defined before platform detection)
+VENV_DIR := venv
+
+# Platform detection
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS := Windows
+    VENV_BIN := Scripts
+    VENV_PYTHON := $(VENV_DIR)/$(VENV_BIN)/python.exe
+    VENV_PIP := $(VENV_DIR)/$(VENV_BIN)/pip.exe
+    VENV_ACTIVATE := $(VENV_DIR)/$(VENV_BIN)/activate
+    PYTHON_CMD := py
+    PYTHON3_CMD := py -3
+    PYTHON311_CMD := py -3.11
+    OPEN_CMD := start
+    KILL_CMD := taskkill /F /IM
+    PKILL_CMD := taskkill /F /FI
+    SLEEP_CMD := timeout /t
+    TEMP_DIR := $(TEMP)
+    WHICH_CMD := where
+    RM_CMD := del /Q /F
+    RMDIR_CMD := rmdir /S /Q
+    MKDIR_CMD := mkdir
+    SHELL := cmd.exe
+else
+    DETECTED_OS := $(shell uname -s)
+    VENV_BIN := bin
+    VENV_PYTHON := $(VENV_DIR)/$(VENV_BIN)/python
+    VENV_PIP := $(VENV_DIR)/$(VENV_BIN)/pip
+    VENV_ACTIVATE := $(VENV_DIR)/$(VENV_BIN)/activate
+    PYTHON_CMD := python3
+    PYTHON3_CMD := python3
+    PYTHON311_CMD := python3.11
+    OPEN_CMD := open
+    KILL_CMD := kill -9
+    PKILL_CMD := pkill -f
+    SLEEP_CMD := sleep
+    TEMP_DIR := /tmp
+    WHICH_CMD := command -v
+    RM_CMD := rm -f
+    RMDIR_CMD := rm -rf
+    MKDIR_CMD := mkdir -p
+endif
+
+# Colors for output (Windows CMD doesn't support ANSI by default, but most modern terminals do)
 BLUE := \033[0;34m
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
@@ -29,11 +84,17 @@ install: setup-venv check-node ## Install all dependencies
 
 check-node: ## Check Node.js and npm installation
 	@echo "$(BLUE)Checking Node.js and npm...$(NC)"
-	@command -v node >/dev/null 2>&1 || { \
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	command -v node >/dev/null 2>&1 || { \
 		echo "$(RED)✗ Node.js not found!$(NC)"; \
 		echo "$(YELLOW)Install Node.js:$(NC)"; \
-		echo "  macOS: $(BLUE)brew install node$(NC)"; \
-		echo "  Or visit: $(BLUE)https://nodejs.org/$(NC)"; \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			echo "  macOS: $(BLUE)brew install node$(NC)"; \
+		elif [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+			echo "  Windows: Download from $(BLUE)https://nodejs.org/$(NC)"; \
+		else \
+			echo "  Linux: Use your package manager or visit $(BLUE)https://nodejs.org/$(NC)"; \
+		fi; \
 		exit 1; \
 	}
 	@command -v npm >/dev/null 2>&1 || { \
@@ -46,28 +107,61 @@ check-node: ## Check Node.js and npm installation
 ##@ Development
 
 # Detect Python command - prefer Python 3.11 for compatibility
-PYTHON311 := $(shell command -v python3.11 2> /dev/null)
-PYTHON := $(shell command -v python3 2> /dev/null || command -v python 2> /dev/null)
-VENV_DIR := venv
-VENV_PYTHON := $(VENV_DIR)/bin/python
-VENV_PIP := $(VENV_DIR)/bin/pip
+ifeq ($(OS),Windows_NT)
+    PYTHON311 := $(shell where py >nul 2>&1 && py -3.11 --version >nul 2>&1 && echo py -3.11)
+    PYTHON := $(shell where py >nul 2>&1 && py -3 --version >nul 2>&1 && echo py -3 || where python >nul 2>&1 && echo python)
+else
+    PYTHON311 := $(shell command -v python3.11 2> /dev/null)
+    PYTHON := $(shell command -v python3 2> /dev/null || command -v python 2> /dev/null)
+endif
 
 check-python: ## Check Python version and availability
 	@echo "$(BLUE)Checking Python installation...$(NC)"
-	@if [ -n "$(PYTHON311)" ]; then \
-		echo "$(GREEN)✓ Python 3.11 found: $(PYTHON311)$(NC)"; \
-		$(PYTHON311) --version; \
-	elif [ -n "$(PYTHON)" ]; then \
-		echo "$(YELLOW)⚠️  Python 3.11 not found$(NC)"; \
-		echo "Current Python: $(PYTHON)"; \
-		$(PYTHON) --version; \
-		echo "$(YELLOW)For best compatibility, install Python 3.11:$(NC)"; \
-		echo "  brew install python@3.11"; \
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Windows"); \
+	if [ "$$UNAME_S" = "Windows" ] || [ "$$OS" = "Windows_NT" ]; then \
+		if py -3.11 --version >nul 2>&1; then \
+			echo "$(GREEN)✓ Python 3.11 found$(NC)"; \
+			py -3.11 --version; \
+		elif py -3 --version >nul 2>&1; then \
+			echo "$(YELLOW)⚠️  Python 3.11 not found$(NC)"; \
+			py -3 --version; \
+			echo "$(YELLOW)For best compatibility, install Python 3.11:$(NC)"; \
+			echo "  Download from: https://www.python.org/downloads/"; \
+		elif python --version >nul 2>&1; then \
+			echo "$(YELLOW)⚠️  Python 3.11 not found$(NC)"; \
+			python --version; \
+			echo "$(YELLOW)For best compatibility, install Python 3.11:$(NC)"; \
+			echo "  Download from: https://www.python.org/downloads/"; \
+		else \
+			echo "$(RED)✗ No Python found!$(NC)"; \
+			echo "$(YELLOW)Install Python 3.11:$(NC)"; \
+			echo "  Download from: https://www.python.org/downloads/"; \
+			exit 1; \
+		fi; \
 	else \
-		echo "$(RED)✗ No Python found!$(NC)"; \
-		echo "$(YELLOW)Install Python 3.11:$(NC)"; \
-		echo "  brew install python@3.11"; \
-		exit 1; \
+		if [ -n "$(PYTHON311)" ]; then \
+			echo "$(GREEN)✓ Python 3.11 found: $(PYTHON311)$(NC)"; \
+			$(PYTHON311) --version; \
+		elif [ -n "$(PYTHON)" ]; then \
+			echo "$(YELLOW)⚠️  Python 3.11 not found$(NC)"; \
+			echo "Current Python: $(PYTHON)"; \
+			$(PYTHON) --version; \
+			echo "$(YELLOW)For best compatibility, install Python 3.11:$(NC)"; \
+			if [ "$$UNAME_S" = "Darwin" ]; then \
+				echo "  macOS: $(BLUE)brew install python@3.11$(NC)"; \
+			else \
+				echo "  Linux: Use your package manager"; \
+			fi; \
+		else \
+			echo "$(RED)✗ No Python found!$(NC)"; \
+			echo "$(YELLOW)Install Python 3.11:$(NC)"; \
+			if [ "$$UNAME_S" = "Darwin" ]; then \
+				echo "  macOS: $(BLUE)brew install python@3.11$(NC)"; \
+			else \
+				echo "  Linux: Use your package manager"; \
+			fi; \
+			exit 1; \
+		fi; \
 	fi
 
 dev: ## Start both backend and frontend in parallel
@@ -77,16 +171,28 @@ dev: ## Start both backend and frontend in parallel
 backend: setup-venv ## Start backend server (FastAPI)
 	@echo "$(GREEN)Starting backend server...$(NC)"
 	@echo "$(BLUE)Killing existing process on port 8000...$(NC)"
-	@lsof -ti:8000 | xargs kill -9 2>/dev/null || true
-	@sleep 1
-	@mkdir -p logs
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		netstat -ano 2>/dev/null | grep :8000 | grep LISTENING | awk '{print $$5}' | xargs -r kill -9 2>/dev/null || \
+		taskkill //F //PID $$(netstat -ano 2>/dev/null | grep :8000 | grep LISTENING | awk '{print $$5}') 2>/dev/null || true; \
+		sleep 1; \
+	else \
+		lsof -ti:8000 | xargs kill -9 2>/dev/null || true; \
+		sleep 1; \
+	fi
+	@mkdir -p logs 2>/dev/null || true
 	@if [ -d "$(VENV_DIR)" ]; then \
-		cd backend && ../$(VENV_PYTHON) main.py; \
+		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+		if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+			cd backend && ../$(VENV_DIR)/Scripts/python.exe main.py; \
+		else \
+			cd backend && ../$(VENV_DIR)/bin/python main.py; \
+		fi; \
 	else \
 		cd backend && $(PYTHON) main.py; \
 	fi
 
-frontend: check-node ## Start frontend dev server (Next.js)
+frontend-no-ngrok: check-node ## Start frontend dev server (Next.js)
 	@echo "$(GREEN)Starting frontend server...$(NC)"
 	@if [ ! -d "frontend/node_modules" ]; then \
 		echo "$(YELLOW)⚠️  Frontend dependencies not installed$(NC)"; \
@@ -94,54 +200,96 @@ frontend: check-node ## Start frontend dev server (Next.js)
 		cd frontend && npm install; \
 	fi
 	@echo "$(BLUE)Killing existing processes on ports 3000-3003...$(NC)"
-	@for port in 3000 3001 3002 3003; do \
-		lsof -ti:$$port | xargs kill -9 2>/dev/null || true; \
-	done
-	@sleep 1
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		for port in 3000 3001 3002 3003; do \
+			netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}' | xargs -r kill -9 2>/dev/null || \
+			taskkill //F //PID $$(netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}') 2>/dev/null || true; \
+		done; \
+		sleep 1; \
+	else \
+		for port in 3000 3001 3002 3003; do \
+			lsof -ti:$$port | xargs kill -9 2>/dev/null || true; \
+		done; \
+		sleep 1; \
+	fi
 	@echo "$(BLUE)Using default config: API at http://localhost:8000$(NC)"
 	@$(MAKE) show-network-urls &
 	cd frontend && npm run dev
 
-frontend-ngrok: ## Start frontend with ngrok tunnel (for public access)
+frontend: ## Start frontend with ngrok tunnel (for public access)
 	@echo "$(GREEN)Starting frontend with ngrok tunnel...$(NC)"
 	@echo "$(YELLOW)⚠️  Important: Backend will run on localhost:8000$(NC)"
 	@echo "$(YELLOW)   Make sure your device can reach localhost or use network IP$(NC)"
 	@echo ""
-	@if ! command -v ngrok >/dev/null 2>&1; then \
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
+	if ! command -v ngrok >/dev/null 2>&1; then \
 		echo "$(RED)✗ ngrok not found!$(NC)"; \
 		echo "$(YELLOW)Install ngrok:$(NC)"; \
-		echo "  macOS: $(BLUE)brew install ngrok/ngrok/ngrok$(NC)"; \
-		echo "  Or download: $(BLUE)https://ngrok.com/download$(NC)"; \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			echo "  macOS: $(BLUE)brew install ngrok/ngrok/ngrok$(NC)"; \
+		else \
+			echo "  Download from: $(BLUE)https://ngrok.com/download$(NC)"; \
+		fi; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)Killing existing ngrok tunnels...$(NC)"
-	@pkill -f ngrok || true
-	@sleep 2
-	@echo "$(BLUE)Killing existing processes on ports 3000-3003...$(NC)"
-	@for port in 3000 3001 3002 3003; do \
-		lsof -ti:$$port | xargs kill -9 2>/dev/null || true; \
-	done
-	@sleep 1
-	@echo "$(BLUE)Starting frontend server first...$(NC)"
-	@cd frontend && npm run dev > /tmp/nextjs.log 2>&1 &
-	@sleep 8
-	@FRONTEND_PORT=$$(lsof -nP -iTCP -sTCP:LISTEN 2>/dev/null | grep -E ':(300[0-9]|3000)' | grep node | head -1 | awk '{print $$9}' | cut -d: -f2 | head -1); \
-	if [ -z "$$FRONTEND_PORT" ]; then \
-		FRONTEND_PORT=$$(netstat -an 2>/dev/null | grep LISTEN | grep -E '\.(300[0-9]|3000)' | head -1 | awk '{print $$4}' | cut -d: -f2 | cut -d. -f1); \
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
+	echo "$(BLUE)Killing existing ngrok tunnels...$(NC)"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		taskkill //F //FI "IMAGENAME eq ngrok.exe" 2>/dev/null || pkill -f ngrok 2>/dev/null || true; \
+	else \
+		pkill -f ngrok || true; \
+	fi; \
+	sleep 2
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
+	echo "$(BLUE)Killing existing processes on ports 3000-3003...$(NC)"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		for port in 3000 3001 3002 3003; do \
+			netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}' | xargs -r kill -9 2>/dev/null || \
+			taskkill //F //PID $$(netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}') 2>/dev/null || true; \
+		done; \
+	else \
+		for port in 3000 3001 3002 3003; do \
+			lsof -ti:$$port | xargs kill -9 2>/dev/null || true; \
+		done; \
+	fi; \
+	sleep 1
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
+	echo "$(BLUE)Starting frontend server first...$(NC)"; \
+	cd frontend && npm run dev > "$$TEMP_DIR/nextjs.log" 2>&1 & \
+	sleep 8
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		FRONTEND_PORT=$$(netstat -ano 2>/dev/null | grep :300 | grep LISTENING | head -1 | awk '{print $$4}' | cut -d: -f2 || echo "3000"); \
+	else \
+		FRONTEND_PORT=$$(lsof -nP -iTCP -sTCP:LISTEN 2>/dev/null | grep -E ':(300[0-9]|3000)' | grep node | head -1 | awk '{print $$9}' | cut -d: -f2 | head -1); \
+		if [ -z "$$FRONTEND_PORT" ]; then \
+			FRONTEND_PORT=$$(netstat -an 2>/dev/null | grep LISTEN | grep -E '\.(300[0-9]|3000)' | head -1 | awk '{print $$4}' | cut -d: -f2 | cut -d. -f1); \
+		fi; \
 	fi; \
 	if [ -z "$$FRONTEND_PORT" ]; then \
 		FRONTEND_PORT="3000"; \
 	fi; \
+	UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
+	PYTHON_CMD=$$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null || echo "python3"); \
 	echo "$(BLUE)Starting ngrok tunnel on port $$FRONTEND_PORT...$(NC)"; \
-	ngrok http $$FRONTEND_PORT --log=stdout > /tmp/ngrok.log 2>&1 &
-	@sleep 5
-	@echo "$(BLUE)Waiting for ngrok to start and fetch public URL...$(NC)"
-	@NGROK_URL=""; \
+	ngrok http $$FRONTEND_PORT --log=stdout > "$$TEMP_DIR/ngrok.log" 2>&1 & \
+	sleep 5
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
+	PYTHON_CMD=$$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null || echo "python3"); \
+	echo "$(BLUE)Waiting for ngrok to start and fetch public URL...$(NC)"; \
+	NGROK_URL=""; \
 	for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
 		echo -n "$(BLUE)Attempt $$i/15...$(NC)\r"; \
 		NGROK_RESPONSE=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null); \
 		if [ -n "$$NGROK_RESPONSE" ]; then \
-			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
+			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | $$PYTHON_CMD -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
 			if [ -z "$$NGROK_URL" ]; then \
 				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE '"public_url":"https://[^"]*' | head -1 | sed 's/"public_url":"//'); \
 			fi; \
@@ -163,7 +311,7 @@ frontend-ngrok: ## Start frontend with ngrok tunnel (for public access)
 		sleep 5; \
 		NGROK_RESPONSE=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null); \
 		if [ -n "$$NGROK_RESPONSE" ]; then \
-			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
+			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | $$PYTHON_CMD -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
 			if [ -z "$$NGROK_URL" ]; then \
 				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE '"public_url":"https://[^"]*' | head -1 | sed 's/"public_url":"//'); \
 			fi; \
@@ -197,13 +345,27 @@ frontend-ngrok: ## Start frontend with ngrok tunnel (for public access)
 		echo "  Run: $(BLUE)make frontend$(NC) and access via your local IP"; \
 		echo ""; \
 		echo "$(BLUE)📋 Quick Actions:$(NC)"; \
-		echo "  • Open in browser: $(GREEN)open $$NGROK_URL_SKIP$(NC)"; \
+		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			echo "  • Open in browser: $(GREEN)open $$NGROK_URL_SKIP$(NC)"; \
+		elif [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+			echo "  • Open in browser: $(GREEN)start $$NGROK_URL_SKIP$(NC)"; \
+		else \
+			echo "  • Open in browser: $(GREEN)xdg-open $$NGROK_URL_SKIP$(NC)"; \
+		fi; \
 		echo "  • Ngrok dashboard: $(GREEN)http://localhost:4040$(NC)"; \
 		echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
 		echo ""; \
-		if command -v open >/dev/null 2>&1; then \
+		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+		if [ "$$UNAME_S" = "Darwin" ] && command -v open >/dev/null 2>&1; then \
 			echo "$(BLUE)Opening ngrok URL in browser...$(NC)"; \
 			open "$$NGROK_URL_SKIP" 2>/dev/null || true; \
+		elif ([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]) && command -v start >/dev/null 2>&1; then \
+			echo "$(BLUE)Opening ngrok URL in browser...$(NC)"; \
+			start "$$NGROK_URL_SKIP" 2>/dev/null || true; \
+		elif [ "$$UNAME_S" = "Linux" ] && command -v xdg-open >/dev/null 2>&1; then \
+			echo "$(BLUE)Opening ngrok URL in browser...$(NC)"; \
+			xdg-open "$$NGROK_URL_SKIP" 2>/dev/null || true; \
 		fi; \
 	else \
 		echo ""; \
@@ -211,12 +373,15 @@ frontend-ngrok: ## Start frontend with ngrok tunnel (for public access)
 		echo "$(BLUE)Please check ngrok dashboard manually:$(NC)"; \
 		echo "  $(GREEN)http://localhost:4040$(NC)"; \
 		echo ""; \
+		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+		TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
+		PYTHON_CMD=$$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null || echo "python3"); \
 		echo "$(BLUE)Or check logs:$(NC)"; \
-		echo "  $(YELLOW)tail -f /tmp/ngrok.log$(NC)  # Ngrok logs"; \
-		echo "  $(YELLOW)tail -f /tmp/nextjs.log$(NC)  # Frontend logs"; \
+		echo "  $(YELLOW)tail -f $$TEMP_DIR/ngrok.log$(NC)  # Ngrok logs"; \
+		echo "  $(YELLOW)tail -f $$TEMP_DIR/nextjs.log$(NC)  # Frontend logs"; \
 		echo ""; \
 		echo "$(BLUE)You can also try fetching the URL manually:$(NC)"; \
-		echo "  $(GREEN)curl -s http://localhost:4040/api/tunnels | python3 -m json.tool$(NC)"; \
+		echo "  $(GREEN)curl -s http://localhost:4040/api/tunnels | $$PYTHON_CMD -m json.tool$(NC)"; \
 	fi
 	@echo "$(BLUE)Frontend running in background. Press Ctrl+C to stop.$(NC)"
 	@wait
@@ -246,34 +411,78 @@ show-network-urls: ## Show network URLs for mobile access
 setup-venv: ## Setup virtual environment if it doesn't exist
 	@if [ ! -d "$(VENV_DIR)" ]; then \
 		echo "$(BLUE)Creating virtual environment...$(NC)"; \
-		if [ -n "$(PYTHON311)" ]; then \
-			echo "$(GREEN)✓ Found Python 3.11, using it for best compatibility$(NC)"; \
-			$(PYTHON311) -m venv $(VENV_DIR); \
-		elif [ -n "$(PYTHON)" ]; then \
-			PYTHON_VERSION=$$($(PYTHON) --version 2>&1 | grep -oE '[0-9]+\.[0-9]+'); \
-			echo "$(YELLOW)⚠️  Python 3.11 not found. Using Python $$PYTHON_VERSION$(NC)"; \
-			echo "$(YELLOW)⚠️  For best compatibility, install Python 3.11: brew install python@3.11$(NC)"; \
-			$(PYTHON) -m venv $(VENV_DIR); \
+		UNAME_S=$$(uname -s 2>/dev/null || echo "Windows"); \
+		if [ "$$UNAME_S" = "Windows" ] || [ "$$OS" = "Windows_NT" ]; then \
+			if py -3.11 --version >nul 2>&1; then \
+				echo "$(GREEN)✓ Found Python 3.11, using it for best compatibility$(NC)"; \
+				py -3.11 -m venv $(VENV_DIR); \
+			elif py -3 --version >nul 2>&1; then \
+				PYTHON_VERSION=$$(py -3 --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' || echo "unknown"); \
+				echo "$(YELLOW)⚠️  Python 3.11 not found. Using Python $$PYTHON_VERSION$(NC)"; \
+				echo "$(YELLOW)⚠️  For best compatibility, install Python 3.11$(NC)"; \
+				py -3 -m venv $(VENV_DIR); \
+			elif python --version >nul 2>&1; then \
+				PYTHON_VERSION=$$(python --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' || echo "unknown"); \
+				echo "$(YELLOW)⚠️  Python 3.11 not found. Using Python $$PYTHON_VERSION$(NC)"; \
+				echo "$(YELLOW)⚠️  For best compatibility, install Python 3.11$(NC)"; \
+				python -m venv $(VENV_DIR); \
+			else \
+				echo "$(RED)Error: Python not found!$(NC)"; \
+				echo "$(YELLOW)Please install Python 3.11 from: https://www.python.org/downloads/$(NC)"; \
+				exit 1; \
+			fi; \
+			echo "$(BLUE)Upgrading pip...$(NC)"; \
+			$(VENV_DIR)/$(VENV_BIN)/python.exe -m pip install --upgrade pip setuptools wheel; \
+			echo "$(BLUE)Installing backend dependencies (this may take a few minutes)...$(NC)"; \
+			$(VENV_DIR)/$(VENV_BIN)/python.exe -m pip install -r models/requirements.txt || { \
+				echo "$(YELLOW)Some packages failed to install. Installing core packages only...$(NC)"; \
+				$(VENV_DIR)/$(VENV_BIN)/python.exe -m pip install fastapi uvicorn python-dotenv sqlalchemy alembic opencv-python Pillow pytesseract pdfplumber PyPDF2 numpy requests beautifulsoup4 pydantic pydantic-settings python-multipart psutil; \
+				echo "$(YELLOW)Note: Some optional packages skipped due to compatibility issues$(NC)"; \
+			}; \
 		else \
-			echo "$(RED)Error: Python not found!$(NC)"; \
-			echo "$(YELLOW)Please install Python 3.11: brew install python@3.11$(NC)"; \
-			exit 1; \
+			if [ -n "$(PYTHON311)" ]; then \
+				echo "$(GREEN)✓ Found Python 3.11, using it for best compatibility$(NC)"; \
+				$(PYTHON311) -m venv $(VENV_DIR); \
+			elif [ -n "$(PYTHON)" ]; then \
+				PYTHON_VERSION=$$($(PYTHON) --version 2>&1 | grep -oE '[0-9]+\.[0-9]+'); \
+				echo "$(YELLOW)⚠️  Python 3.11 not found. Using Python $$PYTHON_VERSION$(NC)"; \
+				if [ "$$UNAME_S" = "Darwin" ]; then \
+					echo "$(YELLOW)⚠️  For best compatibility, install Python 3.11: brew install python@3.11$(NC)"; \
+				else \
+					echo "$(YELLOW)⚠️  For best compatibility, install Python 3.11$(NC)"; \
+				fi; \
+				$(PYTHON) -m venv $(VENV_DIR); \
+			else \
+				echo "$(RED)Error: Python not found!$(NC)"; \
+				if [ "$$UNAME_S" = "Darwin" ]; then \
+					echo "$(YELLOW)Please install Python 3.11: brew install python@3.11$(NC)"; \
+				else \
+					echo "$(YELLOW)Please install Python 3.11$(NC)"; \
+				fi; \
+				exit 1; \
+			fi; \
+			echo "$(BLUE)Upgrading pip...$(NC)"; \
+			. $(VENV_DIR)/$(VENV_BIN)/activate && pip install --upgrade pip setuptools wheel; \
+			echo "$(BLUE)Installing backend dependencies (this may take a few minutes)...$(NC)"; \
+			. $(VENV_DIR)/$(VENV_BIN)/activate && pip install -r models/requirements.txt || { \
+				echo "$(YELLOW)Some packages failed to install. Installing core packages only...$(NC)"; \
+				. $(VENV_DIR)/$(VENV_BIN)/activate && pip install fastapi uvicorn python-dotenv sqlalchemy alembic opencv-python Pillow pytesseract pdfplumber PyPDF2 numpy requests beautifulsoup4 pydantic pydantic-settings python-multipart psutil; \
+				echo "$(YELLOW)Note: Some optional packages skipped due to compatibility issues$(NC)"; \
+			}; \
 		fi; \
-		echo "$(BLUE)Upgrading pip...$(NC)"; \
-		. $(VENV_DIR)/bin/activate && pip install --upgrade pip setuptools wheel; \
-		echo "$(BLUE)Installing backend dependencies (this may take a few minutes)...$(NC)"; \
-		. $(VENV_DIR)/bin/activate && pip install -r models/requirements.txt || { \
-			echo "$(YELLOW)Some packages failed to install. Installing core packages only...$(NC)"; \
-			. $(VENV_DIR)/bin/activate && pip install fastapi uvicorn python-dotenv sqlalchemy alembic opencv-python Pillow pytesseract pdfplumber PyPDF2 numpy requests beautifulsoup4 pydantic pydantic-settings python-multipart psutil; \
-			echo "$(YELLOW)Note: Some optional packages skipped due to compatibility issues$(NC)"; \
-		}; \
 		echo "$(GREEN)✓ Virtual environment created and dependencies installed$(NC)"; \
 	fi
 
 down: ## Stop all running services
 	@echo "$(YELLOW)Stopping services...$(NC)"
-	@pkill -f "uvicorn" || true
-	@pkill -f "next dev" || true
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		taskkill //F //FI "IMAGENAME eq uvicorn.exe" 2>/dev/null || pkill -f uvicorn 2>/dev/null || true; \
+		taskkill //F //FI "IMAGENAME eq node.exe" //FI "WINDOWTITLE eq *next*" 2>/dev/null || pkill -f "next dev" 2>/dev/null || true; \
+	else \
+		pkill -f "uvicorn" || true; \
+		pkill -f "next dev" || true; \
+	fi
 	@echo "$(GREEN)✓ Services stopped$(NC)"
 
 ##@ Code Quality
@@ -305,7 +514,12 @@ lint-frontend: ## Lint frontend code
 db-migrate: setup-venv ## Run database migrations
 	@echo "$(BLUE)Running migrations...$(NC)"
 	@if [ -d "$(VENV_DIR)" ]; then \
-		cd backend && ../$(VENV_PYTHON) -c "from models.database import init_database; init_database()"; \
+		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+		if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+			cd backend && ../$(VENV_DIR)/Scripts/python.exe -c "from models.database import init_database; init_database()"; \
+		else \
+			cd backend && ../$(VENV_DIR)/bin/python -c "from models.database import init_database; init_database()"; \
+		fi; \
 	else \
 		cd backend && $(PYTHON) -c "from models.database import init_database; init_database()"; \
 	fi
@@ -406,17 +620,36 @@ clean-venv: ## Remove virtual environment (will be recreated on next run)
 
 status: ## Show status of services
 	@echo "$(BLUE)Service Status:$(NC)"
-	@echo "Backend (port 8000):"
-	@lsof -ti:8000 >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"
-	@echo "Frontend (port 3000):"
-	@lsof -ti:3000 >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	echo "Backend (port 8000):"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		netstat -ano 2>/dev/null | grep :8000 | grep LISTENING >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+	else \
+		lsof -ti:8000 >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+	fi; \
+	echo "Frontend (port 3000):"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		netstat -ano 2>/dev/null | grep :3000 | grep LISTENING >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+	else \
+		lsof -ti:3000 >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+	fi
 
 ports: ## Show which ports are in use
 	@echo "$(BLUE)Port Usage:$(NC)"
-	@echo "Port 8000 (Backend):"
-	@lsof -i:8000 || echo "  Not in use"
-	@echo "\nPort 3000 (Frontend):"
-	@lsof -i:3000 || echo "  Not in use"
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	echo "Port 8000 (Backend):"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		netstat -ano 2>/dev/null | grep :8000 | grep LISTENING || echo "  Not in use"; \
+	else \
+		lsof -i:8000 || echo "  Not in use"; \
+	fi; \
+	echo ""; \
+	echo "Port 3000 (Frontend):"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		netstat -ano 2>/dev/null | grep :3000 | grep LISTENING || echo "  Not in use"; \
+	else \
+		lsof -i:3000 || echo "  Not in use"; \
+	fi
 
 ##@ Quick Start
 
