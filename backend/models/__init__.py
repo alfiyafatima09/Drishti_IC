@@ -1,4 +1,3 @@
-"""SQLAlchemy models for BEL IC Verification System."""
 from models.base import Base, TimestampMixin
 from models.ic_specification import ICSpecification
 from models.scan_history import ScanHistory
@@ -17,4 +16,3 @@ __all__ = [
     "SyncJob",
     "AppSettings",
 ]
-
