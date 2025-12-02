@@ -1,0 +1,48 @@
+{
+  "scans": [
+    {
+      "scan_id": "550e8400-e29b-41d4-a716-446655440000",
+      "part_number": "LM555",
+      "status": "PASS",
+      "confidence_score": 94.5,
+      "detected_pins": 8,
+      "scanned_at": "2025-12-01T10:30:00Z"
+    },
+    {
+      "scan_id": "550e8400-e29b-41d4-a716-446655440001",
+      "part_number": "ATMEGA328P",
+      "status": "PASS",
+      "confidence_score": 96.0,
+      "detected_pins": 32,
+      "scanned_at": "2025-12-01T10:32:00Z"
+    },
+    {
+      "scan_id": "550e8400-e29b-41d4-a716-446655440002",
+      "part_number": "XYZ9999",
+      "status": "UNKNOWN",
+      "confidence_score": 88.0,
+      "detected_pins": 16,
+      "scanned_at": "2025-12-01T10:35:00Z"
+    },
+    {
+      "scan_id": "550e8400-e29b-41d4-a716-446655440003",
+      "part_number": "FAKE123",
+      "status": "COUNTERFEIT",
+      "confidence_score": 100.0,
+      "detected_pins": 8,
+      "scanned_at": "2025-12-01T10:40:00Z"
+    },
+    {
+      "scan_id": "550e8400-e29b-41d4-a716-446655440004",
+      "part_number": "LM555",
+      "status": "FAIL",
+      "confidence_score": 91.0,
+      "detected_pins": 14,
+      "scanned_at": "2025-12-01T10:45:00Z"
+    }
+  ],
+  "total_count": 156,
+  "limit": 50,
+  "offset": 0
+}
+

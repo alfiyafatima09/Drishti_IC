@@ -1,0 +1,18 @@
+{
+  "scan_id": "550e8400-e29b-41d4-a716-446655440002",
+  "status": "UNKNOWN",
+  "action_required": "NONE",
+  "confidence_score": 88.0,
+  "ocr_text": "XYZ9999",
+  "part_number": "XYZ9999",
+  "manufacturer_detected": null,
+  "detected_pins": 16,
+  "message": "IC not found in database. Part number 'XYZ9999' has been added to the sync queue and will be looked up during the next online sync.",
+  "match_details": null,
+  "queued_for_sync": true,
+  "ic_specification": null,
+  "fake_registry_info": null,
+  "scanned_at": "2025-12-01T10:35:00Z",
+  "completed_at": "2025-12-01T10:35:01Z"
+}
+

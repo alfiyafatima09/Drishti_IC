@@ -1,0 +1,22 @@
+{
+  "scan_id": "550e8400-e29b-41d4-a716-446655440003",
+  "status": "COUNTERFEIT",
+  "action_required": "NONE",
+  "confidence_score": 100.0,
+  "ocr_text": "FAKE123",
+  "part_number": "FAKE123",
+  "manufacturer_detected": null,
+  "detected_pins": 8,
+  "message": "ALERT: This IC number 'FAKE123' is registered in the fake registry. No legitimate manufacturer produces this part number. This component should be rejected and quarantined.",
+  "match_details": null,
+  "queued_for_sync": false,
+  "ic_specification": null,
+  "fake_registry_info": {
+    "added_at": "2025-11-15T08:00:00Z",
+    "source": "SYNC_NOT_FOUND",
+    "reason": "Not found on any manufacturer website (Mouser, DigiKey, AllDatasheet) after 3 sync attempts"
+  },
+  "scanned_at": "2025-12-01T10:40:00Z",
+  "completed_at": "2025-12-01T10:40:01Z"
+}
+

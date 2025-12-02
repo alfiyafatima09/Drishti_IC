@@ -1,0 +1,15 @@
+{
+  "job_id": null,
+  "status": "IDLE",
+  "progress_percentage": 0,
+  "current_item": null,
+  "total_items": 0,
+  "processed_items": 0,
+  "success_count": 0,
+  "failed_count": 0,
+  "fake_count": 0,
+  "started_at": null,
+  "estimated_completion": null,
+  "message": "No sync job running. Queue has 15 pending items."
+}
+

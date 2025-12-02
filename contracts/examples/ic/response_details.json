@@ -1,0 +1,26 @@
+{
+  "part_number": "LM555",
+  "manufacturer": "Texas Instruments",
+  "pin_count": 8,
+  "package_type": "DIP",
+  "description": "Precision Timer IC capable of producing accurate time delays or oscillation. Can operate in monostable or astable mode.",
+  "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm555.pdf",
+  "datasheet_path": "/datasheets/LM555.pdf",
+  "has_datasheet": true,
+  "voltage_min": 4.5,
+  "voltage_max": 16.0,
+  "operating_temp_min": 0,
+  "operating_temp_max": 70,
+  "electrical_specs": {
+    "timing_accuracy": "1%",
+    "output_current": "200mA",
+    "supply_current": "3mA",
+    "trigger_voltage": "1.67V",
+    "threshold_voltage": "3.33V",
+    "reset_voltage": "0.7V"
+  },
+  "source": "SCRAPED_MOUSER",
+  "created_at": "2025-11-01T00:00:00Z",
+  "updated_at": "2025-11-20T14:30:00Z"
+}
+

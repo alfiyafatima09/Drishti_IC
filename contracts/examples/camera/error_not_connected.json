@@ -1,0 +1,5 @@
+{
+  "error": "CAMERA_NOT_CONNECTED",
+  "message": "No camera feed available. Please ensure the AOI device (mobile phone) is connected and streaming."
+}
+
