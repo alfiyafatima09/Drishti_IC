@@ -1,15 +1,26 @@
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
 
 
 class Settings(BaseSettings):
     """Application configuration settings."""
     
     APP_NAME: str = "Drishti IC Backend"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "2.0.0"
+    DEBUG: bool = False
+    
+    # Supabase settings
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""  # anon/public key
+    SUPABASE_SERVICE_KEY: str = ""  # service role key (for admin operations)
+    
+    # Database URL (constructed from Supabase or direct PostgreSQL)
+    DATABASE_URL: str = ""
     
     # Storage settings
-    MEDIA_ROOT: Path = Path("media")
+    MEDIA_ROOT: Path = Path("data")
+    DATASHEET_FOLDER: Path = Path("data/datasheets")
     
     # Image processing settings
     MAX_IMAGE_SIZE_BYTES: int = 10 * 1024 * 1024  # 10MB
@@ -21,17 +32,38 @@ class Settings(BaseSettings):
         "image/tiff"
     ]
     
-    # Preprocessing defaults
-    DEFAULT_DENOISE: bool = True
-    DEFAULT_NORMALIZE: bool = True
-    DEFAULT_ENHANCE_CONTRAST: bool = False
-    DEFAULT_EDGE_PREP: bool = False
+    # OCR settings
+    OCR_CONFIDENCE_THRESHOLD: float = 70.0
+    OCR_MODEL: str = "paddleocr"
+    
+    # Vision settings
+    PIN_DETECTION_MODEL: str = "yolov8"
+    
+    # Sync settings
+    MAX_SCRAPE_RETRIES: int = 3
+    SCRAPE_TIMEOUT_SECONDS: int = 30
+    AUTO_QUEUE_UNKNOWN: bool = True
+    
+    # Scan history
+    SCAN_HISTORY_RETENTION_DAYS: int = 365
+    ENABLE_AUTO_CLEANUP: bool = True
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        env_file=(".env", "../.env"),  # Check both backend/.env and root/.env
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",  # Ignore extra fields like NEXT_PUBLIC_*
+    )
 
 
-settings = Settings()
+@lru_cache()
+def get_settings() -> Settings:
+    """Get cached settings instance."""
+    return Settings()
 
-# Ensure media directory exists
+
+settings = get_settings()
+
+# Ensure directories exist
 settings.MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+settings.DATASHEET_FOLDER.mkdir(parents=True, exist_ok=True)
