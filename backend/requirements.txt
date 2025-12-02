@@ -5,8 +5,9 @@ python-multipart==0.0.6  # For file uploads
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
-# HTTP client for examples
+# HTTP client for examples and datasheet downloads
 requests==2.31.0
+httpx==0.26.0  # For async HTTP requests
 
 # Image processing (stubs for now, will be used later)
 # Pillow==10.2.0

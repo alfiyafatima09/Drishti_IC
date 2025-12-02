@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     
     # Storage settings
     MEDIA_ROOT: Path = Path("media")
+    DATASHEET_ROOT: Path = Path("datasheets")
     
     # Image processing settings
     MAX_IMAGE_SIZE_BYTES: int = 10 * 1024 * 1024  # 10MB
@@ -35,3 +36,6 @@ settings = Settings()
 
 # Ensure media directory exists
 settings.MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+# Ensure datasheets directory exists
+settings.DATASHEET_ROOT.mkdir(parents=True, exist_ok=True)
