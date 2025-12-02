@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
-from backend.core.database import get_db
-from backend.services import SettingsService
-from backend.schemas import (
+from core.database import get_db
+from services import SettingsService
+from schemas import (
     SettingsResponse,
     SettingsUpdateRequest,
     SettingsUpdateResponse,

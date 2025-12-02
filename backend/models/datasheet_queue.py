@@ -1,7 +1,7 @@
 """Datasheet Queue model - Pending ICs for online scraping."""
 from sqlalchemy import Column, Integer, String, Text, DateTime, func
 
-from backend.models.base import Base, TimestampMixin
+from models.base import Base, TimestampMixin
 
 
 class DatasheetQueue(Base, TimestampMixin):

@@ -6,9 +6,9 @@ from datetime import datetime
 from uuid import UUID
 import logging
 
-from backend.core.database import get_db
-from backend.services import ScanService, ICService
-from backend.schemas import (
+from core.database import get_db
+from services import ScanService, ICService
+from schemas import (
     ScanListResult,
     ScanListItem,
     ScanDetails,

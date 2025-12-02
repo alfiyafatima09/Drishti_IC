@@ -1,7 +1,7 @@
 """Application Settings model - System configuration stored in database."""
 from sqlalchemy import Column, Integer, String, Text, DateTime, func
 
-from backend.models.base import Base
+from models.base import Base
 
 
 class AppSettings(Base):

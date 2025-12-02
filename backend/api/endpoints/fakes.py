@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
-from backend.core.database import get_db
-from backend.services import FakeService
-from backend.schemas import (
+from core.database import get_db
+from services import FakeService
+from schemas import (
     FakeListResult,
     FakeRegistryItem,
     MarkFakeRequest,

@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 import logging
 
-from backend.core.database import get_db
-from backend.services import ScanService, ICService, FakeService
-from backend.schemas import (
+from core.database import get_db
+from services import ScanService, ICService, FakeService
+from schemas import (
     ScanResult,
     ManualOverrideRequest,
     ScanStatus,

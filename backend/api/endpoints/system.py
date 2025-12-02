@@ -6,10 +6,10 @@ from pathlib import Path
 import logging
 import socket
 
-from backend.core.database import get_db, check_db_connection
-from backend.core.config import settings
-from backend.services import ICService, QueueService, SyncService
-from backend.schemas import (
+from core.database import get_db, check_db_connection
+from core.config import settings
+from services import ICService, QueueService, SyncService
+from schemas import (
     HealthResponse,
     SystemStatusResponse,
     DatabaseStatus,
@@ -18,7 +18,7 @@ from backend.schemas import (
     LastSyncInfo,
     SyncStatus,
 )
-from backend.schemas.system import NetworkStatus, QueueStatus
+from schemas.system import NetworkStatus, QueueStatus
 
 logger = logging.getLogger(__name__)
 

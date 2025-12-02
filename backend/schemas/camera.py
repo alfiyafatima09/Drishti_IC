@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
 
-from backend.schemas.common import CaptureType
+from schemas.common import CaptureType
 
 
 class CaptureRequest(BaseModel):

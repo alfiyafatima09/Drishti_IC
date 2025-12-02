@@ -5,7 +5,7 @@ from typing import Optional, Any
 import logging
 import json
 
-from backend.models import AppSettings
+from models import AppSettings
 
 logger = logging.getLogger(__name__)
 

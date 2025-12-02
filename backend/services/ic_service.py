@@ -5,8 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from typing import Optional
 import logging
 
-from backend.models import ICSpecification
-from backend.schemas import ICSpecificationCreate, ICSpecificationResponse
+from models import ICSpecification
+from schemas import ICSpecificationCreate, ICSpecificationResponse
 
 logger = logging.getLogger(__name__)
 

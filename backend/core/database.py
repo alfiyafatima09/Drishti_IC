@@ -4,22 +4,22 @@ Database connection and session management for Supabase/PostgreSQL.
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import text
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 import logging
 
-from backend.core.config import settings
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
 # SQLAlchemy Base for models
 Base = declarative_base()
 
-
+# Create async engine
+# Supabase connection string format: postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
+# For async, we use: postgresql+asyncpg://...
 def get_database_url() -> str:
     """Get database URL, converting to async format if needed."""
     url = settings.DATABASE_URL
-    if not url:
-        return ""
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
     elif url.startswith("postgres://"):
@@ -27,55 +27,23 @@ def get_database_url() -> str:
     return url
 
 
-# Lazy initialization of engine and session maker
-_engine: Optional[object] = None
-_async_session_maker: Optional[async_sessionmaker] = None
+# Create async engine with connection pooling
+engine = create_async_engine(
+    get_database_url(),
+    echo=settings.DEBUG,  # Log SQL queries in debug mode
+    pool_size=5,
+    max_overflow=10,
+    pool_pre_ping=True,  # Verify connections before using
+)
 
-
-def get_engine():
-    """Get or create the async engine."""
-    global _engine
-    if _engine is None:
-        db_url = get_database_url()
-        if not db_url:
-            raise RuntimeError(
-                "DATABASE_URL is not configured. "
-                "Please set it in your .env file or environment variables.\n"
-                "Example: DATABASE_URL=postgresql://postgres:password@db.xxx.supabase.co:5432/postgres"
-            )
-        _engine = create_async_engine(
-            db_url,
-            echo=settings.DEBUG,
-            pool_size=5,
-            max_overflow=10,
-            pool_pre_ping=True,
-        )
-    return _engine
-
-
-def get_session_maker():
-    """Get or create the session maker."""
-    global _async_session_maker
-    if _async_session_maker is None:
-        _async_session_maker = async_sessionmaker(
-            get_engine(),
-            class_=AsyncSession,
-            expire_on_commit=False,
-            autocommit=False,
-            autoflush=False,
-        )
-    return _async_session_maker
-
-
-# For backwards compatibility
-@property
-def engine():
-    return get_engine()
-
-
-@property  
-def async_session_maker():
-    return get_session_maker()
+# Create session factory
+async_session_maker = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -86,8 +54,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         async def get_items(db: AsyncSession = Depends(get_db)):
             ...
     """
-    session_maker = get_session_maker()
-    async with session_maker() as session:
+    async with async_session_maker() as session:
         try:
             yield session
             await session.commit()
@@ -103,10 +70,9 @@ async def init_db() -> None:
     Initialize database - create tables if they don't exist.
     This runs the migration SQL to ensure all tables are present.
     """
-    eng = get_engine()
-    async with eng.begin() as conn:
+    async with engine.begin() as conn:
         # Import models to register them with Base
-        from backend.models import (
+        from models import (
             ICSpecification,
             ScanHistory,
             DatasheetQueue,
@@ -123,8 +89,7 @@ async def init_db() -> None:
 async def check_db_connection() -> bool:
     """Check if database connection is working."""
     try:
-        eng = get_engine()
-        async with eng.connect() as conn:
+        async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
             return True
     except Exception as e:
@@ -135,11 +100,11 @@ async def check_db_connection() -> bool:
 async def get_ic_count() -> int:
     """Get count of ICs in database."""
     try:
-        session_maker = get_session_maker()
-        async with session_maker() as session:
+        async with async_session_maker() as session:
             result = await session.execute(
                 text("SELECT COUNT(*) FROM ic_specifications")
             )
             return result.scalar() or 0
     except Exception:
         return 0
+

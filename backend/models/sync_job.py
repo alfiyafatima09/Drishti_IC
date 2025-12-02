@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 
-from backend.models.base import Base
+from models.base import Base
 
 
 class SyncJob(Base):
