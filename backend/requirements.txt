@@ -9,7 +9,11 @@ pydantic-settings==2.1.0
 requests==2.31.0
 httpx==0.26.0  # For async HTTP requests
 
-# Image processing (stubs for now, will be used later)
-# Pillow==10.2.0
+# AI/ML services
+google-generativeai==0.3.2  # Gemini API
+python-dotenv==1.0.0  # Environment variable management
+
+# Image processing
+Pillow==10.2.0  # Image manipulation
 # opencv-python==4.9.0.80
 # numpy==1.26.3
