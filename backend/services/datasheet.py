@@ -10,7 +10,7 @@ from typing import Tuple, Optional, Dict, Type
 from datetime import datetime
 from abc import ABC, abstractmethod
 
-from backend.core.config import settings
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 

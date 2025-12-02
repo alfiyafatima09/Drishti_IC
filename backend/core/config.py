@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     APP_NAME: str = "Drishti IC Backend"
     APP_VERSION: str = "0.1.0"
     
+    # API Keys
+    GEMINI_API_KEY: str = ""
+    
     # Storage settings
     MEDIA_ROOT: Path = Path("media")
     DATASHEET_ROOT: Path = Path("datasheets")
@@ -29,7 +32,7 @@ class Settings(BaseSettings):
     DEFAULT_EDGE_PREP: bool = False
 
     class Config:
-        env_file = ".env"
+        env_file = "backend/.env"
 
 
 settings = Settings()

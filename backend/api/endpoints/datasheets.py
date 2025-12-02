@@ -8,12 +8,12 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 import logging
 
-from backend.schemas.datasheets import (
+from schemas.datasheets import (
     DatasheetDownloadRequest,
     DatasheetDownloadResponse,
     ErrorResponse
 )
-from backend.services.datasheet import (
+from services.datasheet import (
     datasheet_service,
     DatasheetDownloadException,
     UnsupportedManufacturerException
