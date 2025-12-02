@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, Float, Text, DateTime, func
 from sqlalchemy.dialects.postgresql import JSONB
 
-from backend.models.base import Base, TimestampMixin
+from models.base import Base, TimestampMixin
 
 
 class ICSpecification(Base, TimestampMixin):

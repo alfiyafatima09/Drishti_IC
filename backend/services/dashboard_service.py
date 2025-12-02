@@ -4,12 +4,12 @@ from typing import Optional
 from datetime import datetime
 import logging
 
-from backend.services.scan_service import ScanService
-from backend.services.ic_service import ICService
-from backend.services.queue_service import QueueService
-from backend.services.fake_service import FakeService
-from backend.services.sync_service import SyncService
-from backend.schemas import DashboardStats
+from services.scan_service import ScanService
+from services.ic_service import ICService
+from services.queue_service import QueueService
+from services.fake_service import FakeService
+from services.sync_service import SyncService
+from schemas import DashboardStats
 
 logger = logging.getLogger(__name__)
 

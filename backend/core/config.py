@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     
     # Storage settings
     MEDIA_ROOT: Path = Path("data")
+    DATASHEET_ROOT: Path = Path("datasheets")
     DATASHEET_FOLDER: Path = Path("data/datasheets")
     
     # Image processing settings
@@ -66,4 +67,7 @@ settings = get_settings()
 
 # Ensure directories exist
 settings.MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+# Ensure datasheets directory exists
+settings.DATASHEET_ROOT.mkdir(parents=True, exist_ok=True)
 settings.DATASHEET_FOLDER.mkdir(parents=True, exist_ok=True)

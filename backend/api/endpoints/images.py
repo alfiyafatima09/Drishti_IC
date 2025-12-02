@@ -8,15 +8,15 @@ from typing import Optional
 from datetime import datetime
 import logging
 
-from backend.schemas.images import (
+from schemas.images import (
     ImageUploadResponse,
     ImageUploadRequest,
     PreprocessingMetadata,
     ErrorResponse
 )
-from backend.services.storage import save_image_file
-from backend.services.preprocessing import ImagePreprocessingPipeline, PreprocessingException
-from backend.core.config import settings
+from services.storage import save_image_file
+from services.preprocessing import ImagePreprocessingPipeline, PreprocessingException
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 

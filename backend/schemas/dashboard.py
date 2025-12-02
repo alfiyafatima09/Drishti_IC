@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-from backend.schemas.common import SyncStatus
+from schemas.common import SyncStatus
 
 
 class RecentCounterfeit(BaseModel):

@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
-from backend.core.database import get_db
-from backend.services import QueueService
-from backend.schemas import QueueListResult, QueueItem, SuccessResponse
+from core.database import get_db
+from services import QueueService
+from schemas import QueueListResult, QueueItem, SuccessResponse
 
 logger = logging.getLogger(__name__)
 

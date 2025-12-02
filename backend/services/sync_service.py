@@ -7,11 +7,11 @@ from uuid import UUID
 import logging
 import asyncio
 
-from backend.models import SyncJob, DatasheetQueue
-from backend.services.queue_service import QueueService
-from backend.services.fake_service import FakeService
-from backend.services.ic_service import ICService
-from backend.schemas import ICSpecificationCreate
+from models import SyncJob, DatasheetQueue
+from services.queue_service import QueueService
+from services.fake_service import FakeService
+from services.ic_service import ICService
+from schemas import ICSpecificationCreate
 
 logger = logging.getLogger(__name__)
 

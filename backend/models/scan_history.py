@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, Float, Text, Boolean, DateTime, 
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 
-from backend.models.base import Base
+from models.base import Base
 
 
 class ScanHistory(Base):

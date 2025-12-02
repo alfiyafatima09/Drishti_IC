@@ -6,11 +6,11 @@ from datetime import datetime, timedelta
 from uuid import UUID
 import logging
 
-from backend.models import ScanHistory, ICSpecification, FakeRegistry, DatasheetQueue
-from backend.schemas import ScanStatus, ActionRequired, MatchDetails
-from backend.services.ic_service import ICService
-from backend.services.queue_service import QueueService
-from backend.services.fake_service import FakeService
+from models import ScanHistory, ICSpecification, FakeRegistry, DatasheetQueue
+from schemas import ScanStatus, ActionRequired, MatchDetails
+from services.ic_service import ICService
+from services.queue_service import QueueService
+from services.fake_service import FakeService
 
 logger = logging.getLogger(__name__)
 

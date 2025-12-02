@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
-from backend.schemas.common import SyncStatus
+from schemas.common import SyncStatus
 
 
 class HealthResponse(BaseModel):

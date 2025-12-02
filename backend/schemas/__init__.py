@@ -1,5 +1,5 @@
 """Pydantic schemas for API request/response validation."""
-from backend.schemas.common import (
+from schemas.common import (
     ScanStatus,
     ActionRequired,
     QueueStatus,
@@ -9,13 +9,13 @@ from backend.schemas.common import (
     SuccessResponse,
     ErrorResponse,
 )
-from backend.schemas.ic import (
+from schemas.ic import (
     ICSpecificationBase,
     ICSpecificationCreate,
     ICSpecificationResponse,
     ICSearchResult,
 )
-from backend.schemas.scan import (
+from schemas.scan import (
     MatchDetails,
     FakeRegistryInfo,
     ScanResult,
@@ -24,32 +24,32 @@ from backend.schemas.scan import (
     ScanListResult,
     ScanDetails,
 )
-from backend.schemas.queue import (
+from schemas.queue import (
     QueueItem,
     QueueListResult,
 )
-from backend.schemas.fake import (
+from schemas.fake import (
     FakeRegistryItem,
     FakeListResult,
     MarkFakeRequest,
 )
-from backend.schemas.sync import (
+from schemas.sync import (
     SyncStartRequest,
     SyncJobInfo,
     SyncStatusResponse,
     SyncHistoryItem,
     SyncHistoryResult,
 )
-from backend.schemas.settings import (
+from schemas.settings import (
     SettingsResponse,
     SettingsUpdateRequest,
     SettingsUpdateResponse,
 )
-from backend.schemas.dashboard import (
+from schemas.dashboard import (
     RecentCounterfeit,
     DashboardStats,
 )
-from backend.schemas.system import (
+from schemas.system import (
     HealthResponse,
     DatabaseStatus,
     CameraStatus,
@@ -58,7 +58,7 @@ from backend.schemas.system import (
     LastSyncInfo,
     SystemStatusResponse,
 )
-from backend.schemas.camera import (
+from schemas.camera import (
     CaptureRequest,
     CaptureResponse,
 )

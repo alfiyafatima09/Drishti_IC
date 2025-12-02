@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
-from backend.core.database import get_db
-from backend.services import DashboardService
-from backend.schemas import DashboardStats
+from core.database import get_db
+from services import DashboardService
+from schemas import DashboardStats
 
 logger = logging.getLogger(__name__)
 

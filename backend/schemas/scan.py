@@ -4,8 +4,8 @@ from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
-from backend.schemas.common import ScanStatus, ActionRequired
-from backend.schemas.ic import ICSpecificationResponse
+from schemas.common import ScanStatus, ActionRequired
+from schemas.ic import ICSpecificationResponse
 
 
 class MatchDetails(BaseModel):

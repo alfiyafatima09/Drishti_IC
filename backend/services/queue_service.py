@@ -5,7 +5,7 @@ from typing import Optional
 from datetime import datetime
 import logging
 
-from backend.models import DatasheetQueue
+from models import DatasheetQueue
 
 logger = logging.getLogger(__name__)
 

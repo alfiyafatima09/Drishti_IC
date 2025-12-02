@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-from backend.schemas.common import FakeSource
+from schemas.common import FakeSource
 
 
 class FakeRegistryItem(BaseModel):

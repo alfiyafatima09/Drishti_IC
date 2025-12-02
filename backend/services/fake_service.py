@@ -5,7 +5,7 @@ from typing import Optional
 from datetime import datetime
 import logging
 
-from backend.models import FakeRegistry
+from models import FakeRegistry
 
 logger = logging.getLogger(__name__)
 

@@ -267,8 +267,8 @@ async def verify_tables(session_maker):
 async def main():
     """Run database initialization."""
     # Import here to avoid import-time errors
-    from backend.core.config import settings
-    from backend.core.database import get_engine, get_session_maker
+    from core.config import settings
+    from core.database import get_engine, get_session_maker
     
     logger.info("=" * 60)
     logger.info("BEL IC Verification System - Database Initialization")

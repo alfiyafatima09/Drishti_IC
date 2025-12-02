@@ -8,9 +8,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from backend.core.config import settings
-from backend.core.database import init_db
-from backend.api.endpoints import (
+from api.endpoints import datasheets
+from core.config import settings
+
+from core.database import init_db
+from api.endpoints import (
     scan_router,
     ic_router,
     scans_history_router,
@@ -56,21 +58,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="""
-    ## BEL IC Verification System
-    
-    Offline-first API for counterfeit IC detection using computer vision.
-    
-    ### Features
-    - **OCR + Vision**: Read chip text and count pins
-    - **Golden Record**: Verify against local database
-    - **Self-Healing**: Automatically queue unknown ICs for sync
-    - **Fake Registry**: Track known counterfeit part numbers
-    - **Weekly Sync**: Update database when internet is available
-    
-    ### Scan Flow
-    1. Upload image → `/api/v1/scan`
-    2. If PARTIAL (BTC component) → flip and upload → `/api/v1/scan/{id}/bottom`
-    3. If UNKNOWN → manual override available → `/api/v1/scan/override`
+    Backend APIs for Drishti IC
     """,
     lifespan=lifespan,
 )
@@ -95,6 +83,7 @@ app.include_router(sync_router)
 app.include_router(settings_router)
 app.include_router(system_router)
 app.include_router(camera_router)
+app.include_router(datasheets.router)
 
 
 @app.get("/", tags=["Root"])
@@ -112,7 +101,7 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "backend.main:app",
+        "main:app",
         host="0.0.0.0",
         port=8000,
         reload=settings.DEBUG,

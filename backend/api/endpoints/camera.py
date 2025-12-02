@@ -6,9 +6,9 @@ from uuid import UUID, uuid4
 import logging
 import asyncio
 
-from backend.core.database import get_db
-from backend.schemas import CaptureRequest, CaptureResponse, CaptureType
-from backend.api.endpoints.system import set_camera_status
+from core.database import get_db
+from schemas import CaptureRequest, CaptureResponse, CaptureType
+from api.endpoints.system import set_camera_status
 
 logger = logging.getLogger(__name__)
 

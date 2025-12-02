@@ -6,10 +6,10 @@ from typing import Optional
 from pathlib import Path
 import logging
 
-from backend.core.database import get_db
-from backend.core.config import settings
-from backend.services import ICService
-from backend.schemas import ICSpecificationResponse, ICSearchResult
+from core.database import get_db
+from core.config import settings
+from services import ICService
+from schemas import ICSpecificationResponse, ICSearchResult
 
 logger = logging.getLogger(__name__)
 
