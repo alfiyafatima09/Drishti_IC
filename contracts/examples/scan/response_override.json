@@ -1,0 +1,31 @@
+{
+  "scan_id": "550e8400-e29b-41d4-a716-446655440005",
+  "status": "PASS",
+  "action_required": "NONE",
+  "confidence_score": 85.0,
+  "ocr_text": "LN555",
+  "part_number": "LM555",
+  "manufacturer_detected": null,
+  "detected_pins": 8,
+  "was_manual_override": true,
+  "message": "Manual override accepted. OCR originally read 'LN555', operator corrected to 'LM555'. Pin count (8) matches LM555 specification.",
+  "match_details": {
+    "part_number_match": true,
+    "pin_count_match": true,
+    "manufacturer_match": null
+  },
+  "queued_for_sync": false,
+  "ic_specification": {
+    "part_number": "LM555",
+    "manufacturer": "Texas Instruments",
+    "pin_count": 8,
+    "package_type": "DIP",
+    "description": "Precision Timer IC",
+    "datasheet_path": "/datasheets/LM555.pdf",
+    "has_datasheet": true
+  },
+  "fake_registry_info": null,
+  "scanned_at": "2025-12-01T10:50:00Z",
+  "completed_at": "2025-12-01T10:51:30Z"
+}
+

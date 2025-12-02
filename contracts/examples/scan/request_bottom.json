@@ -1,0 +1,6 @@
+{
+  "_description": "POST /api/v1/scan/{scan_id}/bottom - multipart/form-data request",
+  "_path_param": "scan_id: 550e8400-e29b-41d4-a716-446655440001",
+  "file": "<binary image data - JPEG/PNG of IC bottom>"
+}
+

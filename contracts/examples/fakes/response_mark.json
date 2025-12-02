@@ -1,0 +1,10 @@
+{
+  "part_number": "SUSPICIOUS001",
+  "source": "MANUAL_REPORT",
+  "reason": "Physical inspection revealed chip die does not match expected layout. X-ray analysis showed incorrect internal bond wires.",
+  "reported_by": "Operator_Jane",
+  "added_at": "2025-12-01T11:00:00Z",
+  "scrape_attempts": 0,
+  "manufacturers_checked": null
+}
+

@@ -1,0 +1,36 @@
+{
+  "results": [
+    {
+      "part_number": "LM555",
+      "manufacturer": "Texas Instruments",
+      "pin_count": 8,
+      "package_type": "DIP",
+      "description": "Precision Timer IC"
+    },
+    {
+      "part_number": "NE555",
+      "manufacturer": "Texas Instruments",
+      "pin_count": 8,
+      "package_type": "DIP",
+      "description": "General Purpose Single Bipolar Timer"
+    },
+    {
+      "part_number": "LM555CM",
+      "manufacturer": "Texas Instruments",
+      "pin_count": 8,
+      "package_type": "SOIC",
+      "description": "Precision Timer IC - Surface Mount"
+    },
+    {
+      "part_number": "ICM7555",
+      "manufacturer": "Intersil",
+      "pin_count": 8,
+      "package_type": "DIP",
+      "description": "CMOS General Purpose Timer"
+    }
+  ],
+  "total_count": 4,
+  "limit": 20,
+  "offset": 0
+}
+

@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "message": "Settings updated successfully.",
+  "updated_settings": {
+    "scan_history_retention_days": 180,
+    "ocr_confidence_threshold": 75.0,
+    "max_scrape_retries": 5
+  }
+}
+
