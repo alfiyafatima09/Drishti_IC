@@ -1,23 +1,12 @@
 openapi: 3.1.0
 info:
-  title: BEL IC Verification API
+  title: Drishti_IC
   description: |
-    Offline-first API for counterfeit IC detection system.
-    
-    ## Overview
-    This API powers an automated optical inspection (AOI) system that verifies 
-    whether Integrated Circuits (ICs) are authentic or counterfeit by comparing 
-    their physical appearance against a local "Golden Record" database.
-    
-    ## Key Features
-    - **Offline-First**: Operates without internet, syncs weekly
-    - **OCR + Vision**: Reads chip text and counts pins
-    - **Self-Healing Database**: Learns new ICs through web scraping
-    - **Counterfeit Detection**: Maintains registry of known fakes
+    Backend APIs for Drishti IC
     
   version: 2.0.0
   contact:
-    name: BEL IC Verification Team
+    name: Backend APIs
 
 servers:
   - url: http://localhost:8000
