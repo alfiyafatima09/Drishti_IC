@@ -1,0 +1,482 @@
+openapi: 3.1.0
+info:
+  title: Drishti IC Verification API
+  version: 1.0.0
+  description: |
+    API contract for Drishti IC Verification System.
+    This is the single source of truth - both frontend and backend MUST follow this specification.
+    
+    ## Features
+    - IC authenticity verification using AI/ML
+    - Real-time video streaming from mobile devices
+    - Logo detection with SIFT and CDS kernel
+    - Font analysis for counterfeit detection
+    - Datasheet retrieval and parsing
+    
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: http://localhost:8000/api/v1
+    description: API v1
+
+paths:
+  /api/v1/health:
+    get:
+      summary: Basic health check
+      operationId: getHealth
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/v1/health/detailed:
+    get:
+      summary: Detailed health check with system info
+      operationId: getDetailedHealth
+      tags: [Health]
+      responses:
+        '200':
+          description: Detailed health information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+
+  /api/v1/verify/ic:
+    post:
+      summary: Verify IC authenticity from image
+      operationId: verifyIC
+      tags: [Verification]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image_file:
+                  type: string
+                  format: binary
+                  description: IC image file
+                part_number:
+                  type: string
+                  description: Known part number (optional)
+                manufacturer:
+                  type: string
+                  description: Known manufacturer (optional)
+                thorough_check:
+                  type: boolean
+                  default: true
+                  description: Perform thorough verification including datasheet
+      responses:
+        '200':
+          description: Verification complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/verify/results/{verification_id}:
+    get:
+      summary: Get verification result by ID
+      operationId: getVerificationResult
+      tags: [Verification]
+      parameters:
+        - name: verification_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResultDetail'
+        '404':
+          description: Result not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/verify/history:
+    get:
+      summary: Get verification history
+      operationId: getVerificationHistory
+      tags: [Verification]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: genuine_only
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Verification history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationHistoryResponse'
+
+  /api/v1/verify/manufacturers:
+    get:
+      summary: Get supported manufacturers
+      operationId: getManufacturers
+      tags: [Verification]
+      responses:
+        '200':
+          description: List of manufacturers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManufacturersResponse'
+
+  /api/v1/video/sessions/start:
+    post:
+      summary: Start video streaming session
+      operationId: startVideoSession
+      tags: [Video]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device_id:
+                  type: string
+                resolution:
+                  type: string
+                  default: "1920x1080"
+                fps:
+                  type: number
+                  default: 30
+      responses:
+        '200':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoSessionResponse'
+
+  /api/v1/video/sessions/{session_id}/status:
+    get:
+      summary: Get video session status
+      operationId: getVideoSessionStatus
+      tags: [Video]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoSessionStatus'
+
+  /api/v1/images/upload:
+    post:
+      summary: Upload and process image
+      operationId: uploadImage
+      tags: [Images]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                preprocess:
+                  type: boolean
+                  default: true
+                enhance_contrast:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadResponse'
+
+  /api/v1/datasheets/fetch/{part_number}:
+    post:
+      summary: Fetch datasheet for part number
+      operationId: fetchDatasheet
+      tags: [Datasheets]
+      parameters:
+        - name: part_number
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                manufacturer:
+                  type: string
+                force_refresh:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Datasheet fetched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasheetResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+        service:
+          type: string
+        version:
+          type: string
+
+    DetailedHealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/HealthResponse'
+        - type: object
+          properties:
+            database:
+              type: string
+            system:
+              type: object
+              properties:
+                platform:
+                  type: string
+                cpu_count:
+                  type: integer
+                memory_total_gb:
+                  type: number
+                memory_available_gb:
+                  type: number
+
+    VerificationResponse:
+      type: object
+      properties:
+        verification_id:
+          type: integer
+        detected_part_number:
+          type: string
+        detected_manufacturer:
+          type: string
+        detected_text:
+          type: array
+          items:
+            type: object
+        confidence_scores:
+          type: object
+          properties:
+            ocr:
+              type: number
+            logo:
+              type: number
+            font:
+              type: number
+        logo_match_score:
+          type: number
+        font_similarity_score:
+          type: number
+        marking_accuracy_score:
+          type: number
+        overall_confidence:
+          type: number
+        is_genuine:
+          type: boolean
+        authenticity_reasons:
+          type: array
+          items:
+            type: string
+        analysis_results:
+          type: object
+        processing_time_seconds:
+          type: number
+
+    VerificationResultDetail:
+      type: object
+      properties:
+        verification_id:
+          type: integer
+        ic_id:
+          type: integer
+        detected_part_number:
+          type: string
+        detected_manufacturer:
+          type: string
+        detected_text:
+          type: string
+        confidence_scores:
+          type: object
+        logo_match_score:
+          type: number
+        font_similarity_score:
+          type: number
+        marking_accuracy_score:
+          type: number
+        overall_confidence:
+          type: number
+        is_genuine:
+          type: boolean
+        authenticity_reasons:
+          type: object
+        analysis_results:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        processing_time_seconds:
+          type: number
+
+    VerificationHistoryResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              part_number:
+                type: string
+              manufacturer:
+                type: string
+              is_genuine:
+                type: boolean
+              overall_confidence:
+                type: number
+              created_at:
+                type: string
+                format: date-time
+
+    ManufacturersResponse:
+      type: object
+      properties:
+        manufacturers:
+          type: array
+          items:
+            type: string
+        details:
+          type: object
+
+    VideoSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+        upload_url:
+          type: string
+        websocket_url:
+          type: string
+
+    VideoSessionStatus:
+      type: object
+      properties:
+        session_id:
+          type: string
+        status:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        duration_seconds:
+          type: number
+        frame_count:
+          type: integer
+        device_id:
+          type: string
+        resolution:
+          type: string
+        fps:
+          type: number
+
+    ImageUploadResponse:
+      type: object
+      properties:
+        image_id:
+          type: string
+        original_path:
+          type: string
+        processed_path:
+          type: string
+        metadata:
+          type: object
+        preprocessing_applied:
+          type: boolean
+        contrast_enhanced:
+          type: boolean
+
+    DatasheetResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        part_number:
+          type: string
+        manufacturer:
+          type: string
+        url:
+          type: string
+        local_path:
+          type: string
+        downloaded_at:
+          type: string
+          format: date-time
+        processing_time_seconds:
+          type: number
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        error:
+          type: string
