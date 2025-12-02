@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 from typing import Tuple
 
-from backend.core.config import settings
+from core.config import settings
 
 
 def save_image_file(file_bytes: bytes, original_filename: str) -> Tuple[str, Path]:

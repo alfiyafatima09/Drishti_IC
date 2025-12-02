@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.endpoints import images, datasheets
-from backend.core.config import settings
+from api.endpoints import images, datasheets, ic_analysis
+from core.config import settings
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -22,6 +22,7 @@ app.add_middleware(
 # Include routers
 app.include_router(images.router)
 app.include_router(datasheets.router)
+app.include_router(ic_analysis.router)
 
 
 @app.get("/", tags=["health"])
