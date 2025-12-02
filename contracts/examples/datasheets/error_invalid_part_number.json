@@ -1,0 +1,9 @@
+{
+  "error": "INVALID_PART_NUMBER",
+  "message": "Part number is required and must be at least 2 characters",
+  "details": {
+    "provided": "X",
+    "min_length": 2
+  }
+}
+

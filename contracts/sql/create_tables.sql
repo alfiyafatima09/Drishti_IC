@@ -1,24 +1,28 @@
 -- ============================================================
--- BEL IC Verification System - Database Schema
+-- Drishti IC Backend - Database Schema
 -- Target: Supabase (PostgreSQL)
 -- Run this script in Supabase SQL Editor to create all tables
 -- ============================================================
 
--- Enable UUID extension (usually enabled by default in Supabase)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
--- TABLE 1: ic_specifications (Golden Record)
+-- TABLE 1: ic_specifications (IC Specifications)
+-- ============================================================
+-- NOTE: Same IC can be manufactured by multiple companies.
+-- Composite unique constraint on (part_number, manufacturer) allows
+-- multiple entries for same IC from different manufacturers.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS ic_specifications (
     id SERIAL PRIMARY KEY,
-    part_number VARCHAR(100) UNIQUE NOT NULL,
-    manufacturer VARCHAR(100),
+    part_number VARCHAR(100) NOT NULL,
+    manufacturer VARCHAR(100) NOT NULL,
     pin_count INTEGER NOT NULL,
     package_type VARCHAR(50),
     description TEXT,
     datasheet_url VARCHAR(500),
     datasheet_path VARCHAR(500),
+    has_datasheet BOOLEAN DEFAULT FALSE,
     voltage_min FLOAT,
     voltage_max FLOAT,
     operating_temp_min FLOAT,
@@ -26,14 +30,15 @@ CREATE TABLE IF NOT EXISTS ic_specifications (
     electrical_specs JSONB DEFAULT '{}',
     source VARCHAR(50) DEFAULT 'MANUAL',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    -- Composite unique: same IC can exist from different manufacturers
+    CONSTRAINT uq_ic_part_manufacturer UNIQUE (part_number, manufacturer)
 );
 
--- Indexes for ic_specifications
 CREATE INDEX IF NOT EXISTS idx_ic_specs_part_number ON ic_specifications(part_number);
 CREATE INDEX IF NOT EXISTS idx_ic_specs_manufacturer ON ic_specifications(manufacturer);
+CREATE INDEX IF NOT EXISTS idx_ic_specs_part_mfr ON ic_specifications(part_number, manufacturer);
 
--- Trigger to auto-update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -48,7 +53,7 @@ CREATE TRIGGER update_ic_specifications_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
--- TABLE 2: scan_history (Audit Trail)
+-- TABLE 2: scan_history (Scan History)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS scan_history (
     id SERIAL PRIMARY KEY,
@@ -72,14 +77,13 @@ CREATE TABLE IF NOT EXISTS scan_history (
     completed_at TIMESTAMPTZ
 );
 
--- Indexes for scan_history
 CREATE INDEX IF NOT EXISTS idx_scan_history_scan_id ON scan_history(scan_id);
 CREATE INDEX IF NOT EXISTS idx_scan_history_status ON scan_history(status);
 CREATE INDEX IF NOT EXISTS idx_scan_history_scanned_at ON scan_history(scanned_at);
 CREATE INDEX IF NOT EXISTS idx_scan_history_part_number ON scan_history(part_number_verified);
 
 -- ============================================================
--- TABLE 3: datasheet_queue (Pending Scrape Queue)
+-- TABLE 3: datasheet_queue (Pending Datasheet Queue)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS datasheet_queue (
     id SERIAL PRIMARY KEY,
@@ -94,7 +98,6 @@ CREATE TABLE IF NOT EXISTS datasheet_queue (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Index for datasheet_queue
 CREATE INDEX IF NOT EXISTS idx_datasheet_queue_status ON datasheet_queue(status);
 
 CREATE TRIGGER update_datasheet_queue_updated_at
@@ -103,7 +106,7 @@ CREATE TRIGGER update_datasheet_queue_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
--- TABLE 4: fake_registry (Known Fakes)
+-- TABLE 4: fake_registry (Fake Registry)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS fake_registry (
     id SERIAL PRIMARY KEY,
@@ -116,11 +119,10 @@ CREATE TABLE IF NOT EXISTS fake_registry (
     added_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Index for fake_registry
 CREATE INDEX IF NOT EXISTS idx_fake_registry_part_number ON fake_registry(part_number);
 
 -- ============================================================
--- TABLE 5: sync_jobs (Job Tracking)
+-- TABLE 5: sync_jobs (Sync Jobs)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS sync_jobs (
     id SERIAL PRIMARY KEY,
@@ -139,12 +141,11 @@ CREATE TABLE IF NOT EXISTS sync_jobs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Index for sync_jobs
 CREATE INDEX IF NOT EXISTS idx_sync_jobs_job_id ON sync_jobs(job_id);
 CREATE INDEX IF NOT EXISTS idx_sync_jobs_status ON sync_jobs(status);
 
 -- ============================================================
--- TABLE 6: settings (System Configuration)
+-- TABLE 6: settings (Application Settings)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS settings (
     id SERIAL PRIMARY KEY,
@@ -162,7 +163,7 @@ CREATE TRIGGER update_settings_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
--- INSERT DEFAULT SETTINGS
+-- INSERT DEFAULT APPLICATION SETTINGS
 -- ============================================================
 INSERT INTO settings (key, value, value_type, description) VALUES
     ('datasheet_folder_path', '/data/datasheets', 'STRING', 'Directory where PDF datasheets are stored'),
@@ -177,18 +178,30 @@ INSERT INTO settings (key, value, value_type, description) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
--- INSERT SAMPLE IC DATA (for testing)
+-- INSERT SAMPLE IC SPECIFICATIONS (for testing)
+-- Note: Same IC can have multiple entries from different manufacturers
 -- ============================================================
-INSERT INTO ic_specifications (part_number, manufacturer, pin_count, package_type, description, voltage_min, voltage_max, operating_temp_min, operating_temp_max, electrical_specs, source) VALUES
-    ('LM555', 'Texas Instruments', 8, 'DIP', 'Precision Timer IC capable of producing accurate time delays or oscillation', 4.5, 16.0, 0, 70, '{"timing_accuracy": "1%", "output_current": "200mA", "supply_current": "3mA"}', 'MANUAL'),
-    ('NE555', 'Texas Instruments', 8, 'DIP', 'General Purpose Single Bipolar Timer', 4.5, 16.0, 0, 70, '{"timing_accuracy": "1%", "output_current": "200mA"}', 'MANUAL'),
-    ('ATMEGA328P', 'Microchip', 32, 'QFN', '8-bit AVR Microcontroller with 32KB Flash', 1.8, 5.5, -40, 85, '{"flash_memory": "32KB", "sram": "2KB", "eeprom": "1KB", "max_frequency": "20MHz"}', 'MANUAL'),
-    ('LM7805', 'Texas Instruments', 3, 'TO-220', 'Positive 5V Voltage Regulator', 7.0, 35.0, 0, 125, '{"output_voltage": "5V", "output_current": "1.5A", "dropout_voltage": "2V"}', 'MANUAL'),
-    ('LM317', 'Texas Instruments', 3, 'TO-220', 'Adjustable Positive Voltage Regulator', 3.0, 40.0, 0, 125, '{"output_voltage_range": "1.25V-37V", "output_current": "1.5A"}', 'MANUAL'),
-    ('74HC595', 'NXP', 16, 'DIP', '8-bit Serial-In Parallel-Out Shift Register', 2.0, 6.0, -40, 125, '{"max_frequency": "100MHz", "output_current": "35mA"}', 'MANUAL'),
-    ('LM741', 'Texas Instruments', 8, 'DIP', 'General Purpose Operational Amplifier', 5.0, 18.0, 0, 70, '{"gain_bandwidth": "1MHz", "slew_rate": "0.5V/us", "input_offset_voltage": "1mV"}', 'MANUAL'),
-    ('CD4017', 'Texas Instruments', 16, 'DIP', 'Decade Counter/Divider with 10 Decoded Outputs', 3.0, 15.0, -40, 85, '{"max_frequency": "5MHz", "propagation_delay": "250ns"}', 'MANUAL')
-ON CONFLICT (part_number) DO NOTHING;
+INSERT INTO ic_specifications (part_number, manufacturer, pin_count, package_type, description, voltage_min, voltage_max, operating_temp_min, operating_temp_max, electrical_specs, source, has_datasheet) VALUES
+    -- Timer ICs (same IC, different manufacturers)
+    ('LM555', 'TI', 8, 'DIP', 'Precision Timer IC capable of producing accurate time delays or oscillation', 4.5, 16.0, 0, 70, '{"timing_accuracy": "1%", "output_current": "200mA", "supply_current": "3mA"}', 'SCRAPED_TI', true),
+    ('LM555', 'STM', 8, 'DIP', 'Precision Timer IC - STM variant', 4.5, 16.0, 0, 70, '{"timing_accuracy": "1%", "output_current": "200mA", "supply_current": "3mA"}', 'SCRAPED_STM', true),
+    ('NE555', 'TI', 8, 'DIP', 'General Purpose Single Bipolar Timer', 4.5, 16.0, 0, 70, '{"timing_accuracy": "1%", "output_current": "200mA"}', 'SCRAPED_TI', true),
+    
+    -- Microcontrollers
+    ('STM32L031K6', 'STM', 32, 'LQFP', 'Ultra-low-power ARM Cortex-M0+ MCU', 1.65, 3.6, -40, 85, '{"flash_memory": "32KB", "sram": "8KB", "max_frequency": "32MHz"}', 'SCRAPED_STM', true),
+    ('STM32F407VG', 'STM', 100, 'LQFP', 'High-performance ARM Cortex-M4 MCU', 1.8, 3.6, -40, 105, '{"flash_memory": "1MB", "sram": "192KB", "max_frequency": "168MHz"}', 'SCRAPED_STM', true),
+    
+    -- Voltage Regulators
+    ('LM7805', 'TI', 3, 'TO-220', 'Positive 5V Voltage Regulator', 7.0, 35.0, 0, 125, '{"output_voltage": "5V", "output_current": "1.5A", "dropout_voltage": "2V"}', 'SCRAPED_TI', true),
+    ('LM317', 'TI', 3, 'TO-220', 'Adjustable Positive Voltage Regulator', 3.0, 40.0, 0, 125, '{"output_voltage_range": "1.25V-37V", "output_current": "1.5A"}', 'SCRAPED_TI', true),
+    
+    -- Op-Amps
+    ('LM358', 'TI', 8, 'DIP', 'Dual Operational Amplifier', 3.0, 32.0, 0, 70, '{"gain_bandwidth": "1MHz", "slew_rate": "0.5V/us", "input_offset_voltage": "2mV"}', 'SCRAPED_TI', true),
+    ('LM741', 'TI', 8, 'DIP', 'General Purpose Operational Amplifier', 5.0, 18.0, 0, 70, '{"gain_bandwidth": "1MHz", "slew_rate": "0.5V/us", "input_offset_voltage": "1mV"}', 'SCRAPED_TI', true),
+    
+    -- Logic ICs
+    ('CD4017', 'TI', 16, 'DIP', 'Decade Counter/Divider with 10 Decoded Outputs', 3.0, 15.0, -40, 85, '{"max_frequency": "5MHz", "propagation_delay": "250ns"}', 'SCRAPED_TI', true)
+ON CONFLICT ON CONSTRAINT uq_ic_part_manufacturer DO NOTHING;
 
 -- ============================================================
 -- VIEWS (Optional - for dashboard queries)

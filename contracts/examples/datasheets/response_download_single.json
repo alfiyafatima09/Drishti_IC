@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "part_number": "LM555",
+  "manufacturers_found": ["TI"],
+  "manufacturers_tried": ["TI"],
+  "manufacturers_failed": [],
+  "results": [
+    {
+      "manufacturer": "TI",
+      "manufacturer_name": "Texas Instruments",
+      "status": "SUCCESS",
+      "file_path": "/datasheets/ti/lm555.pdf",
+      "file_size_bytes": 1245678,
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm555.pdf",
+      "data_extracted": true,
+      "error": null
+    }
+  ],
+  "database_entries_created": 1,
+  "message": "Successfully downloaded and processed datasheet from TI"
+}
+
