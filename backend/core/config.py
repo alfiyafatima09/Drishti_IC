@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     DEFAULT_EDGE_PREP: bool = False
 
     class Config:
-        env_file = "backend/.env"
+        env_file = ".env"
 
 
 settings = Settings()
