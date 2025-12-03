@@ -1,0 +1,14 @@
+{
+  "settings": {
+    "datasheet_folder_path": "/data/datasheets",
+    "auto_queue_unknown": true,
+    "ocr_confidence_threshold": 70.0,
+    "scan_history_retention_days": 365,
+    "enable_auto_cleanup": true,
+    "pin_detection_model": "yolov8",
+    "ocr_model": "paddleocr",
+    "max_scrape_retries": 3,
+    "scrape_timeout_seconds": 30
+  }
+}
+

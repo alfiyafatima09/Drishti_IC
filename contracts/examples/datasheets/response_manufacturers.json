@@ -1,0 +1,17 @@
+{
+  "manufacturers": ["STM", "TI"],
+  "count": 2,
+  "details": {
+    "STM": {
+      "name": "STMicroelectronics",
+      "url_pattern": "https://www.st.com/resource/en/datasheet/{part_number}.pdf",
+      "example_ics": ["stm32l031k6", "stm32f407vg", "stm32h743zi", "stm8s003f3"]
+    },
+    "TI": {
+      "name": "Texas Instruments",
+      "url_pattern": "https://www.ti.com/lit/ds/symlink/{part_number}.pdf",
+      "example_ics": ["lm555", "lm358", "tps54620", "lm7805", "ne555"]
+    }
+  }
+}
+

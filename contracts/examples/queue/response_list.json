@@ -1,0 +1,35 @@
+{
+  "queue_items": [
+    {
+      "part_number": "XYZ9999",
+      "first_seen_at": "2025-11-28T09:00:00Z",
+      "last_scanned_at": "2025-12-01T10:35:00Z",
+      "scan_count": 5,
+      "status": "PENDING",
+      "retry_count": 0,
+      "error_message": null
+    },
+    {
+      "part_number": "ABC1234",
+      "first_seen_at": "2025-11-30T14:20:00Z",
+      "last_scanned_at": "2025-11-30T14:20:00Z",
+      "scan_count": 1,
+      "status": "FAILED",
+      "retry_count": 2,
+      "error_message": "Timeout connecting to Mouser API after 30 seconds"
+    },
+    {
+      "part_number": "NEW7890",
+      "first_seen_at": "2025-12-01T08:15:00Z",
+      "last_scanned_at": "2025-12-01T11:30:00Z",
+      "scan_count": 3,
+      "status": "PENDING",
+      "retry_count": 0,
+      "error_message": null
+    }
+  ],
+  "total_count": 15,
+  "pending_count": 13,
+  "failed_count": 2
+}
+

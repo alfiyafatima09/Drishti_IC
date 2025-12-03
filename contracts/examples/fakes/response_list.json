@@ -1,0 +1,33 @@
+{
+  "fake_ics": [
+    {
+      "part_number": "FAKE123",
+      "source": "SYNC_NOT_FOUND",
+      "reason": "Not found on any manufacturer website after 3 sync attempts. Checked Mouser, DigiKey, AllDatasheet, and Octopart.",
+      "reported_by": null,
+      "added_at": "2025-11-15T08:00:00Z",
+      "scrape_attempts": 3,
+      "manufacturers_checked": ["Mouser", "DigiKey", "AllDatasheet", "Octopart"]
+    },
+    {
+      "part_number": "NOTREAL999",
+      "source": "MANUAL_REPORT",
+      "reason": "Physical inspection revealed chip die does not match expected layout. Decapped IC showed wrong internal structure.",
+      "reported_by": "Operator_John",
+      "added_at": "2025-11-20T11:30:00Z",
+      "scrape_attempts": 0,
+      "manufacturers_checked": null
+    },
+    {
+      "part_number": "BOGUS456",
+      "source": "SYNC_NOT_FOUND",
+      "reason": "Part number format does not match any known manufacturer naming convention. No results found online.",
+      "reported_by": null,
+      "added_at": "2025-11-22T16:45:00Z",
+      "scrape_attempts": 3,
+      "manufacturers_checked": ["Mouser", "DigiKey", "AllDatasheet"]
+    }
+  ],
+  "total_count": 8
+}
+

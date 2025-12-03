@@ -1,0 +1,15 @@
+{
+  "job_id": "660e8400-e29b-41d4-a716-446655440099",
+  "status": "COMPLETED",
+  "progress_percentage": 100,
+  "current_item": null,
+  "total_items": 15,
+  "processed_items": 15,
+  "success_count": 12,
+  "failed_count": 1,
+  "fake_count": 2,
+  "started_at": "2025-12-01T14:00:00Z",
+  "estimated_completion": null,
+  "message": "Sync completed. 12 ICs added to database, 2 marked as fake, 1 failed (will retry next sync)."
+}
+

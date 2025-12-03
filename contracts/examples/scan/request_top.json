@@ -1,0 +1,6 @@
+{
+  "_description": "POST /api/v1/scan - multipart/form-data request",
+  "_note": "This is a file upload, actual request is binary. This JSON shows the field name.",
+  "file": "<binary image data - JPEG/PNG>"
+}
+

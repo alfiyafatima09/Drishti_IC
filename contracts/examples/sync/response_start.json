@@ -1,0 +1,8 @@
+{
+  "job_id": "660e8400-e29b-41d4-a716-446655440099",
+  "status": "PROCESSING",
+  "message": "Sync job started successfully. Processing 15 items from the queue.",
+  "queue_size": 15,
+  "estimated_time_minutes": 30
+}
+

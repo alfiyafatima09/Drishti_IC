@@ -1,0 +1,35 @@
+{
+  "scan_id": "550e8400-e29b-41d4-a716-446655440000",
+  "ocr_text_raw": "LM555CN\n  TI\n  2024",
+  "part_number_detected": "LM555CN",
+  "part_number_verified": "LM555",
+  "status": "PASS",
+  "confidence_score": 94.5,
+  "detected_pins": 8,
+  "expected_pins": 8,
+  "manufacturer_detected": "Texas Instruments",
+  "action_required": "NONE",
+  "has_bottom_scan": false,
+  "was_manual_override": false,
+  "match_details": {
+    "part_number_match": true,
+    "pin_count_match": true,
+    "manufacturer_match": true
+  },
+  "failure_reasons": null,
+  "message": "IC verified successfully. All parameters match.",
+  "scanned_at": "2025-12-01T10:30:00Z",
+  "completed_at": "2025-12-01T10:30:02Z",
+  "ic_specification": {
+    "part_number": "LM555",
+    "manufacturer": "Texas Instruments",
+    "pin_count": 8,
+    "package_type": "DIP",
+    "description": "Precision Timer IC",
+    "datasheet_path": "/datasheets/LM555.pdf",
+    "has_datasheet": true,
+    "voltage_min": 4.5,
+    "voltage_max": 16.0
+  }
+}
+
