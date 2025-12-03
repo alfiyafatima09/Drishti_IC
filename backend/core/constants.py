@@ -17,10 +17,10 @@ class Manufacturer(str, Enum):
     """
     STM = "STM"
     TI = "TI"
-    # Add more manufacturers as support is implemented:
-    # MICROCHIP = "MICROCHIP"
-    # NXP = "NXP"
-    # ANALOG_DEVICES = "ANALOG_DEVICES"
+    NXP = "NXP"
+    ANALOG_DEVICES = "ANALOG_DEVICES"
+    
+    # MICROCHIP = "MICROCHIP" //
     # INFINEON = "INFINEON"
     # ONSEMI = "ONSEMI"
 
@@ -29,10 +29,9 @@ class Manufacturer(str, Enum):
 MANUFACTURER_NAMES: Dict[str, str] = {
     Manufacturer.STM: "STMicroelectronics",
     Manufacturer.TI: "Texas Instruments",
-    # Add more as needed:
-    # Manufacturer.MICROCHIP: "Microchip Technology",
-    # Manufacturer.NXP: "NXP Semiconductors",
-    # Manufacturer.ANALOG_DEVICES: "Analog Devices",
+    Manufacturer.NXP: "NXP Semiconductors",
+    Manufacturer.ANALOG_DEVICES: "Analog Devices",
+    # Manufacturer.MICROCHIP: "Microchip Technology", 
     # Manufacturer.INFINEON: "Infineon Technologies",
     # Manufacturer.ONSEMI: "onsemi",
 }
@@ -41,7 +40,11 @@ MANUFACTURER_NAMES: Dict[str, str] = {
 MANUFACTURER_URL_PATTERNS: Dict[str, str] = {
     Manufacturer.STM: "https://www.st.com/resource/en/datasheet/{ic_id}.pdf",
     Manufacturer.TI: "https://www.ti.com/lit/ds/symlink/{ic_id}.pdf",
-    # Add more as needed:
+    Manufacturer.NXP: "https://www.nxp.com/docs/en/data-sheet/{ic_id}.pdf",
+    Manufacturer.ANALOG_DEVICES: "https://www.analog.com/media/en/technical-documentation/{ic_id}.pdf",
+    # Manufacturer.MOUSER: "https://www.mouser.com/datasheet/{ic_id}.pdf",
+    # Manufacturer.DIGIKEY: "https://www.digikey.com/datasheet/{ic_id}.pdf",
+    # Manufacturer.ALLDATASHEET: "https://www.all-datasheet.com/datasheet/{ic_id}.pdf",
     # Manufacturer.MICROCHIP: "https://ww1.microchip.com/downloads/en/DeviceDoc/{ic_id}.pdf",
 }
 
@@ -49,8 +52,7 @@ MANUFACTURER_URL_PATTERNS: Dict[str, str] = {
 MANUFACTURER_EXAMPLE_ICS: Dict[str, List[str]] = {
     Manufacturer.STM: ["stm32l031k6", "stm32f407vg", "stm32h743zi", "stm8s003f3"],
     Manufacturer.TI: ["lm555", "lm358", "tps54620", "lm7805", "ne555"],
-    # Add more as needed:
-    # Manufacturer.MICROCHIP: ["atmega328p", "pic16f877a", "attiny85"],
+    Manufacturer.NXP: ["MCXW23"],
 }
 
 
@@ -60,18 +62,7 @@ def get_supported_manufacturers() -> List[str]:
 
 
 def get_manufacturer_name(code: str) -> str:
-    """
-    Get full manufacturer name from code.
-    
-    Args:
-        code: Manufacturer code (e.g., "TI")
-        
-    Returns:
-        Full name (e.g., "Texas Instruments")
-        
-    Raises:
-        ValueError: If manufacturer code is not supported
-    """
+    """Get full manufacturer name from code."""
     try:
         manufacturer = Manufacturer(code.upper())
         return MANUFACTURER_NAMES.get(manufacturer, code)
@@ -80,18 +71,7 @@ def get_manufacturer_name(code: str) -> str:
 
 
 def get_manufacturer_url_pattern(code: str) -> str:
-    """
-    Get URL pattern for manufacturer's datasheet downloads.
-    
-    Args:
-        code: Manufacturer code (e.g., "TI")
-        
-    Returns:
-        URL pattern with {ic_id} placeholder
-        
-    Raises:
-        ValueError: If manufacturer code is not supported
-    """
+    """Get URL pattern for manufacturer's datasheet downloads."""
     try:
         manufacturer = Manufacturer(code.upper())
         return MANUFACTURER_URL_PATTERNS.get(manufacturer, "")
@@ -100,13 +80,7 @@ def get_manufacturer_url_pattern(code: str) -> str:
 
 
 def get_manufacturer_details() -> Dict[str, Dict]:
-    """
-    Get detailed information about all supported manufacturers.
-    Used by the /api/v1/datasheets/manufacturers endpoint.
-    
-    Returns:
-        Dictionary with manufacturer details
-    """
+    """Get detailed information about all supported manufacturers."""
     return {
         m.value: {
             "name": MANUFACTURER_NAMES.get(m, m.value),
@@ -118,15 +92,7 @@ def get_manufacturer_details() -> Dict[str, Dict]:
 
 
 def is_valid_manufacturer(code: str) -> bool:
-    """
-    Check if manufacturer code is valid/supported.
-    
-    Args:
-        code: Manufacturer code to validate
-        
-    Returns:
-        True if valid, False otherwise
-    """
+    """Check if manufacturer code is valid/supported."""
     try:
         Manufacturer(code.upper())
         return True
