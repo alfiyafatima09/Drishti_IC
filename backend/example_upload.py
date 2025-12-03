@@ -43,7 +43,9 @@ def upload_image(
         ".png": "image/png",
         ".bmp": "image/bmp",
         ".tiff": "image/tiff",
-        ".tif": "image/tiff"
+        ".tif": "image/tiff",
+        ".heif": "image/heif",
+        ".heic": "image/heic"
     }
     
     ext = file_path.suffix.lower()

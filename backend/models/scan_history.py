@@ -4,7 +4,6 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 
 from models.base import Base
-from core.constants import ScanStatus, ActionRequired
 
 
 class ScanHistory(Base):
@@ -13,10 +12,6 @@ class ScanHistory(Base):
     Each scan gets a unique scan_id for tracking.
     """
     __tablename__ = "scan_history"
-
-    # Valid status values from constants
-    VALID_STATUSES = [s.value for s in ScanStatus]
-    VALID_ACTIONS = [a.value for a in ActionRequired]
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     scan_id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4, index=True)
@@ -27,16 +22,14 @@ class ScanHistory(Base):
     part_number_verified = Column(String(100), index=True)  # Final verified (may differ if override)
     
     # Verification Results
-    # Status: PASS, FAIL, PARTIAL, UNKNOWN, COUNTERFEIT (from ScanStatus enum)
-    status = Column(String(20), nullable=False, index=True)
+    status = Column(String(20), nullable=False, index=True)  # PASS, FAIL, PARTIAL, UNKNOWN, COUNTERFEIT
     confidence_score = Column(Float)  # 0-100
     detected_pins = Column(Integer)
     expected_pins = Column(Integer)  # From IC spec (NULL if unknown)
     manufacturer_detected = Column(String(100))
     
     # Flow Control
-    # action_required: NONE, SCAN_BOTTOM (from ActionRequired enum)
-    action_required = Column(String(20), default=ActionRequired.NONE.value)
+    action_required = Column(String(20), default="NONE")  # NONE, SCAN_BOTTOM
     has_bottom_scan = Column(Boolean, default=False)
     
     # Match Details
@@ -55,17 +48,7 @@ class ScanHistory(Base):
     def __repr__(self):
         return f"<ScanHistory(scan_id='{self.scan_id}', status='{self.status}')>"
 
-    @classmethod
-    def is_valid_status(cls, status: str) -> bool:
-        """Check if status value is valid."""
-        return status in cls.VALID_STATUSES
-
-    @classmethod
-    def is_valid_action(cls, action: str) -> bool:
-        """Check if action value is valid."""
-        return action in cls.VALID_ACTIONS
-
-    def to_dict(self) -> dict:
+    def to_dict(self):
         """Convert model to dictionary."""
         return {
             "scan_id": str(self.scan_id),
@@ -88,7 +71,7 @@ class ScanHistory(Base):
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }
 
-    def to_list_item(self) -> dict:
+    def to_list_item(self):
         """Convert to abbreviated format for list responses."""
         return {
             "scan_id": str(self.scan_id),
@@ -98,3 +81,4 @@ class ScanHistory(Base):
             "detected_pins": self.detected_pins,
             "scanned_at": self.scanned_at.isoformat() if self.scanned_at else None,
         }
+
