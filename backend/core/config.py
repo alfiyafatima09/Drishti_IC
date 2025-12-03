@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     
     APP_NAME: str = "Drishti IC Backend"
     APP_VERSION: str = "2.0.0"
-    DEBUG: bool = False
+    DEBUG: bool = os.environ.get("DEBUG", False)
     
     # Supabase settings
     SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
