@@ -23,8 +23,7 @@ from .exceptions import (
     DatasheetDownloadException,
     UnsupportedManufacturerException,
 )
-from .providers import PROVIDERS
-from .providers.base import DatasheetProvider
+from .providers import PROVIDERS, DatasheetProvider
 from .extractors import EXTRACTORS
 from .extractors.base import DatasheetExtractor
 from .storage import (

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -29,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Drishti IC Backend...")
     try:
         await init_db()
         logger.info("Database initialized successfully")
@@ -38,7 +38,6 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    logger.info("Shutting down Drishti IC Backend...")
 
 
 app = FastAPI(
@@ -87,6 +86,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         # host="0.0.0.0",
-        port=8000,
-        # reload=settings.DEBUG,
+        port=int(os.environ.get("PORT", 8000)),
+        reload=settings.DEBUG,
     )
