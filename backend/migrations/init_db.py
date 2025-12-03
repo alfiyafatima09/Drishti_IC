@@ -14,8 +14,8 @@ import logging
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add backend directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -268,10 +268,10 @@ async def main():
     """Run database initialization."""
     # Import here to avoid import-time errors
     from core.config import settings
-    from core.database import get_engine, get_session_maker
+    from core.database import engine, async_session_maker
     
     logger.info("=" * 60)
-    logger.info("BEL IC Verification System - Database Initialization")
+    logger.info("Drishti IC Backend - Database Initialization")
     logger.info("=" * 60)
     
     # Check if DATABASE_URL is set
@@ -289,19 +289,15 @@ async def main():
     logger.info(f"Database URL: {settings.DATABASE_URL[:50]}...")
     
     try:
-        # Get engine and session maker (lazy initialization)
-        engine = get_engine()
-        session_maker = get_session_maker()
-        
         # Create tables
         await create_tables(engine)
         
         # Insert defaults
-        await insert_default_settings(session_maker)
-        await insert_sample_ics(session_maker)
+        await insert_default_settings(async_session_maker)
+        await insert_sample_ics(async_session_maker)
         
         # Verify
-        await verify_tables(session_maker)
+        await verify_tables(async_session_maker)
         
         logger.info("=" * 60)
         logger.info("Database initialization complete!")

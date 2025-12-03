@@ -1,4 +1,3 @@
-"""Business logic services for BEL IC Verification System."""
 from services.ic_service import ICService
 from services.scan_service import ScanService
 from services.queue_service import QueueService
