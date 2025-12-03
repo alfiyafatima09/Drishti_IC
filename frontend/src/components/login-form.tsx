@@ -1,53 +1,103 @@
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldSeparator,
-} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Github, Loader2, ArrowRight } from 'lucide-react'
+import { useState } from 'react'
 
-export function LoginForm({ className, ...props }: React.ComponentProps<'form'>) {
+export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+
+  async function onSubmit(event: React.SyntheticEvent) {
+    event.preventDefault()
+    setIsLoading(true)
+
+    setTimeout(() => {
+      setIsLoading(false)
+    }, 3000)
+  }
+
   return (
-    <form className={cn('flex flex-col gap-6', className)} {...props}>
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="m@example.com" required />
-        </Field>
-        <Field>
-          <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline">
-              Forgot your password?
-            </a>
+    <div className={cn('grid gap-8', className)} {...props}>
+      <form onSubmit={onSubmit}>
+        <div className="grid gap-5">
+          <div className="grid gap-2">
+            <Label
+              htmlFor="email"
+              className="text-xs font-light tracking-wider text-zinc-500 uppercase"
+            >
+              Email Address
+            </Label>
+            <Input
+              id="email"
+              placeholder="name@example.com"
+              type="email"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect="off"
+              disabled={isLoading}
+              className="h-10 rounded-none border-0 border-b border-zinc-200 bg-transparent px-0 transition-colors placeholder:text-zinc-300 focus-visible:border-zinc-900 focus-visible:ring-0 dark:border-zinc-800 dark:placeholder:text-zinc-700 dark:focus-visible:border-zinc-100"
+            />
           </div>
-          <Input id="password" type="password" required />
-        </Field>
-        <Field>
-          <Button type="submit">Login</Button>
-        </Field>
-        <FieldSeparator>Or continue with</FieldSeparator>
-        <Field>
-          <Button variant="outline" type="button">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path
-                d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
-                fill="currentColor"
-              />
-            </svg>
-            Login with GitHub
+          <div className="grid gap-2">
+            <div className="flex items-center justify-between">
+              <Label
+                htmlFor="password"
+                className="text-xs font-light tracking-wider text-zinc-500 uppercase"
+              >
+                Password
+              </Label>
+              <a
+                href="#"
+                className="text-[10px] font-medium tracking-widest text-zinc-400 uppercase transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                Forgot?
+              </a>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              autoCapitalize="none"
+              autoComplete="current-password"
+              disabled={isLoading}
+              className="h-10 rounded-none border-0 border-b border-zinc-200 bg-transparent px-0 transition-colors focus-visible:border-zinc-900 focus-visible:ring-0 dark:border-zinc-800 dark:focus-visible:border-zinc-100"
+            />
+          </div>
+          <Button
+            disabled={isLoading}
+            className="mt-4 h-10 bg-zinc-900 font-medium tracking-wide text-zinc-50 transition-all hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200"
+          >
+            {isLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+            Sign In
+            {!isLoading && <ArrowRight className="ml-2 h-3 w-3 opacity-50" />}
           </Button>
-          <FieldDescription className="text-center">
-            Don&apos;t have an account?{' '}
-            <a href="#" className="underline underline-offset-4">
-              Sign up
-            </a>
-          </FieldDescription>
-        </Field>
-      </FieldGroup>
-    </form>
+        </div>
+      </form>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-zinc-100 dark:border-zinc-800/50" />
+        </div>
+        <div className="relative flex justify-center text-[10px] tracking-widest uppercase">
+          <span className="bg-white px-2 text-zinc-400 dark:bg-zinc-950 dark:text-zinc-600">
+            Or
+          </span>
+        </div>
+      </div>
+
+      <Button
+        variant="outline"
+        type="button"
+        disabled={isLoading}
+        className="h-10 border-zinc-200 bg-transparent font-normal text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+      >
+        {isLoading ? (
+          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+        ) : (
+          <Github className="mr-2 h-3 w-3" />
+        )}
+        GitHub
+      </Button>
+    </div>
   )
 }
