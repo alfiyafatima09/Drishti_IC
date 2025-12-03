@@ -58,3 +58,6 @@ package-lock.json
 *.sqlite
 
 *logs/
+backend/logs/
+backend/datasheets/
+backend/migrations/

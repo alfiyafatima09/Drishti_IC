@@ -24,3 +24,6 @@ paddleocr>=3.0.0
 # Utilities
 python-dotenv==1.0.0
 httpx==0.28.1  # Async HTTP client
+
+# PDF processing
+pdfplumber==0.10.0
