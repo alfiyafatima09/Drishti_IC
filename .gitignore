@@ -61,3 +61,4 @@ package-lock.json
 backend/logs/
 backend/datasheets/
 backend/migrations/
+*temp*/
