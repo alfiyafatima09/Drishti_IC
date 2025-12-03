@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Github, Loader2, ArrowRight } from 'lucide-react'
+import { Loader2, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -77,30 +77,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
         </div>
       </form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-zinc-100 dark:border-zinc-800/50" />
-        </div>
-        <div className="relative flex justify-center text-[10px] tracking-widest uppercase">
-          <span className="bg-white px-2 text-zinc-400 dark:bg-zinc-950 dark:text-zinc-600">
-            Or
-          </span>
-        </div>
-      </div>
-
-      <Button
-        variant="outline"
-        type="button"
-        disabled={isLoading}
-        className="h-10 border-zinc-200 bg-transparent font-normal text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
-      >
-        {isLoading ? (
-          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-        ) : (
-          <Github className="mr-2 h-3 w-3" />
-        )}
-        GitHub
-      </Button>
     </div>
   )
 }
