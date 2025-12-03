@@ -46,7 +46,7 @@ preprocessing_pipeline = ImagePreprocessingPipeline()
     2. Stored securely
     3. Preprocessed through a configurable pipeline
     
-    Supported formats: JPEG, PNG, BMP, TIFF
+    Supported formats: JPEG, PNG, BMP, TIFF, HEIF (iPhone)
     Maximum file size: 10MB
     """,
     responses={
@@ -59,7 +59,7 @@ preprocessing_pipeline = ImagePreprocessingPipeline()
 async def upload_image(
     file: UploadFile = File(
         ...,
-        description="Image file to upload (JPEG, PNG, BMP, or TIFF)"
+        description="Image file to upload (JPEG, PNG, BMP, TIFF, or HEIF/HEIC)"
     ),
     denoise: bool = Form(
         default=True,

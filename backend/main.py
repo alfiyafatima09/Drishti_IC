@@ -1,8 +1,3 @@
-"""
-BEL IC Verification System - Main Application Entry Point
-
-This is an offline-first API for counterfeit IC detection.
-"""
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +20,6 @@ from api.endpoints import (
     camera_router,
 )
 
-# Configure logging
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -35,25 +29,18 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifecycle manager."""
-    # Startup
-    logger.info("Starting BEL IC Verification System...")
-    
-    # Initialize database (create tables if not exist)
+    logger.info("Starting Drishti IC Backend...")
     try:
         await init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
-        # Don't fail startup - DB might not be configured yet
     
     yield
     
-    # Shutdown
-    logger.info("Shutting down BEL IC Verification System...")
+    logger.info("Shutting down Drishti IC Backend...")
 
 
-# Create FastAPI application
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -63,16 +50,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include all routers
 app.include_router(scan_router)
 app.include_router(ic_router)
 app.include_router(scans_history_router)
@@ -87,8 +72,7 @@ app.include_router(datasheets.router)
 
 
 @app.get("/", tags=["Root"])
-async def root():
-    """Root endpoint - API information."""
+async def root():   
     return {
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
@@ -102,7 +86,7 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
+        # host="0.0.0.0",
         port=8000,
-        reload=settings.DEBUG,
+        # reload=settings.DEBUG,
     )
