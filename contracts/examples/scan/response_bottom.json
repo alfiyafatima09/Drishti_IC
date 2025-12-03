@@ -1,0 +1,30 @@
+{
+  "scan_id": "550e8400-e29b-41d4-a716-446655440001",
+  "status": "PASS",
+  "action_required": "NONE",
+  "confidence_score": 96.0,
+  "ocr_text": "ATMEGA328P-AU",
+  "part_number": "ATMEGA328P",
+  "manufacturer_detected": "Microchip",
+  "detected_pins": 32,
+  "message": "Bottom scan complete. Pin count verified (32 pins detected, 32 expected). IC is authentic.",
+  "match_details": {
+    "part_number_match": true,
+    "pin_count_match": true,
+    "manufacturer_match": true
+  },
+  "queued_for_sync": false,
+  "ic_specification": {
+    "part_number": "ATMEGA328P",
+    "manufacturer": "Microchip",
+    "pin_count": 32,
+    "package_type": "QFN",
+    "description": "8-bit AVR Microcontroller with 32KB Flash",
+    "datasheet_path": "/datasheets/ATMEGA328P.pdf",
+    "has_datasheet": true
+  },
+  "fake_registry_info": null,
+  "scanned_at": "2025-12-01T10:32:00Z",
+  "completed_at": "2025-12-01T10:33:15Z"
+}
+

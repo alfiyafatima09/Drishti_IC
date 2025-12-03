@@ -1,0 +1,30 @@
+{
+  "status": "operational",
+  "database": {
+    "connected": true,
+    "ic_count": 2456
+  },
+  "camera": {
+    "connected": true,
+    "last_frame_at": "2025-12-01T11:59:55Z"
+  },
+  "network": {
+    "internet_available": false,
+    "last_checked": "2025-12-01T11:00:00Z"
+  },
+  "queue": {
+    "pending_count": 15,
+    "failed_count": 2
+  },
+  "storage": {
+    "datasheet_folder": "/data/datasheets",
+    "datasheet_count": 2400,
+    "folder_size_mb": 1250.5
+  },
+  "last_sync": {
+    "job_id": "660e8400-e29b-41d4-a716-446655440099",
+    "status": "COMPLETED",
+    "completed_at": "2025-11-25T02:45:00Z"
+  }
+}
+

@@ -1,0 +1,36 @@
+{
+  "sync_jobs": [
+    {
+      "job_id": "660e8400-e29b-41d4-a716-446655440099",
+      "status": "COMPLETED",
+      "started_at": "2025-11-25T02:00:00Z",
+      "completed_at": "2025-11-25T02:45:00Z",
+      "total_items": 23,
+      "success_count": 20,
+      "failed_count": 1,
+      "fake_count": 2
+    },
+    {
+      "job_id": "550e8400-e29b-41d4-a716-446655440088",
+      "status": "COMPLETED",
+      "started_at": "2025-11-18T02:00:00Z",
+      "completed_at": "2025-11-18T02:30:00Z",
+      "total_items": 18,
+      "success_count": 18,
+      "failed_count": 0,
+      "fake_count": 0
+    },
+    {
+      "job_id": "440e8400-e29b-41d4-a716-446655440077",
+      "status": "ERROR",
+      "started_at": "2025-11-11T02:00:00Z",
+      "completed_at": "2025-11-11T02:15:00Z",
+      "total_items": 12,
+      "success_count": 5,
+      "failed_count": 7,
+      "fake_count": 0
+    }
+  ],
+  "total_count": 12
+}
+

@@ -1,0 +1,9 @@
+{
+  "error": "INVALID_MANUFACTURER",
+  "message": "Manufacturer 'UNKNOWN_MFR' is not supported",
+  "details": {
+    "provided": "UNKNOWN_MFR",
+    "supported_manufacturers": ["STM", "TI"]
+  }
+}
+

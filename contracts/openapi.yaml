@@ -17,6 +17,8 @@ tags:
     description: Primary scanning and verification endpoints
   - name: IC Database
     description: Golden Record IC specifications
+  - name: Datasheet Management
+    description: Download datasheets from manufacturer websites
   - name: Scan History
     description: Audit trail of all scans
   - name: Dashboard
@@ -307,7 +309,8 @@ paths:
           in: query
           schema:
             type: string
-          description: Filter by manufacturer
+            enum: [STM, TI]
+          description: Filter by manufacturer (enum values only)
         - name: limit
           in: query
           schema:
@@ -326,6 +329,184 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ICSearchResult'
+
+  # ================================================================
+  # DATASHEET MANAGEMENT ENDPOINTS
+  # ================================================================
+  /api/v1/datasheets/download:
+    post:
+      tags: [Datasheet Management]
+      summary: Download Datasheet from Manufacturer
+      operationId: downloadDatasheet
+      description: |
+        Download IC datasheet from manufacturer websites and extract data.
+        
+        **Supported Manufacturers (enum):**
+        - `STM` - STMicroelectronics
+        - `TI` - Texas Instruments
+        
+        **Behavior:**
+        - If `manufacturer` is provided: Downloads from that specific manufacturer
+        - If `manufacturer` is omitted: Tries ALL manufacturers in parallel
+        - Same IC can exist from multiple manufacturers → creates multiple DB entries
+        
+        **URL Patterns:**
+        - STM: `https://www.st.com/resource/en/datasheet/{part_number}.pdf`
+        - TI: `https://www.ti.com/lit/ds/symlink/{part_number}.pdf`
+        
+        **Flow:**
+        1. Download PDF from manufacturer website(s)
+        2. Extract IC specifications from PDF
+        3. Store extracted data in `ic_specifications` table
+        4. Save PDF to local storage
+        5. Return results with manufacturers found
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasheetDownloadRequest'
+            examples:
+              WithManufacturer:
+                summary: Download from specific manufacturer
+                value:
+                  part_number: "LM555"
+                  manufacturer: "TI"
+              WithoutManufacturer:
+                summary: Try all manufacturers (parallel)
+                value:
+                  part_number: "LM555"
+      responses:
+        '200':
+          description: Download completed (may have partial success)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasheetDownloadResponse'
+              examples:
+                SingleManufacturer:
+                  summary: Single manufacturer success
+                  value:
+                    success: true
+                    part_number: "LM555"
+                    manufacturers_found: ["TI"]
+                    manufacturers_tried: ["TI"]
+                    manufacturers_failed: []
+                    results:
+                      - manufacturer: "TI"
+                        manufacturer_name: "Texas Instruments"
+                        status: "SUCCESS"
+                        file_path: "/datasheets/ti/lm555.pdf"
+                        file_size_bytes: 1245678
+                        datasheet_url: "https://www.ti.com/lit/ds/symlink/lm555.pdf"
+                        data_extracted: true
+                    database_entries_created: 1
+                    message: "Successfully downloaded and processed datasheet from TI"
+                MultipleManufacturers:
+                  summary: Multiple manufacturers found (parallel search)
+                  value:
+                    success: true
+                    part_number: "LM555"
+                    manufacturers_found: ["TI", "STM"]
+                    manufacturers_tried: ["TI", "STM"]
+                    manufacturers_failed: []
+                    results:
+                      - manufacturer: "TI"
+                        manufacturer_name: "Texas Instruments"
+                        status: "SUCCESS"
+                        file_path: "/datasheets/ti/lm555.pdf"
+                        file_size_bytes: 1245678
+                        datasheet_url: "https://www.ti.com/lit/ds/symlink/lm555.pdf"
+                        data_extracted: true
+                      - manufacturer: "STM"
+                        manufacturer_name: "STMicroelectronics"
+                        status: "SUCCESS"
+                        file_path: "/datasheets/stm/lm555.pdf"
+                        file_size_bytes: 987654
+                        datasheet_url: "https://www.st.com/resource/en/datasheet/lm555.pdf"
+                        data_extracted: true
+                    database_entries_created: 2
+                    message: "Found datasheet from 2 manufacturers"
+                PartialSuccess:
+                  summary: Partial success (some manufacturers failed)
+                  value:
+                    success: true
+                    part_number: "STM32L031K6"
+                    manufacturers_found: ["STM"]
+                    manufacturers_tried: ["TI", "STM"]
+                    manufacturers_failed: ["TI"]
+                    results:
+                      - manufacturer: "STM"
+                        manufacturer_name: "STMicroelectronics"
+                        status: "SUCCESS"
+                        file_path: "/datasheets/stm/stm32l031k6.pdf"
+                        file_size_bytes: 2345678
+                        datasheet_url: "https://www.st.com/resource/en/datasheet/stm32l031k6.pdf"
+                        data_extracted: true
+                      - manufacturer: "TI"
+                        manufacturer_name: "Texas Instruments"
+                        status: "NOT_FOUND"
+                        error: "Datasheet not found (HTTP 404)"
+                    database_entries_created: 1
+                    message: "Found datasheet from 1 manufacturer, 1 failed"
+        '400':
+          description: Invalid request or unsupported manufacturer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                InvalidManufacturer:
+                  value:
+                    error: "INVALID_MANUFACTURER"
+                    message: "Manufacturer 'UNKNOWN_MFR' is not supported"
+                    details:
+                      provided: "UNKNOWN_MFR"
+                      supported_manufacturers: ["STM", "TI"]
+                InvalidPartNumber:
+                  value:
+                    error: "INVALID_PART_NUMBER"
+                    message: "Part number is required and must be at least 2 characters"
+        '404':
+          description: Datasheet not found on any manufacturer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "DATASHEET_NOT_FOUND"
+                message: "No datasheet found for 'XYZ999' on any supported manufacturer"
+                details:
+                  part_number: "XYZ999"
+                  manufacturers_tried: ["STM", "TI"]
+
+  /api/v1/datasheets/manufacturers:
+    get:
+      tags: [Datasheet Management]
+      summary: List Supported Manufacturers
+      operationId: listManufacturers
+      description: |
+        Get list of all supported manufacturers for datasheet downloads.
+        Returns enum values and detailed information for each.
+      responses:
+        '200':
+          description: List of supported manufacturers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManufacturerListResponse'
+              example:
+                manufacturers: ["STM", "TI"]
+                count: 2
+                details:
+                  STM:
+                    name: "STMicroelectronics"
+                    url_pattern: "https://www.st.com/resource/en/datasheet/{part_number}.pdf"
+                    example_ics: ["stm32l031k6", "stm32f407vg", "stm32h743zi"]
+                  TI:
+                    name: "Texas Instruments"
+                    url_pattern: "https://www.ti.com/lit/ds/symlink/{part_number}.pdf"
+                    example_ics: ["lm555", "lm358", "tps54620", "lm7805"]
 
   # ================================================================
   # SCAN HISTORY ENDPOINTS
@@ -845,45 +1026,63 @@ components:
     ICSpecification:
       type: object
       nullable: true
-      description: Golden Record IC specification
+      description: |
+        Golden Record IC specification.
+        Note: Same part_number can have multiple entries from different manufacturers.
+        Unique constraint is on (part_number, manufacturer) composite key.
       properties:
         part_number:
           type: string
+          description: IC part number (e.g., "LM555", "STM32L031K6")
         manufacturer:
           type: string
+          enum: [STM, TI]
+          description: Manufacturer code (enum)
+        manufacturer_name:
+          type: string
+          description: Full manufacturer name (e.g., "Texas Instruments")
         pin_count:
           type: integer
+          description: Number of physical pins
         package_type:
           type: string
-          description: DIP, QFN, BGA, SOIC, TSSOP, etc.
+          description: Package format (DIP, QFN, BGA, SOIC, TSSOP, LQFP, etc.)
         description:
           type: string
+          description: Brief description of IC function
         datasheet_url:
           type: string
-          description: Original web URL
+          description: Original web URL where datasheet was downloaded
         datasheet_path:
           type: string
-          description: Local file path
+          description: Local file path to stored PDF
         has_datasheet:
           type: boolean
+          description: Whether datasheet PDF is available locally
         voltage_min:
           type: number
           format: float
+          description: Minimum operating voltage (V)
         voltage_max:
           type: number
           format: float
+          description: Maximum operating voltage (V)
         operating_temp_min:
           type: number
           format: float
+          description: Minimum operating temperature (°C)
         operating_temp_max:
           type: number
           format: float
+          description: Maximum operating temperature (°C)
         electrical_specs:
           type: object
           additionalProperties: true
+          description: Additional electrical specifications (flexible JSON)
         source:
           type: string
-          enum: [MANUAL, SCRAPED_MOUSER, SCRAPED_DIGIKEY, SCRAPED_ALLDATASHEET]
+          enum: [MANUAL, SCRAPED_STM, SCRAPED_TI, SCRAPED_MOUSER, SCRAPED_DIGIKEY, SCRAPED_ALLDATASHEET]
+          description: Data source identifier
         created_at:
           type: string
           format: date-time
@@ -903,18 +1102,153 @@ components:
                 type: string
               manufacturer:
                 type: string
+                enum: [STM, TI]
+              manufacturer_name:
+                type: string
               pin_count:
                 type: integer
               package_type:
                 type: string
               description:
                 type: string
+              has_datasheet:
+                type: boolean
         total_count:
           type: integer
         limit:
           type: integer
         offset:
           type: integer
+
+    # --------------------------------------------------
+    # DATASHEET MANAGEMENT SCHEMAS
+    # --------------------------------------------------
+    ManufacturerEnum:
+      type: string
+      enum: [STM, TI]
+      description: |
+        Supported manufacturer codes.
+        - STM: STMicroelectronics
+        - TI: Texas Instruments
+
+    DatasheetDownloadRequest:
+      type: object
+      required: [part_number]
+      properties:
+        part_number:
+          type: string
+          minLength: 2
+          description: IC part number to download datasheet for
+          example: "LM555"
+        manufacturer:
+          $ref: '#/components/schemas/ManufacturerEnum'
+          description: |
+            Optional. If provided, downloads only from this manufacturer.
+            If omitted, tries ALL supported manufacturers in parallel.
+
+    DatasheetDownloadResult:
+      type: object
+      description: Result for a single manufacturer download attempt
+      properties:
+        manufacturer:
+          $ref: '#/components/schemas/ManufacturerEnum'
+        manufacturer_name:
+          type: string
+          description: Full manufacturer name
+          example: "Texas Instruments"
+        status:
+          type: string
+          enum: [SUCCESS, NOT_FOUND, TIMEOUT, ERROR]
+          description: Download status
+        file_path:
+          type: string
+          nullable: true
+          description: Local path where PDF was saved (if successful)
+          example: "/datasheets/ti/lm555.pdf"
+        file_size_bytes:
+          type: integer
+          nullable: true
+          description: File size in bytes (if successful)
+        datasheet_url:
+          type: string
+          nullable: true
+          description: URL where datasheet was downloaded from
+        data_extracted:
+          type: boolean
+          description: Whether IC data was successfully extracted from PDF
+        error:
+          type: string
+          nullable: true
+          description: Error message (if status is not SUCCESS)
+
+    DatasheetDownloadResponse:
+      type: object
+      description: Response from datasheet download operation
+      properties:
+        success:
+          type: boolean
+          description: True if at least one manufacturer succeeded
+        part_number:
+          type: string
+          description: The requested part number
+        manufacturers_found:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManufacturerEnum'
+          description: List of manufacturers where datasheet was found
+        manufacturers_tried:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManufacturerEnum'
+          description: List of all manufacturers attempted
+        manufacturers_failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManufacturerEnum'
+          description: List of manufacturers that failed
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatasheetDownloadResult'
+          description: Detailed results for each manufacturer attempted
+        database_entries_created:
+          type: integer
+          description: Number of new entries added to ic_specifications table
+        message:
+          type: string
+          description: Human-readable summary message
+
+    ManufacturerDetail:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Full manufacturer name
+        url_pattern:
+          type: string
+          description: URL pattern for datasheet downloads ({part_number} placeholder)
+        example_ics:
+          type: array
+          items:
+            type: string
+          description: Example IC part numbers for this manufacturer
+
+    ManufacturerListResponse:
+      type: object
+      properties:
+        manufacturers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManufacturerEnum'
+          description: List of supported manufacturer codes
+        count:
+          type: integer
+          description: Total number of supported manufacturers
+        details:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ManufacturerDetail'
+          description: Detailed information for each manufacturer
 
     # --------------------------------------------------
     # SCAN HISTORY SCHEMAS

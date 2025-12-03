@@ -1,0 +1,15 @@
+{
+  "job_id": "660e8400-e29b-41d4-a716-446655440099",
+  "status": "PROCESSING",
+  "progress_percentage": 60,
+  "current_item": "ABC1234",
+  "total_items": 15,
+  "processed_items": 9,
+  "success_count": 7,
+  "failed_count": 1,
+  "fake_count": 1,
+  "started_at": "2025-12-01T14:00:00Z",
+  "estimated_completion": "2025-12-01T14:25:00Z",
+  "message": null
+}
+

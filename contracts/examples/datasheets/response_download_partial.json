@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "part_number": "STM32L031K6",
+  "manufacturers_found": ["STM"],
+  "manufacturers_tried": ["TI", "STM"],
+  "manufacturers_failed": ["TI"],
+  "results": [
+    {
+      "manufacturer": "STM",
+      "manufacturer_name": "STMicroelectronics",
+      "status": "SUCCESS",
+      "file_path": "/datasheets/stm/stm32l031k6.pdf",
+      "file_size_bytes": 2345678,
+      "datasheet_url": "https://www.st.com/resource/en/datasheet/stm32l031k6.pdf",
+      "data_extracted": true,
+      "error": null
+    },
+    {
+      "manufacturer": "TI",
+      "manufacturer_name": "Texas Instruments",
+      "status": "NOT_FOUND",
+      "file_path": null,
+      "file_size_bytes": null,
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/stm32l031k6.pdf",
+      "data_extracted": false,
+      "error": "Datasheet not found (HTTP 404)"
+    }
+  ],
+  "database_entries_created": 1,
+  "message": "Found datasheet from 1 manufacturer, 1 failed"
+}
+

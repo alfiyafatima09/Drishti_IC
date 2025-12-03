@@ -1,0 +1,6 @@
+{
+  "error": "IC_NOT_FOUND",
+  "message": "Part number 'XYZ999' not found in database.",
+  "suggestion": "This IC may be in the sync queue or fake registry. Check /api/v1/queue/list or /api/v1/fakes/list."
+}
+

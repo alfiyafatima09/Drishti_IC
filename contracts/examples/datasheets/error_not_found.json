@@ -1,0 +1,9 @@
+{
+  "error": "DATASHEET_NOT_FOUND",
+  "message": "No datasheet found for 'XYZ999' on any supported manufacturer",
+  "details": {
+    "part_number": "XYZ999",
+    "manufacturers_tried": ["STM", "TI"]
+  }
+}
+

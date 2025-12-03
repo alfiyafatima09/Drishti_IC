@@ -1,1 +1,1 @@
-"""API endpoints package."""
+"""API module for BEL IC Verification System."""
