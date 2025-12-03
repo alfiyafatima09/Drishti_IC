@@ -1,5 +1,6 @@
 import { LoginForm } from '@/components/login-form'
 import { LoginHero } from './login-hero'
+import { RotatingTooltip } from '@/components/rotating-tooltip'
 
 export function LoginPage() {
   return (
@@ -20,23 +21,7 @@ export function LoginPage() {
 
           <LoginForm />
 
-          <p className="px-8 text-center text-[10px] leading-relaxed text-zinc-400 dark:text-zinc-600">
-            By clicking login, you agree to our{' '}
-            <a
-              href="#"
-              className="underline underline-offset-2 transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
-            >
-              Terms
-            </a>{' '}
-            and{' '}
-            <a
-              href="#"
-              className="underline underline-offset-2 transition-colors hover:text-zinc-900 dark:hover:text-zinc-50"
-            >
-              Privacy Policy
-            </a>
-            .
-          </p>
+          <RotatingTooltip />
         </div>
       </div>
     </div>
