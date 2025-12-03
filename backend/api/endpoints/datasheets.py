@@ -1,29 +1,32 @@
 """
-Datasheet download API endpoints.
-Multi-provider support for downloading datasheets from various manufacturers.
-Supports: STM, Texas Instruments (TI), and extensible for more.
+Datasheet Management API endpoints.
+Matches the API contract defined in contracts/openapi.yaml
 """
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
-from datetime import datetime
 import logging
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from schemas.datasheets import (
     DatasheetDownloadRequest,
     DatasheetDownloadResponse,
-    ErrorResponse
+    ManufacturerListResponse,
+    ErrorResponse,
 )
 from services.datasheet import (
     datasheet_service,
     DatasheetDownloadException,
-    UnsupportedManufacturerException
+    UnsupportedManufacturerException,
 )
+from core.database import get_db
+from core.constants import get_supported_manufacturers, get_manufacturer_details
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/datasheets",
-    tags=["datasheets"],
+    prefix="/api/v1/datasheets",
+    tags=["Datasheet Management"],
     responses={
         400: {"model": ErrorResponse, "description": "Bad Request"},
         404: {"model": ErrorResponse, "description": "Datasheet Not Found"},
@@ -35,178 +38,116 @@ router = APIRouter(
 @router.post(
     "/download",
     response_model=DatasheetDownloadResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Download IC Datasheet",
-    description="""
-    Download an IC datasheet from various manufacturers and store it locally.
+    status_code=status.HTTP_200_OK,
+    summary="Download Datasheet from Manufacturer",
+    description=f"""
+    Download IC datasheet from manufacturer websites and extract data.
     
-    **Supported Manufacturers:**
-    - **STM** (STMicroelectronics): stm32l031k6, stm32f407vg, etc.
-    - **TI** (Texas Instruments): lm358, lm555, tps54620, etc.
-    
-    The endpoint:
-    1. Selects the appropriate provider based on manufacturer
-    2. Constructs the manufacturer-specific datasheet URL
-    3. Downloads the PDF file
-    4. Saves it to the local datasheets/{manufacturer}/ directory
-    5. Returns the file path and metadata
-    
-    **URL Formats:**
-    - STM: https://www.st.com/resource/en/datasheet/{ic_id}.pdf
-    - TI: https://www.ti.com/lit/ds/symlink/{ic_id}.pdf
+    Supported Manufacturers:
+    {', '.join(f'{m}' for m in get_supported_manufacturers())}
     """
 )
-async def download_datasheet(request: DatasheetDownloadRequest):
+async def download_datasheet(
+    request: DatasheetDownloadRequest,
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Download and store an IC datasheet from the specified manufacturer.
+    Download and store an IC datasheet from the specified manufacturer(s).
     
     Args:
-        request: DatasheetDownloadRequest containing manufacturer and IC ID
+        request: DatasheetDownloadRequest containing part_number and optional manufacturer
+        db: Database session
         
     Returns:
-        DatasheetDownloadResponse with download status and file info
+        DatasheetDownloadResponse with download status and results
         
     Raises:
-        HTTPException: If download fails, IC not found, or manufacturer not supported
+        HTTPException: If request is invalid or manufacturer not supported
     """
-    ic_id = request.ic_id
-    manufacturer = request.manufacturer
+    part_number = request.part_number.strip()
+    manufacturer = request.manufacturer.upper().strip() if request.manufacturer else None
     
-    logger.info(f"Received datasheet download request for {manufacturer} IC: {ic_id}")
-    
-    # Validate IC ID format (basic validation)
-    if not ic_id or len(ic_id) < 2:
+    logger.info(
+        f"Received datasheet download request for part_number={part_number}, "
+        f"manufacturer={manufacturer or 'ALL'}"
+    )
+        
+    if not part_number or len(part_number) < 2:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
-                "error": "INVALID_IC_ID",
-                "message": "IC ID is too short or invalid",
-                "details": {"ic_id": ic_id, "manufacturer": manufacturer}
+                "error": "INVALID_PART_NUMBER",
+                "message": "Part number is required and must be at least 2 characters",
+                "details": {
+                    "provided": part_number,
+                    "min_length": 2
+                }
             }
         )
     
-    # Check if datasheet already exists locally
-    if datasheet_service.datasheet_exists(ic_id, manufacturer):
-        logger.info(f"Datasheet for {manufacturer}/{ic_id} already exists locally")
-        existing_info = datasheet_service.get_datasheet_info(ic_id, manufacturer)
-        
-        return DatasheetDownloadResponse(
-            success=True,
-            message="Datasheet already exists locally",
-            manufacturer=manufacturer,
-            ic_id=ic_id,
-            file_path=existing_info["file_path"],
-            file_size_bytes=existing_info["file_size_bytes"],
-            downloaded_at=existing_info["modified_at"]
-        )
+    if manufacturer:
+        from core.constants import is_valid_manufacturer
+        if not is_valid_manufacturer(manufacturer):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "INVALID_MANUFACTURER",
+                    "message": f"Manufacturer '{manufacturer}' is not supported",
+                    "details": {
+                        "provided": manufacturer,
+                        "supported_manufacturers": get_supported_manufacturers()
+                    }
+                }
+            )
     
-    # Download the datasheet
     try:
-        file_path, file_size = await datasheet_service.download_datasheet(ic_id, manufacturer)
-        
-        return DatasheetDownloadResponse(
-            success=True,
-            message="Datasheet downloaded successfully",
-            manufacturer=manufacturer,
-            ic_id=ic_id,
-            file_path=str(file_path),
-            file_size_bytes=file_size,
-            downloaded_at=datetime.utcnow()
+        result = await datasheet_service.download_datasheet(
+            part_number=part_number,
+            manufacturer_code=manufacturer,
+            db=db
         )
-    
+        
+        if not result["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": "DATASHEET_NOT_FOUND",
+                    "message": f"No datasheet found for '{part_number}' on any supported manufacturer",
+                    "details": {
+                        "part_number": part_number,
+                        "manufacturers_tried": result["manufacturers_tried"]
+                    }
+                }
+            )
+        
+        return DatasheetDownloadResponse(**result)
+        
     except UnsupportedManufacturerException as e:
         logger.error(f"Unsupported manufacturer: {manufacturer}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
-                "error": "UNSUPPORTED_MANUFACTURER",
+                "error": "INVALID_MANUFACTURER",
                 "message": str(e),
                 "details": {
                     "manufacturer": manufacturer,
-                    "supported_manufacturers": datasheet_service.get_supported_manufacturers()
+                    "supported_manufacturers": get_supported_manufacturers()
                 }
             }
         )
-        
-    except DatasheetDownloadException as e:
-        logger.error(f"Failed to download datasheet for {manufacturer}/{ic_id}: {e}")
-        
-        # Check if it's a 404 error
-        if "404" in str(e) or "not found" in str(e).lower():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                    "error": "DATASHEET_NOT_FOUND",
-                    "message": str(e),
-                    "details": {"ic_id": ic_id, "manufacturer": manufacturer}
-                }
-            )
-        
-        # Other download errors
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "error": "DOWNLOAD_FAILED",
-                "message": str(e),
-                "details": {"ic_id": ic_id, "manufacturer": manufacturer}
-            }
-        )
-    
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.exception(f"Unexpected error downloading datasheet for {manufacturer}/{ic_id}")
+        logger.exception(f"Unexpected error downloading datasheet for {part_number}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "error": "INTERNAL_ERROR",
                 "message": "An unexpected error occurred while downloading the datasheet",
-                "details": {"ic_id": ic_id, "manufacturer": manufacturer, "error": str(e)}
-            }
-        )
-
-
-@router.get(
-    "/check/{manufacturer}/{ic_id}",
-    summary="Check if Datasheet Exists Locally",
-    description="Check if a datasheet for the given IC ID and manufacturer exists in local storage"
-)
-async def check_datasheet(manufacturer: str, ic_id: str):
-    """
-    Check if datasheet exists locally.
-    
-    Args:
-        manufacturer: Manufacturer name (STM, TI, etc.)
-        ic_id: IC identifier
-        
-    Returns:
-        Status and file info if exists
-    """
-    try:
-        exists = datasheet_service.datasheet_exists(ic_id, manufacturer)
-        
-        if exists:
-            info = datasheet_service.get_datasheet_info(ic_id, manufacturer)
-            return {
-                "exists": True,
-                "manufacturer": manufacturer,
-                "ic_id": ic_id,
-                "file_info": info
-            }
-        else:
-            return {
-                "exists": False,
-                "manufacturer": manufacturer,
-                "ic_id": ic_id,
-                "message": "Datasheet not found locally"
-            }
-    except UnsupportedManufacturerException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "error": "UNSUPPORTED_MANUFACTURER",
-                "message": str(e),
                 "details": {
+                    "part_number": part_number,
                     "manufacturer": manufacturer,
-                    "supported_manufacturers": datasheet_service.get_supported_manufacturers()
+                    "error": str(e)
                 }
             }
         )
@@ -214,29 +155,25 @@ async def check_datasheet(manufacturer: str, ic_id: str):
 
 @router.get(
     "/manufacturers",
-    summary="Get Supported Manufacturers",
-    description="Get list of all supported manufacturers"
+    response_model=ManufacturerListResponse,
+    summary="List Supported Manufacturers",
+    description="""
+    Get list of all supported manufacturers for datasheet downloads.
+    Returns enum values and detailed information for each.
+    """
 )
-async def get_supported_manufacturers():
+async def list_manufacturers():
     """
     Get list of supported manufacturers.
     
     Returns:
-        List of manufacturer codes and names
+        ManufacturerListResponse with manufacturer codes and details
     """
-    return {
-        "manufacturers": datasheet_service.get_supported_manufacturers(),
-        "count": len(datasheet_service.get_supported_manufacturers()),
-        "details": {
-            "STM": {
-                "name": "STMicroelectronics",
-                "url_pattern": "https://www.st.com/resource/en/datasheet/{ic_id}.pdf",
-                "example_ics": ["stm32l031k6", "stm32f407vg", "stm32h743zi"]
-            },
-            "TI": {
-                "name": "Texas Instruments",
-                "url_pattern": "https://www.ti.com/lit/ds/symlink/{ic_id}.pdf",
-                "example_ics": ["lm358", "lm555", "tps54620"]
-            }
-        }
-    }
+    manufacturers = get_supported_manufacturers()
+    details = get_manufacturer_details()
+    
+    return ManufacturerListResponse(
+        manufacturers=manufacturers,
+        count=len(manufacturers),
+        details=details
+    )

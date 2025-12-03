@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
@@ -11,26 +12,22 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     
     # Supabase settings
-    SUPABASE_URL: str = ""
-    SUPABASE_KEY: str = ""  # anon/public key
-    SUPABASE_SERVICE_KEY: str = ""  # service role key (for admin operations)
-    
-    # Database URL (constructed from Supabase or direct PostgreSQL)
-    DATABASE_URL: str = ""
-    
-    # Storage settings
-    MEDIA_ROOT: Path = Path("data")
-    DATASHEET_ROOT: Path = Path("datasheets")
-    DATASHEET_FOLDER: Path = Path("data/datasheets")
-    
-    # Image processing settings
-    MAX_IMAGE_SIZE_BYTES: int = 10 * 1024 * 1024  # 10MB
+    SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY", "") 
+    SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", "")  
+    DATABASE_URL: str = os.environ.get("DATABASE_URL", "")
+    MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", "data"))   
+    DATASHEET_FOLDER: Path = Path(os.environ.get("DATASHEET_FOLDER", "data/datasheets"))
+
+    MAX_IMAGE_SIZE_BYTES: int = int(os.environ.get("MAX_IMAGE_SIZE_BYTES", 50 * 1024 * 1024))
     ALLOWED_IMAGE_TYPES: list[str] = [
         "image/jpeg",
         "image/jpg",
         "image/png",
         "image/bmp",
-        "image/tiff"
+        "image/tiff",
+        "image/heif",
+        "image/heic"
     ]
     
     # OCR settings
@@ -42,7 +39,7 @@ class Settings(BaseSettings):
     
     # Sync settings
     MAX_SCRAPE_RETRIES: int = 3
-    SCRAPE_TIMEOUT_SECONDS: int = 30
+    SCRAPE_TIMEOUT_SECONDS: int = 5
     AUTO_QUEUE_UNKNOWN: bool = True
     
     # Scan history
@@ -69,5 +66,4 @@ settings = get_settings()
 settings.MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 # Ensure datasheets directory exists
-settings.DATASHEET_ROOT.mkdir(parents=True, exist_ok=True)
 settings.DATASHEET_FOLDER.mkdir(parents=True, exist_ok=True)
