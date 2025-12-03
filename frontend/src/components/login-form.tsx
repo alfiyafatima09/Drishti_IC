@@ -4,9 +4,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Github, Loader2, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const navigate = useNavigate()
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault()
@@ -14,7 +16,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
 
     setTimeout(() => {
       setIsLoading(false)
-    }, 3000)
+      navigate('/dashboard')
+    }, 1500) // Reduced delay for faster feel
   }
 
   return (
