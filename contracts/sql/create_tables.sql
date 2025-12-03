@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS ic_specifications (
     voltage_max FLOAT,
     operating_temp_min FLOAT,
     operating_temp_max FLOAT,
+    dimension_length FLOAT,  -- Length in millimeters
+    dimension_width FLOAT,   -- Width in millimeters
+    dimension_height FLOAT,  -- Height in millimeters
     electrical_specs JSONB DEFAULT '{}',
     source VARCHAR(50) DEFAULT 'MANUAL',
     created_at TIMESTAMPTZ DEFAULT NOW(),
