@@ -5,6 +5,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 import logging
 import asyncio
+import json
 
 from core.database import get_db
 from schemas import CaptureRequest, CaptureResponse, CaptureType
@@ -22,42 +23,29 @@ _pending_capture: asyncio.Event = None
 _capture_result: dict = None
 
 
-@router.websocket("/feed")
-async def camera_feed(websocket: WebSocket):
-    """
-    WebSocket endpoint for live video streaming.
-    
-    Phone sends: Binary JPEG frames
-    Desktop receives: Binary JPEG frames
-    Server sends JSON events: CAMERA_CONNECTED, CAMERA_DISCONNECTED
-    """
+async def handle_phone_connection(websocket: WebSocket):
+    """Handle phone camera connection - receives and broadcasts frames."""
     global _phone_client, _latest_frame
     
-    await websocket.accept()
+    _phone_client = websocket
+    set_camera_status(True, datetime.utcnow())
+    logger.info("Phone camera connected")
     
-    # Determine if this is a phone (sender) or desktop (receiver)
-    # For simplicity, first connection without existing phone is the phone
-    # Subsequent connections are desktops
-    
-    client_type = websocket.headers.get("X-Client-Type", "desktop").lower()
-    
-    if client_type == "phone" or _phone_client is None:
-        # This is the phone (AOI simulator)
-        _phone_client = websocket
-        set_camera_status(True, datetime.utcnow())
-        logger.info("Phone camera connected")
-        
-        # Notify desktops
-        for client in _desktop_clients:
-            try:
-                await client.send_json({"event": "CAMERA_CONNECTED", "timestamp": datetime.utcnow().isoformat()})
-            except Exception:
-                pass
-        
+    # Notify desktops
+    for client in _desktop_clients:
         try:
-            while True:
-                # Receive frame from phone
-                data = await websocket.receive_bytes()
+            await client.send_json({"event": "CAMERA_CONNECTED", "timestamp": datetime.utcnow().isoformat()})
+        except Exception:
+            pass
+    
+    try:
+        while True:
+            # Receive data from phone (can be binary frame or JSON message)
+            message = await websocket.receive()
+            
+            if "bytes" in message:
+                # Binary frame data
+                data = message["bytes"]
                 _latest_frame = data
                 set_camera_status(True, datetime.utcnow())
                 
@@ -67,36 +55,120 @@ async def camera_feed(websocket: WebSocket):
                         await client.send_bytes(data)
                     except Exception:
                         pass
-        except WebSocketDisconnect:
-            logger.info("Phone camera disconnected")
-            _phone_client = None
-            set_camera_status(False)
-            
-            # Notify desktops
-            for client in _desktop_clients:
+                        
+            elif "text" in message:
+                # JSON message (ping, identify, etc.)
                 try:
-                    await client.send_json({"event": "CAMERA_DISCONNECTED", "timestamp": datetime.utcnow().isoformat()})
-                except Exception:
+                    msg = json.loads(message["text"])
+                    if msg.get("type") == "ping":
+                        await websocket.send_json({"type": "pong", "timestamp": msg.get("timestamp")})
+                except json.JSONDecodeError:
                     pass
+                    
+    except WebSocketDisconnect:
+        logger.info("Phone camera disconnected")
+        _phone_client = None
+        set_camera_status(False)
+        
+        # Notify desktops
+        for client in _desktop_clients:
+            try:
+                await client.send_json({"event": "CAMERA_DISCONNECTED", "timestamp": datetime.utcnow().isoformat()})
+            except Exception:
+                pass
+
+
+async def handle_desktop_connection(websocket: WebSocket):
+    """Handle desktop connection - receives frames from phone."""
+    _desktop_clients.append(websocket)
+    logger.info(f"Desktop client connected. Total: {len(_desktop_clients)}")
+    
+    # Send current camera status
+    if _phone_client:
+        await websocket.send_json({"event": "CAMERA_CONNECTED", "timestamp": datetime.utcnow().isoformat()})
     else:
-        # This is a desktop client
-        _desktop_clients.append(websocket)
-        logger.info(f"Desktop client connected. Total: {len(_desktop_clients)}")
-        
-        # Send current camera status
-        if _phone_client:
-            await websocket.send_json({"event": "CAMERA_CONNECTED", "timestamp": datetime.utcnow().isoformat()})
-        else:
-            await websocket.send_json({"event": "CAMERA_DISCONNECTED", "timestamp": datetime.utcnow().isoformat()})
-        
-        try:
-            while True:
-                # Keep connection alive, handle any messages from desktop
-                message = await websocket.receive_text()
-                # Desktop might send commands, but for now just keep alive
-        except WebSocketDisconnect:
+        await websocket.send_json({"event": "CAMERA_DISCONNECTED", "timestamp": datetime.utcnow().isoformat()})
+    
+    try:
+        while True:
+            # Keep connection alive, handle any messages from desktop
+            message = await websocket.receive_text()
+            # Desktop might send commands (like capture trigger)
+            try:
+                msg = json.loads(message)
+                if msg.get("type") == "capture":
+                    # Handle capture request from desktop
+                    logger.info("Desktop requested capture")
+            except json.JSONDecodeError:
+                pass
+    except WebSocketDisconnect:
+        if websocket in _desktop_clients:
             _desktop_clients.remove(websocket)
-            logger.info(f"Desktop client disconnected. Total: {len(_desktop_clients)}")
+        logger.info(f"Desktop client disconnected. Total: {len(_desktop_clients)}")
+
+
+@router.websocket("/feed")
+async def camera_feed(websocket: WebSocket):
+    """
+    WebSocket endpoint for live video streaming.
+    
+    Phone sends: Binary JPEG frames + JSON messages
+    Desktop receives: Binary JPEG frames + JSON events
+    
+    Connection flow:
+    1. Client connects
+    2. Server accepts and waits for identification
+    3. First message should be: {"type": "identify", "client": "phone"|"desktop"}
+    4. If no identify message, falls back to header check or assumes desktop
+    """
+    global _phone_client
+    
+    await websocket.accept()
+    logger.info("New WebSocket connection")
+    
+    # Check header for client type (for native apps that can set headers)
+    client_type = websocket.headers.get("X-Client-Type", "").lower()
+    
+    if client_type == "phone":
+        await handle_phone_connection(websocket)
+        return
+    elif client_type == "desktop":
+        await handle_desktop_connection(websocket)
+        return
+    
+    # No header - wait for identification message or first data
+    try:
+        # Wait for first message with short timeout
+        message = await asyncio.wait_for(websocket.receive(), timeout=5.0)
+        
+        if "text" in message:
+            try:
+                msg = json.loads(message["text"])
+                if msg.get("type") == "identify":
+                    client_type = msg.get("client", "desktop").lower()
+                    logger.info(f"Client identified as: {client_type}")
+                    
+                    if client_type == "phone":
+                        await handle_phone_connection(websocket)
+                    else:
+                        await handle_desktop_connection(websocket)
+                    return
+            except json.JSONDecodeError:
+                pass
+        
+        elif "bytes" in message:
+            # First message is binary - this is a phone sending frames
+            # Store this frame and continue as phone
+            _latest_frame = message["bytes"]
+            await handle_phone_connection(websocket)
+            return
+            
+    except asyncio.TimeoutError:
+        # No identification received - assume desktop
+        logger.info("No identification received, assuming desktop")
+    
+    # Default to desktop
+    await handle_desktop_connection(websocket)
 
 
 @router.post("/capture", response_model=CaptureResponse)

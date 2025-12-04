@@ -16,7 +16,7 @@ class AppSettings(Base):
     value = Column(Text, nullable=False)
     value_type = Column(String(20), default="STRING")  # STRING, INTEGER, FLOAT, BOOLEAN, JSON
     description = Column(Text)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     updated_by = Column(String(100))
 
     def __repr__(self):

@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
 import os
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import logging
 
 from core.config import settings
@@ -19,6 +22,9 @@ from api.endpoints import (
     camera_router,
 )
 from api.endpoints import images, datasheets, ic_analysis
+
+# Static files directory
+STATIC_DIR = Path(__file__).parent / "static"
 
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
@@ -77,14 +83,24 @@ async def root():
         "status": "running",
         "docs": "/docs",
         "redoc": "/redoc",
+        "camera": "/camera",
     }
+
+
+@app.get("/camera", tags=["Camera"], include_in_schema=False)
+async def camera_page():
+    """Serve the phone camera streaming page."""
+    camera_html = STATIC_DIR / "camera.html"
+    if camera_html.exists():
+        return FileResponse(camera_html, media_type="text/html")
+    return {"error": "Camera page not found"}
 
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
-        # host="0.0.0.0",
+        # host="0.0.0.0",  # Bind to all interfaces for network access
         port=int(os.environ.get("PORT", 8000)),
         reload=settings.DEBUG,
     )

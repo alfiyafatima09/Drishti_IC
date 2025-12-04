@@ -13,7 +13,7 @@
 # - URL opening (open vs start vs xdg-open)
 # - Python detection (python3 vs py)
 
-.PHONY: help install dev backend frontend down clean fmt lint logs db-migrate db-reset docker-build docker-up docker-down contracts-lint contracts-gen
+.PHONY: help install dev backend frontend frontend-web frontend-build frontend-ngrok down clean fmt lint logs db-migrate db-reset docker-build docker-up docker-down contracts-lint contracts-gen check-go check-wails check-bun check-frontend-deps install-wails
 
 # Virtual environment directory (must be defined before platform detection)
 VENV_DIR := venv
@@ -72,14 +72,16 @@ help: ## Display this help message
 	@echo "================================"
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(BLUE)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(GREEN)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-install: setup-venv check-node ## Install all dependencies
+install: setup-venv check-frontend-deps ## Install all dependencies
 	@echo "$(GREEN)Installing dependencies...$(NC)"
-	@echo "$(BLUE)Installing frontend dependencies...$(NC)"
+	@echo "$(BLUE)Installing frontend dependencies (Bun)...$(NC)"
 	@if [ ! -d "frontend/node_modules" ]; then \
-		cd frontend && npm install; \
+		cd frontend && bun install; \
 	else \
 		echo "$(YELLOW)Frontend dependencies already installed. Run 'make clean-frontend' to reinstall$(NC)"; \
 	fi
+	@echo "$(BLUE)Syncing Go dependencies...$(NC)"
+	@cd frontend && go mod tidy
 	@echo "$(GREEN)✓ All dependencies installed$(NC)"
 
 check-node: ## Check Node.js and npm installation
@@ -103,6 +105,61 @@ check-node: ## Check Node.js and npm installation
 	}
 	@echo "$(GREEN)✓ Node $(shell node --version)$(NC)"
 	@echo "$(GREEN)✓ npm $(shell npm --version)$(NC)"
+
+check-go: ## Check Go installation
+	@echo "$(BLUE)Checking Go installation...$(NC)"
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	command -v go >/dev/null 2>&1 || { \
+		echo "$(RED)✗ Go not found!$(NC)"; \
+		echo "$(YELLOW)Install Go 1.21+:$(NC)"; \
+		if [ "$$UNAME_S" = "Darwin" ]; then \
+			echo "  macOS: $(BLUE)brew install go$(NC)"; \
+		elif [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+			echo "  Windows: Download from $(BLUE)https://go.dev/dl/$(NC)"; \
+		else \
+			echo "  Linux: $(BLUE)sudo apt install golang-go$(NC) or visit $(BLUE)https://go.dev/dl/$(NC)"; \
+		fi; \
+		exit 1; \
+	}
+	@echo "$(GREEN)✓ Go $$(go version | awk '{print $$3}')$(NC)"
+
+check-wails: check-go ## Check Wails CLI installation
+	@echo "$(BLUE)Checking Wails CLI...$(NC)"
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	command -v wails >/dev/null 2>&1 || { \
+		echo "$(RED)✗ Wails CLI not found!$(NC)"; \
+		echo "$(YELLOW)Install Wails CLI:$(NC)"; \
+		echo "  $(BLUE)go install github.com/wailsapp/wails/v2/cmd/wails@latest$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Then add Go bin to PATH:$(NC)"; \
+		if [ "$$UNAME_S" = "Darwin" ] || [ "$$UNAME_S" = "Linux" ]; then \
+			echo "  $(BLUE)export PATH=\"\$$PATH:\$$(go env GOPATH)/bin\"$(NC)"; \
+		else \
+			echo "  Add $(BLUE)%GOPATH%\\bin$(NC) to your PATH environment variable"; \
+		fi; \
+		exit 1; \
+	}
+	@echo "$(GREEN)✓ Wails $$(wails version | head -1)$(NC)"
+
+check-bun: ## Check Bun installation
+	@echo "$(BLUE)Checking Bun installation...$(NC)"
+	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
+	command -v bun >/dev/null 2>&1 || { \
+		echo "$(RED)✗ Bun not found!$(NC)"; \
+		echo "$(YELLOW)Install Bun:$(NC)"; \
+		if [ "$$UNAME_S" = "Darwin" ] || [ "$$UNAME_S" = "Linux" ]; then \
+			echo "  $(BLUE)curl -fsSL https://bun.sh/install | bash$(NC)"; \
+			echo "  or"; \
+			echo "  macOS: $(BLUE)brew install oven-sh/bun/bun$(NC)"; \
+		else \
+			echo "  Windows: $(BLUE)powershell -c \"irm bun.sh/install.ps1 | iex\"$(NC)"; \
+		fi; \
+		exit 1; \
+	}
+	@echo "$(GREEN)✓ Bun $$(bun --version)$(NC)"
+
+check-frontend-deps: check-go check-wails check-bun ## Check all frontend dependencies (Go, Wails, Bun)
+	@echo "$(GREEN)✓ All frontend dependencies available$(NC)"
 
 ##@ Development
 
@@ -164,9 +221,16 @@ check-python: ## Check Python version and availability
 		fi; \
 	fi
 
-dev: ## Start both backend and frontend in parallel
+dev: ## Start both backend and frontend (Wails desktop) in parallel
 	@echo "$(GREEN)Starting development environment...$(NC)"
-	@$(MAKE) -j2 backend frontend-ngrok
+	@echo "$(YELLOW)Note: This runs backend + Wails desktop app$(NC)"
+	@echo "$(YELLOW)      For web-only frontend, use: make dev-web$(NC)"
+	@echo ""
+	@$(MAKE) -j2 backend frontend
+
+dev-web: ## Start backend and frontend web server (no desktop window)
+	@echo "$(GREEN)Starting web development environment...$(NC)"
+	@$(MAKE) -j2 backend frontend-web
 
 backend: setup-venv ## Start backend server (FastAPI)
 	@echo "$(GREEN)Starting backend server...$(NC)"
@@ -192,199 +256,94 @@ backend: setup-venv ## Start backend server (FastAPI)
 		cd backend && $(PYTHON) main.py; \
 	fi
 
-frontend-no-ngrok: check-node ## Start frontend dev server (Next.js)
-	@echo "$(GREEN)Starting frontend server...$(NC)"
+frontend: check-frontend-deps ## Start Wails desktop app (Go + React + Vite)
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)  🚀 Starting Drishti IC Desktop (Wails)$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo ""
+	@# Install bun dependencies if needed
+	@if [ ! -d "frontend/node_modules" ]; then \
+		echo "$(BLUE)📦 Installing frontend dependencies (bun install)...$(NC)"; \
+		cd frontend && bun install; \
+		echo "$(GREEN)✓ Frontend dependencies installed$(NC)"; \
+	else \
+		echo "$(GREEN)✓ Frontend dependencies already installed$(NC)"; \
+	fi
+	@# Run go mod tidy if go.sum is missing or outdated
+	@echo "$(BLUE)📦 Syncing Go dependencies...$(NC)"
+	@cd frontend && go mod tidy
+	@echo "$(GREEN)✓ Go dependencies synced$(NC)"
+	@echo ""
+	@echo "$(BLUE)🖥️  Launching Wails development server...$(NC)"
+	@echo "$(YELLOW)   This will open a desktop window with HMR enabled$(NC)"
+	@echo "$(YELLOW)   Vite dev server runs on port 34115$(NC)"
+	@echo ""
+	cd frontend && wails dev
+
+frontend-web: check-bun ## Start frontend as web app only (Vite dev server, no desktop window)
+	@echo "$(GREEN)Starting frontend web dev server (Vite only)...$(NC)"
 	@if [ ! -d "frontend/node_modules" ]; then \
 		echo "$(YELLOW)⚠️  Frontend dependencies not installed$(NC)"; \
 		echo "$(BLUE)Installing dependencies first...$(NC)"; \
-		cd frontend && npm install; \
+		cd frontend && bun install; \
 	fi
-	@echo "$(BLUE)Killing existing processes on ports 3000-3003...$(NC)"
+	@echo "$(BLUE)Killing existing processes on ports 5173, 34115...$(NC)"
 	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
 	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
-		for port in 3000 3001 3002 3003; do \
-			netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}' | xargs -r kill -9 2>/dev/null || \
-			taskkill //F //PID $$(netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}') 2>/dev/null || true; \
+		for port in 5173 34115; do \
+			netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}' | xargs -r kill -9 2>/dev/null || true; \
 		done; \
 		sleep 1; \
 	else \
-		for port in 3000 3001 3002 3003; do \
+		for port in 5173 34115; do \
 			lsof -ti:$$port | xargs kill -9 2>/dev/null || true; \
 		done; \
 		sleep 1; \
 	fi
-	@echo "$(BLUE)Using default config: API at http://localhost:8000$(NC)"
-	@$(MAKE) show-network-urls &
-	cd frontend && npm run dev
+	@echo "$(BLUE)Starting Vite dev server...$(NC)"
+	cd frontend && bun run dev
 
-frontend: ## Start frontend with ngrok tunnel (for public access)
-	@echo "$(GREEN)Starting frontend with ngrok tunnel...$(NC)"
-	@echo "$(YELLOW)⚠️  Important: Backend will run on localhost:8000$(NC)"
-	@echo "$(YELLOW)   Make sure your device can reach localhost or use network IP$(NC)"
+frontend-build: check-frontend-deps ## Build Wails desktop app for production
+	@echo "$(GREEN)Building Drishti IC Desktop...$(NC)"
+	@if [ ! -d "frontend/node_modules" ]; then \
+		echo "$(BLUE)📦 Installing frontend dependencies...$(NC)"; \
+		cd frontend && bun install; \
+	fi
+	@echo "$(BLUE)📦 Syncing Go dependencies...$(NC)"
+	@cd frontend && go mod tidy
+	@echo "$(BLUE)🔨 Building frontend assets...$(NC)"
+	@cd frontend && bun run build
+	@echo "$(BLUE)🔨 Building desktop binary...$(NC)"
+	@cd frontend && wails build
 	@echo ""
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(GREEN)  ✅ Build Complete!$(NC)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@echo "$(BLUE)Binary location: $(GREEN)frontend/build/bin/$(NC)"
 	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
-	if ! command -v ngrok >/dev/null 2>&1; then \
-		echo "$(RED)✗ ngrok not found!$(NC)"; \
-		echo "$(YELLOW)Install ngrok:$(NC)"; \
 		if [ "$$UNAME_S" = "Darwin" ]; then \
-			echo "  macOS: $(BLUE)brew install ngrok/ngrok/ngrok$(NC)"; \
+		echo "$(BLUE)Run with: $(GREEN)./frontend/build/bin/drishti-ic-desktop$(NC)"; \
+	elif [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		echo "$(BLUE)Run with: $(GREEN)frontend\\build\\bin\\drishti-ic-desktop.exe$(NC)"; \
 		else \
-			echo "  Download from: $(BLUE)https://ngrok.com/download$(NC)"; \
-		fi; \
-		exit 1; \
+		echo "$(BLUE)Run with: $(GREEN)./frontend/build/bin/drishti-ic-desktop$(NC)"; \
 	fi
+
+install-wails: check-go ## Install Wails CLI
+	@echo "$(BLUE)Installing Wails CLI...$(NC)"
+	go install github.com/wailsapp/wails/v2/cmd/wails@latest
+	@echo ""
+	@echo "$(GREEN)✓ Wails CLI installed$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Make sure Go bin is in your PATH:$(NC)"
 	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
-	echo "$(BLUE)Killing existing ngrok tunnels...$(NC)"; \
-	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
-		taskkill //F //FI "IMAGENAME eq ngrok.exe" 2>/dev/null || pkill -f ngrok 2>/dev/null || true; \
+	if [ "$$UNAME_S" = "Darwin" ] || [ "$$UNAME_S" = "Linux" ]; then \
+		echo "  $(BLUE)export PATH=\"\$$PATH:\$$(go env GOPATH)/bin\"$(NC)"; \
+		echo ""; \
+		echo "$(YELLOW)Add this to your ~/.zshrc or ~/.bashrc for persistence$(NC)"; \
 	else \
-		pkill -f ngrok || true; \
-	fi; \
-	sleep 2
-	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
-	echo "$(BLUE)Killing existing processes on ports 3000-3003...$(NC)"; \
-	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
-		for port in 3000 3001 3002 3003; do \
-			netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}' | xargs -r kill -9 2>/dev/null || \
-			taskkill //F //PID $$(netstat -ano 2>/dev/null | grep :$$port | grep LISTENING | awk '{print $$5}') 2>/dev/null || true; \
-		done; \
-	else \
-		for port in 3000 3001 3002 3003; do \
-			lsof -ti:$$port | xargs kill -9 2>/dev/null || true; \
-		done; \
-	fi; \
-	sleep 1
-	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
-	echo "$(BLUE)Starting frontend server first...$(NC)"; \
-	cd frontend && npm run dev > "$$TEMP_DIR/nextjs.log" 2>&1 & \
-	sleep 8
-	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
-		FRONTEND_PORT=$$(netstat -ano 2>/dev/null | grep :300 | grep LISTENING | head -1 | awk '{print $$4}' | cut -d: -f2 || echo "3000"); \
-	else \
-		FRONTEND_PORT=$$(lsof -nP -iTCP -sTCP:LISTEN 2>/dev/null | grep -E ':(300[0-9]|3000)' | grep node | head -1 | awk '{print $$9}' | cut -d: -f2 | head -1); \
-		if [ -z "$$FRONTEND_PORT" ]; then \
-			FRONTEND_PORT=$$(netstat -an 2>/dev/null | grep LISTEN | grep -E '\.(300[0-9]|3000)' | head -1 | awk '{print $$4}' | cut -d: -f2 | cut -d. -f1); \
-		fi; \
-	fi; \
-	if [ -z "$$FRONTEND_PORT" ]; then \
-		FRONTEND_PORT="3000"; \
-	fi; \
-	UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
-	PYTHON_CMD=$$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null || echo "python3"); \
-	echo "$(BLUE)Starting ngrok tunnel on port $$FRONTEND_PORT...$(NC)"; \
-	ngrok http $$FRONTEND_PORT --log=stdout > "$$TEMP_DIR/ngrok.log" 2>&1 & \
-	sleep 5
-	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-	TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
-	PYTHON_CMD=$$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null || echo "python3"); \
-	echo "$(BLUE)Waiting for ngrok to start and fetch public URL...$(NC)"; \
-	NGROK_URL=""; \
-	for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
-		echo -n "$(BLUE)Attempt $$i/15...$(NC)\r"; \
-		NGROK_RESPONSE=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null); \
-		if [ -n "$$NGROK_RESPONSE" ]; then \
-			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | $$PYTHON_CMD -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
-			if [ -z "$$NGROK_URL" ]; then \
-				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE '"public_url":"https://[^"]*' | head -1 | sed 's/"public_url":"//'); \
-			fi; \
-			if [ -z "$$NGROK_URL" ]; then \
-				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok-free\.app' | head -1); \
-			fi; \
-			if [ -z "$$NGROK_URL" ]; then \
-				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok\.io' | head -1); \
-			fi; \
-		fi; \
-		if [ -n "$$NGROK_URL" ]; then \
-			break; \
-		fi; \
-		sleep 2; \
-	done; \
-	echo ""; \
-	if [ -z "$$NGROK_URL" ]; then \
-		echo "$(YELLOW)⚠️  Still waiting for ngrok URL... Trying one more time with longer wait...$(NC)"; \
-		sleep 5; \
-		NGROK_RESPONSE=$$(curl -s http://localhost:4040/api/tunnels 2>/dev/null); \
-		if [ -n "$$NGROK_RESPONSE" ]; then \
-			NGROK_URL=$$(echo "$$NGROK_RESPONSE" | $$PYTHON_CMD -c "import sys, json; data=json.load(sys.stdin); tunnels=data.get('tunnels', []); print(tunnels[0]['public_url'] if tunnels else '')" 2>/dev/null); \
-			if [ -z "$$NGROK_URL" ]; then \
-				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE '"public_url":"https://[^"]*' | head -1 | sed 's/"public_url":"//'); \
-			fi; \
-			if [ -z "$$NGROK_URL" ]; then \
-				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok-free\.app' | head -1); \
-			fi; \
-			if [ -z "$$NGROK_URL" ]; then \
-				NGROK_URL=$$(echo "$$NGROK_RESPONSE" | grep -oE 'https://[a-z0-9-]+\.ngrok\.io' | head -1); \
-			fi; \
-		fi; \
-	fi; \
-	if [ -n "$$NGROK_URL" ]; then \
-		NGROK_URL_SKIP=$$(echo "$$NGROK_URL" | sed 's|$$|?ngrok-skip-browser-warning=1|'); \
-		echo ""; \
-		echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
-		echo "$(GREEN)  ✅ Ngrok Tunnel Active$(NC)"; \
-		echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
-		echo "$(BLUE)🌍 Frontend URL (Use on your phone):$(NC)"; \
-		echo "  $(GREEN)$$NGROK_URL_SKIP$(NC)"; \
-		echo ""; \
-		echo "$(BLUE)🔧 Backend URL (for WebSocket):$(NC)"; \
-		echo "  $(GREEN)http://localhost:8000$(NC)  $(YELLOW)# Backend NOT on ngrok$(NC)"; \
-		echo ""; \
-		echo "$(YELLOW)⚠️  Important Notes:$(NC)"; \
-		echo "  • Frontend is on ngrok (HTTPS)"; \
-		echo "  • Backend is on localhost:8000 (HTTP)"; \
-		echo "  • $(RED)Your phone cannot reach localhost from ngrok!$(NC)"; \
-		echo "  • $(GREEN)Solution: Test on same device or use network IP for backend$(NC)"; \
-		echo ""; \
-		echo "$(YELLOW)💡 Better option for mobile: Use network IP instead$(NC)"; \
-		echo "  Run: $(BLUE)make frontend$(NC) and access via your local IP"; \
-		echo ""; \
-		echo "$(BLUE)📋 Quick Actions:$(NC)"; \
-		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-		if [ "$$UNAME_S" = "Darwin" ]; then \
-			echo "  • Open in browser: $(GREEN)open $$NGROK_URL_SKIP$(NC)"; \
-		elif [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
-			echo "  • Open in browser: $(GREEN)start $$NGROK_URL_SKIP$(NC)"; \
-		else \
-			echo "  • Open in browser: $(GREEN)xdg-open $$NGROK_URL_SKIP$(NC)"; \
-		fi; \
-		echo "  • Ngrok dashboard: $(GREEN)http://localhost:4040$(NC)"; \
-		echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"; \
-		echo ""; \
-		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-		if [ "$$UNAME_S" = "Darwin" ] && command -v open >/dev/null 2>&1; then \
-			echo "$(BLUE)Opening ngrok URL in browser...$(NC)"; \
-			open "$$NGROK_URL_SKIP" 2>/dev/null || true; \
-		elif ([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]) && command -v start >/dev/null 2>&1; then \
-			echo "$(BLUE)Opening ngrok URL in browser...$(NC)"; \
-			start "$$NGROK_URL_SKIP" 2>/dev/null || true; \
-		elif [ "$$UNAME_S" = "Linux" ] && command -v xdg-open >/dev/null 2>&1; then \
-			echo "$(BLUE)Opening ngrok URL in browser...$(NC)"; \
-			xdg-open "$$NGROK_URL_SKIP" 2>/dev/null || true; \
-		fi; \
-	else \
-		echo ""; \
-		echo "$(YELLOW)⚠️  Could not automatically fetch ngrok URL$(NC)"; \
-		echo "$(BLUE)Please check ngrok dashboard manually:$(NC)"; \
-		echo "  $(GREEN)http://localhost:4040$(NC)"; \
-		echo ""; \
-		UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
-		TEMP_DIR=$$([ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ] && echo "$$TEMP" || echo "/tmp"); \
-		PYTHON_CMD=$$(command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null || echo "python3"); \
-		echo "$(BLUE)Or check logs:$(NC)"; \
-		echo "  $(YELLOW)tail -f $$TEMP_DIR/ngrok.log$(NC)  # Ngrok logs"; \
-		echo "  $(YELLOW)tail -f $$TEMP_DIR/nextjs.log$(NC)  # Frontend logs"; \
-		echo ""; \
-		echo "$(BLUE)You can also try fetching the URL manually:$(NC)"; \
-		echo "  $(GREEN)curl -s http://localhost:4040/api/tunnels | $$PYTHON_CMD -m json.tool$(NC)"; \
+		echo "  Add $(BLUE)%GOPATH%\\bin$(NC) to your PATH environment variable"; \
 	fi
-	@echo "$(BLUE)Frontend running in background. Press Ctrl+C to stop.$(NC)"
-	@wait
 
 show-network-urls: ## Show network URLs for mobile access
 	@sleep 3
@@ -478,10 +437,13 @@ down: ## Stop all running services
 	@UNAME_S=$$(uname -s 2>/dev/null || echo "Unknown"); \
 	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
 		taskkill //F //FI "IMAGENAME eq uvicorn.exe" 2>/dev/null || pkill -f uvicorn 2>/dev/null || true; \
-		taskkill //F //FI "IMAGENAME eq node.exe" //FI "WINDOWTITLE eq *next*" 2>/dev/null || pkill -f "next dev" 2>/dev/null || true; \
+		taskkill //F //FI "IMAGENAME eq drishti-ic-desktop.exe" 2>/dev/null || pkill -f "wails dev" 2>/dev/null || true; \
+		taskkill //F //FI "IMAGENAME eq node.exe" 2>/dev/null || pkill -f "vite" 2>/dev/null || true; \
 	else \
 		pkill -f "uvicorn" || true; \
-		pkill -f "next dev" || true; \
+		pkill -f "wails dev" || true; \
+		pkill -f "drishti-ic-desktop" || true; \
+		pkill -f "vite" || true; \
 	fi
 	@echo "$(GREEN)✓ Services stopped$(NC)"
 
@@ -594,10 +556,12 @@ clean: ## Clean temporary files and caches
 clean-frontend: ## Clean frontend dependencies and build artifacts
 	@echo "$(YELLOW)Cleaning frontend...$(NC)"
 	rm -rf frontend/node_modules
+	rm -rf frontend/dist
+	rm -rf frontend/build
 	rm -rf frontend/.next
 	rm -rf frontend/.turbo
 	@echo "$(GREEN)✓ Frontend cleaned$(NC)"
-	@echo "$(BLUE)Run 'make install' or 'make frontend' to reinstall$(NC)"
+	@echo "$(BLUE)Run 'make frontend' to reinstall and start$(NC)"
 
 check-extensions: ## Check for problematic browser extensions causing CORS errors
 	@echo "$(BLUE)Checking for browser extension issues...$(NC)"
@@ -627,11 +591,17 @@ status: ## Show status of services
 	else \
 		lsof -ti:8000 >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
 	fi; \
-	echo "Frontend (port 3000):"; \
+	echo "Frontend Vite (port 34115):"; \
 	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
-		netstat -ano 2>/dev/null | grep :3000 | grep LISTENING >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+		netstat -ano 2>/dev/null | grep :34115 | grep LISTENING >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
 	else \
-		lsof -ti:3000 >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+		lsof -ti:34115 >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+	fi; \
+	echo "Wails Desktop App:"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		tasklist 2>/dev/null | grep -i "drishti-ic-desktop" >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
+	else \
+		pgrep -f "drishti-ic-desktop\|wails dev" >/dev/null 2>&1 && echo "  $(GREEN)✓ Running$(NC)" || echo "  $(RED)✗ Not running$(NC)"; \
 	fi
 
 ports: ## Show which ports are in use
@@ -644,17 +614,27 @@ ports: ## Show which ports are in use
 		lsof -i:8000 || echo "  Not in use"; \
 	fi; \
 	echo ""; \
-	echo "Port 3000 (Frontend):"; \
+	echo "Port 34115 (Wails/Vite Dev Server):"; \
 	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
-		netstat -ano 2>/dev/null | grep :3000 | grep LISTENING || echo "  Not in use"; \
+		netstat -ano 2>/dev/null | grep :34115 | grep LISTENING || echo "  Not in use"; \
 	else \
-		lsof -i:3000 || echo "  Not in use"; \
+		lsof -i:34115 || echo "  Not in use"; \
+	fi; \
+	echo ""; \
+	echo "Port 5173 (Vite standalone):"; \
+	if [ "$$UNAME_S" = "MINGW"* ] || [ "$$UNAME_S" = "MSYS"* ] || [ "$$OS" = "Windows_NT" ]; then \
+		netstat -ano 2>/dev/null | grep :5173 | grep LISTENING || echo "  Not in use"; \
+	else \
+		lsof -i:5173 || echo "  Not in use"; \
 	fi
 
 ##@ Quick Start
 
-setup: check-node install db-migrate ## Complete initial setup
+setup: check-frontend-deps install db-migrate ## Complete initial setup
 	@echo "$(GREEN)✓ Setup complete! Run 'make dev' to start development.$(NC)"
+	@echo "$(BLUE)  • 'make dev' - Start backend + Wails desktop app$(NC)"
+	@echo "$(BLUE)  • 'make dev-web' - Start backend + web dev server only$(NC)"
+	@echo "$(BLUE)  • 'make frontend' - Start Wails desktop app only$(NC)"
 
 reinstall: clean-venv clean-frontend install ## Reinstall all dependencies from scratch
 	@echo "$(GREEN)✓ All dependencies reinstalled$(NC)"
