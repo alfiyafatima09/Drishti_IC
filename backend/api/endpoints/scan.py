@@ -3,9 +3,11 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 import logging
+import re
 
 from core.database import get_db
 from services import ScanService, ICService, FakeService
+from services.ocr import extract_text_from_image, OCRResponse
 from schemas import (
     ScanResult,
     ManualOverrideRequest,
@@ -17,6 +19,34 @@ from schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Core Inspection"])
+
+
+def extract_part_number_from_ocr(ocr_response: OCRResponse) -> tuple[str | None, float]:
+    """
+    Extract part number from OCR response.
+    
+    Returns tuple of (part_number, confidence_score).
+    Uses the first detected text as it's typically the most prominent marking.
+    """
+    if not ocr_response.results:
+        return None, 0.0
+    
+    # Get the first result (most prominent text on chip)
+    first_result = ocr_response.results[0]
+    part_number = first_result.text.strip()
+    
+    # Clean up part number - remove common non-part characters
+    # Keep alphanumeric, dashes, and common IC naming characters
+    part_number = re.sub(r'[^\w\-\/]', '', part_number)
+    
+    # Calculate average confidence across all results
+    avg_confidence = sum(r.confidence for r in ocr_response.results) / len(ocr_response.results)
+    # Scale to percentage (0-100)
+    confidence_score = avg_confidence * 100
+    
+    logger.debug(f"Extracted part number: {part_number} with confidence: {confidence_score:.1f}%")
+    
+    return part_number if part_number else None, confidence_score
 
 
 @router.post("/scan", response_model=ScanResult)
@@ -37,18 +67,64 @@ async def scan_image(
     # Read image
     image_data = await file.read()
     
-    # TODO: Integrate with actual OCR and Vision services
-    # For now, simulate OCR/Vision results
-    # In production, this would call:
-    # - backend.services.ocr.perform_ocr(image_data)
-    # - backend.services.vision.count_pins(image_data)
+    # ========== OCR Processing ==========
+    logger.info(f"Processing scan for file: {file.filename}, size: {len(image_data)} bytes")
     
-    # Placeholder OCR/Vision results (replace with actual implementation)
-    ocr_text = "LM555CN"  # Simulated
-    part_number = "LM555"  # Simulated - extracted from OCR
-    detected_pins = 8  # Simulated
-    confidence_score = 94.5  # Simulated
-    manufacturer_detected = "Texas Instruments"  # Simulated
+    # Run OCR on the uploaded image
+    logger.debug("Starting OCR extraction...")
+    ocr_response = extract_text_from_image(image_data, preprocess=True)
+    
+    if ocr_response.status == "error":
+        logger.error(f"OCR failed: {ocr_response.error}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"OCR processing failed: {ocr_response.error}"
+        )
+    
+    # Get full OCR text for logging and storage
+    ocr_text = ocr_response.full_text
+    logger.debug(f"OCR extracted text: {ocr_text}")
+    logger.debug(f"OCR results count: {len(ocr_response.results)}")
+    for i, result in enumerate(ocr_response.results):
+        logger.debug(f"  OCR segment {i+1}: '{result.text}' (confidence: {result.confidence:.2%})")
+    
+    # Extract part number from OCR text
+    part_number, confidence_score = extract_part_number_from_ocr(ocr_response)
+    
+    if not part_number:
+        logger.warning("No part number could be extracted from OCR")
+        # Still create a scan but with UNKNOWN status
+        part_number = "UNKNOWN"
+        confidence_score = 0.0
+    
+    logger.info(f"Extracted part number: {part_number}, confidence: {confidence_score:.1f}%")
+    
+    # ========== Database Lookup ==========
+    # Check if IC exists in the database (Golden Record)
+    ic_spec = await ICService.get_by_part_number(db, part_number)
+    if ic_spec:
+        logger.info(f"IC found in database: {part_number} - {ic_spec.manufacturer}, {ic_spec.pin_count} pins")
+    else:
+        logger.info(f"IC not found in database: {part_number}")
+    
+    # ========== Placeholders for Vision Analysis ==========
+    # TODO: Integrate with pin detection service (Gemini Vision or local model)
+    detected_pins = 0  # Placeholder - would come from vision analysis
+    manufacturer_detected = None  # Placeholder - could be extracted from OCR or vision
+    
+    # Try to extract manufacturer from OCR text (simple heuristic)
+    manufacturer_keywords = ['TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP', 'INFINEON']
+    for text_segment in ocr_response.texts:
+        upper_text = text_segment.upper()
+        for keyword in manufacturer_keywords:
+            if keyword in upper_text:
+                manufacturer_detected = text_segment
+                logger.debug(f"Detected manufacturer from OCR: {manufacturer_detected}")
+                break
+        if manufacturer_detected:
+            break
+    
+    logger.info(f"Creating scan - part_number: {part_number}, pins: {detected_pins}, manufacturer: {manufacturer_detected}")
     
     # Create scan and perform verification
     scan = await ScanService.create_scan(
