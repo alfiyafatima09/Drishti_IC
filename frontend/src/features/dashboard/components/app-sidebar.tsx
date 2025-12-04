@@ -18,10 +18,10 @@ import {
     History,
     Settings,
     Shield,
-    LogOut,
-    User,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+
+import * as React from 'react'
+import { UserNav } from './user-nav'
 
 // Menu items.
 const items = [
@@ -48,17 +48,28 @@ const items = [
 ]
 
 export function AppSidebar() {
-    const navigate = useNavigate()
-
     return (
-        <Sidebar collapsible="icon" className="border-r border-zinc-200 dark:border-zinc-800">
-            <SidebarHeader className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-center px-4 group-data-[collapsible=icon]:px-2">
-                <div className="flex items-center gap-2 w-full overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:justify-center">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-50 text-zinc-50 dark:text-zinc-900">
+        <Sidebar
+            collapsible="icon"
+            className="border-r border-zinc-800 sidebar-grainy"
+            style={{
+                '--sidebar': 'transparent',
+                '--sidebar-foreground': '#F0F0F0',
+                '--sidebar-primary': '#F0F0F0',
+                '--sidebar-primary-foreground': '#1a1a1a',
+                '--sidebar-accent': '#27272a',
+                '--sidebar-accent-foreground': '#F0F0F0',
+                '--sidebar-border': '#27272a',
+                '--sidebar-ring': '#D0D0D0',
+            } as React.CSSProperties}
+        >
+            <SidebarHeader className="h-16 border-b border-zinc-800 flex items-center justify-center px-4 group-data-[collapsible=icon]:px-2">
+                <div className="flex items-center gap-2 w-full overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:justify-center">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800/50 text-[#F0F0F0]">
                         <Shield className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
-                        <span className="font-medium tracking-wide text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
+                        <span className="font-medium tracking-wide text-[#F0F0F0] whitespace-nowrap">
                             Drishti IC
                         </span>
                     </div>
@@ -67,7 +78,7 @@ export function AppSidebar() {
 
             <SidebarContent className="gap-0">
                 <SidebarGroup className="pt-4">
-                    <SidebarGroupLabel className="text-xs font-light uppercase tracking-widest text-zinc-500 dark:text-zinc-400 px-4 mb-2 group-data-[collapsible=icon]:hidden">
+                    <SidebarGroupLabel className="text-xs font-light uppercase tracking-widest text-[#A0A0A0] px-4 mb-2 group-data-[collapsible=icon]:hidden">
                         Platform
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
@@ -77,7 +88,7 @@ export function AppSidebar() {
                                     <SidebarMenuButton
                                         asChild
                                         tooltip={item.title}
-                                        className="h-9 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors group-data-[collapsible=icon]:justify-center"
+                                        className="h-9 hover:bg-zinc-800/50 text-[#D0D0D0] hover:text-[#F0F0F0] transition-colors group-data-[collapsible=icon]:justify-center"
                                     >
                                         <a href={item.url}>
                                             <item.icon className="h-4 w-4 shrink-0" />
@@ -97,7 +108,7 @@ export function AppSidebar() {
                                 <SidebarMenuButton
                                     asChild
                                     tooltip="Settings"
-                                    className="h-9 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors group-data-[collapsible=icon]:justify-center"
+                                    className="h-9 hover:bg-zinc-800/50 text-[#D0D0D0] hover:text-[#F0F0F0] transition-colors group-data-[collapsible=icon]:justify-center"
                                 >
                                     <a href="/dashboard/settings">
                                         <Settings className="h-4 w-4 shrink-0" />
@@ -110,22 +121,10 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
 
-            <SidebarFooter className="border-t border-zinc-200 dark:border-zinc-800 p-4 group-data-[collapsible=icon]:p-2">
+            <SidebarFooter className="border-t border-zinc-800 p-4 group-data-[collapsible=icon]:p-2">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors group-data-[collapsible=icon]:justify-center"
-                        >
-                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0">
-                                <User className="size-4" />
-                            </div>
-                            <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                                <span className="truncate font-medium text-zinc-900 dark:text-zinc-50">Admin User</span>
-                                <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">admin@drishti.ic</span>
-                            </div>
-                            <LogOut className="ml-auto size-4 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors group-data-[collapsible=icon]:hidden" onClick={() => navigate('/')} />
-                        </SidebarMenuButton>
+                        <UserNav />
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
