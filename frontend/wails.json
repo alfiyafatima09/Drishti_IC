@@ -1,0 +1,26 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "drishti-ic-desktop",
+  "outputfilename": "drishti-ic-desktop",
+  "frontend": {
+    "dir": ".",
+    "install": "bun install",
+    "build": "bun run build",
+    "dev": "bun run dev",
+    "devwatcher": "bun run dev",
+    "serve": "dist"
+  },
+  "author": {
+    "name": "Team Win Diesel",
+    "email": ""
+  },
+  "info": {
+    "companyName": "Drishti IC",
+    "productName": "Drishti IC Desktop",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright © 2025 Team Win Diesel",
+    "comments": "Automated Optical Inspection (AOI) for Counterfeit IC Marking Detection"
+  }
+}
+
+

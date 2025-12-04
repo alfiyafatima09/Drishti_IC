@@ -1,0 +1,84 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.app-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app-header h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+  margin: 0 0 0.5rem 0;
+}
+
+.app-header p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.1em;
+}
+
+.app-main {
+  width: 100%;
+  max-width: 800px;
+}
+
+.card {
+  padding: 2em;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+  margin-right: 1em;
+}
+
+.card button:hover {
+  border-color: #646cff;
+}
+
+.card button:focus,
+.card button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+.card code {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  .app-header p {
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .card {
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .card button {
+    background-color: #f9f9f9;
+  }
+
+  .card code {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}

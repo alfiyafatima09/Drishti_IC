@@ -11,14 +11,22 @@ class Settings(BaseSettings):
     APP_VERSION: str = "2.0.0"
     DEBUG: bool = os.environ.get("DEBUG", False)
     
-    # Supabase settings
+    # Supabase / database settings
     SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
-    SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY", "") 
-    SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", "")  
+    SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY", "")
+    SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", "")
     DATABASE_URL: str = os.environ.get("DATABASE_URL", "")
-    MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", "data"))   
-    DATASHEET_FOLDER: Path = Path(os.environ.get("DATASHEET_FOLDER", "data/datasheets"))
 
+    # API Keys
+    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
+    
+    # Storage settings
+    MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", "data"))
+    DATASHEET_ROOT: Path = Path(os.environ.get("DATASHEET_ROOT", "data/datasheets"))
+    # Backwards compatibility with older code using DATASHEET_FOLDER
+    DATASHEET_FOLDER: Path = DATASHEET_ROOT
+    
+    # Image processing settings
     MAX_IMAGE_SIZE_BYTES: int = int(os.environ.get("MAX_IMAGE_SIZE_BYTES", 50 * 1024 * 1024))
     ALLOWED_IMAGE_TYPES: list[str] = [
         "image/jpeg",
@@ -66,4 +74,4 @@ settings = get_settings()
 settings.MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 # Ensure datasheets directory exists
-settings.DATASHEET_FOLDER.mkdir(parents=True, exist_ok=True)
+settings.DATASHEET_ROOT.mkdir(parents=True, exist_ok=True)

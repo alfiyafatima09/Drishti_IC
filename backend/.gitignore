@@ -41,6 +41,7 @@ ENV/
 media/
 uploads/
 data/
+datasheets/
 
 # Logs
 *.log
