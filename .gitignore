@@ -101,3 +101,6 @@ backend/migrations/
 
 # Bun
 bun.lockb
+models/constraints_req.txt
+*tests*/
+*test*
