@@ -25,10 +25,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
       <form onSubmit={onSubmit}>
         <div className="grid gap-5">
           <div className="grid gap-2">
-            <Label
-              htmlFor="email"
-              className="text-xs font-medium tracking-wide text-zinc-500"
-            >
+            <Label htmlFor="email" className="text-xs font-medium tracking-wide text-zinc-500">
               Email Address
             </Label>
             <Input
@@ -44,10 +41,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           </div>
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
-              <Label
-                htmlFor="password"
-                className="text-xs font-medium tracking-wide text-zinc-500"
-              >
+              <Label htmlFor="password" className="text-xs font-medium tracking-wide text-zinc-500">
                 Password
               </Label>
               <a
@@ -76,7 +70,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           </Button>
         </div>
       </form>
-
     </div>
   )
 }
