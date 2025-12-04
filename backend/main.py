@@ -4,9 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from api.endpoints import datasheets
 from core.config import settings
-
 from core.database import init_db
 from api.endpoints import (
     scan_router,
@@ -20,6 +18,7 @@ from api.endpoints import (
     system_router,
     camera_router,
 )
+from api.endpoints import images, datasheets, ic_analysis
 
 logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
@@ -37,8 +36,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize database: {e}")
     
     yield
-    
-
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -67,7 +64,9 @@ app.include_router(sync_router)
 app.include_router(settings_router)
 app.include_router(system_router)
 app.include_router(camera_router)
+app.include_router(images.router)
 app.include_router(datasheets.router)
+app.include_router(ic_analysis.router)
 
 
 @app.get("/", tags=["Root"])
