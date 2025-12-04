@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Drishti IC - Camera</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg-primary: #0a0a0f;
+        --bg-secondary: #12121a;
+        --bg-card: #1a1a24;
+        --accent: #00d4aa;
+        --accent-dim: #00a88a;
+        --text-primary: #ffffff;
+        --text-secondary: #8888aa;
+        --danger: #ff4757;
+        --warning: #ffa502;
+        --success: #2ed573;
+      }
+
+      body {
+        font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Header */
+      .header {
+        background: var(--bg-secondary);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .logo-text {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+      }
+
+      .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-secondary);
+      }
+
+      .status-badge.connected .status-dot {
+        background: var(--success);
+        box-shadow: 0 0 8px var(--success);
+      }
+
+      .status-badge.connecting .status-dot {
+        background: var(--warning);
+        animation: pulse 1s infinite;
+      }
+
+      .status-badge.error .status-dot {
+        background: var(--danger);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* Main Content */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+        overflow: hidden;
+      }
+
+      /* Camera Preview */
+      .camera-container {
+        flex: 1;
+        position: relative;
+        background: var(--bg-card);
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+
+      #video.active {
+        display: block;
+      }
+
+      .camera-placeholder {
+        text-align: center;
+        padding: 40px;
+      }
+
+      .camera-placeholder.hidden {
+        display: none;
+      }
+
+      .camera-icon {
+        font-size: 64px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      .camera-placeholder h3 {
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+      }
+
+      .camera-placeholder p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+
+      /* Camera overlay */
+      .camera-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+      }
+
+      .corner-bracket {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-color: var(--accent);
+        border-style: solid;
+        border-width: 0;
+        opacity: 0.6;
+      }
+
+      .corner-bracket.tl {
+        top: 20px;
+        left: 20px;
+        border-top-width: 3px;
+        border-left-width: 3px;
+      }
+      .corner-bracket.tr {
+        top: 20px;
+        right: 20px;
+        border-top-width: 3px;
+        border-right-width: 3px;
+      }
+      .corner-bracket.bl {
+        bottom: 20px;
+        left: 20px;
+        border-bottom-width: 3px;
+        border-left-width: 3px;
+      }
+      .corner-bracket.br {
+        bottom: 20px;
+        right: 20px;
+        border-bottom-width: 3px;
+        border-right-width: 3px;
+      }
+
+      .fps-counter {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-family: "SF Mono", monospace;
+        color: var(--accent);
+      }
+
+      /* Stats Bar */
+      .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .stat-card {
+        background: var(--bg-card);
+        padding: 12px;
+        border-radius: 12px;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--accent);
+        font-family: "SF Mono", monospace;
+      }
+
+      .stat-label {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* Controls */
+      .controls {
+        display: flex;
+        gap: 12px;
+      }
+
+      .btn {
+        flex: 1;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+        color: var(--bg-primary);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 212, 170, 0.3);
+      }
+
+      .btn-primary:disabled {
+        background: var(--text-secondary);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .btn-secondary {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-danger {
+        background: var(--danger);
+        color: white;
+      }
+
+      /* Instructions Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 1000;
+      }
+
+      .modal-overlay.hidden {
+        display: none;
+      }
+
+      .modal {
+        background: var(--bg-card);
+        border-radius: 20px;
+        padding: 24px;
+        max-width: 400px;
+        width: 100%;
+      }
+
+      .modal h2 {
+        font-size: 20px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .modal p {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .modal code {
+        background: var(--bg-primary);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: "SF Mono", monospace;
+        font-size: 12px;
+        color: var(--accent);
+      }
+
+      .modal .btn {
+        margin-top: 16px;
+      }
+
+      /* Error Toast */
+      .toast {
+        position: fixed;
+        bottom: 100px;
+        left: 20px;
+        right: 20px;
+        background: var(--danger);
+        color: white;
+        padding: 14px 18px;
+        border-radius: 12px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 1001;
+        animation: slideUp 0.3s ease;
+      }
+
+      .toast.hidden {
+        display: none;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 360px) {
+        .stats-bar {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .stat-card:last-child {
+          grid-column: span 2;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">👁</div>
+        <span class="logo-text">Drishti IC</span>
+      </div>
+      <div class="status-badge" id="statusBadge">
+        <div class="status-dot"></div>
+        <span id="statusText">Disconnected</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Camera Preview -->
+      <div class="camera-container">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas" style="display: none"></canvas>
+
+        <div class="camera-placeholder" id="placeholder">
+          <div class="camera-icon">📷</div>
+          <h3>Camera Ready</h3>
+          <p>
+            Tap "Start Camera" to begin streaming to the desktop inspection
+            station
+          </p>
+        </div>
+
+        <div class="camera-overlay" id="overlay" style="display: none">
+          <div class="corner-bracket tl"></div>
+          <div class="corner-bracket tr"></div>
+          <div class="corner-bracket bl"></div>
+          <div class="corner-bracket br"></div>
+          <div class="fps-counter"><span id="fps">0</span> FPS</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value" id="framesSent">0</div>
+          <div class="stat-label">Frames</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="dataSize">0 KB</div>
+          <div class="stat-label">Data Sent</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="latency">-- ms</div>
+          <div class="stat-label">Latency</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="btn btn-primary" id="startBtn" onclick="startCamera()">
+          <span>📹</span> Start Camera
+        </button>
+        <button
+          class="btn btn-secondary"
+          id="switchBtn"
+          onclick="switchCamera()"
+          style="display: none"
+        >
+          <span>🔄</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- HTTP Warning Modal -->
+    <div class="modal-overlay" id="httpModal">
+      <div class="modal">
+        <h2>⚠️ HTTPS Required</h2>
+        <p>
+          Camera access requires a secure connection (HTTPS). You're currently
+          on HTTP.
+        </p>
+        <p><strong>Options to fix this:</strong></p>
+        <p>
+          1. <strong>Chrome flag</strong> (easiest): Go to
+          <code>chrome://flags</code> → search "insecure origins" → add this URL
+        </p>
+        <p>
+          2. <strong>Use ngrok</strong>: Run
+          <code>make start-ngrok-full</code> on the server
+        </p>
+        <p>3. <strong>Use localhost</strong>: Access from the same machine</p>
+        <button class="btn btn-primary" onclick="dismissModal()">
+          Got it, try anyway
+        </button>
+      </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div class="toast hidden" id="toast">
+      <span>⚠️</span>
+      <span id="toastMessage">Error message</span>
+    </div>
+
+    <script>
+      // Configuration
+      const WS_RECONNECT_DELAY = 3000;
+      const FRAME_RATE = 15; // Target FPS
+      const JPEG_QUALITY = 0.7;
+
+      // State
+      let ws = null;
+      let videoStream = null;
+      let isStreaming = false;
+      let frameInterval = null;
+      let frameCount = 0;
+      let totalBytes = 0;
+      let lastFpsTime = Date.now();
+      let fpsCount = 0;
+      let facingMode = "environment"; // rear camera
+
+      // DOM Elements
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const placeholder = document.getElementById("placeholder");
+      const overlay = document.getElementById("overlay");
+      const statusBadge = document.getElementById("statusBadge");
+      const statusText = document.getElementById("statusText");
+      const startBtn = document.getElementById("startBtn");
+      const switchBtn = document.getElementById("switchBtn");
+      const framesSentEl = document.getElementById("framesSent");
+      const dataSizeEl = document.getElementById("dataSize");
+      const latencyEl = document.getElementById("latency");
+      const fpsEl = document.getElementById("fps");
+      const httpModal = document.getElementById("httpModal");
+      const toast = document.getElementById("toast");
+      const toastMessage = document.getElementById("toastMessage");
+
+      // Check if HTTPS or localhost
+      function checkSecureContext() {
+        const isSecure = window.isSecureContext;
+        const isLocalhost =
+          location.hostname === "localhost" ||
+          location.hostname === "127.0.0.1" ||
+          location.hostname.endsWith(".localhost");
+
+        if (!isSecure && !isLocalhost) {
+          httpModal.classList.remove("hidden");
+        } else {
+          httpModal.classList.add("hidden");
+        }
+      }
+
+      function dismissModal() {
+        httpModal.classList.add("hidden");
+      }
+
+      // Show error toast
+      function showToast(message, duration = 5000) {
+        toastMessage.textContent = message;
+        toast.classList.remove("hidden");
+        setTimeout(() => toast.classList.add("hidden"), duration);
+      }
+
+      // Update status
+      function updateStatus(status, text) {
+        statusBadge.className = "status-badge " + status;
+        statusText.textContent = text;
+      }
+
+      // Get WebSocket URL
+      function getWsUrl() {
+        const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        return `${protocol}//${location.host}/api/v1/camera/feed`;
+      }
+
+      // Connect WebSocket
+      function connectWebSocket() {
+        if (ws && ws.readyState === WebSocket.OPEN) return;
+
+        updateStatus("connecting", "Connecting...");
+
+        ws = new WebSocket(getWsUrl());
+
+        // Set client type header via URL param (since WS doesn't support custom headers in browser)
+        // We'll handle this in the message instead
+
+        ws.onopen = () => {
+          console.log("WebSocket connected");
+          updateStatus("connected", "Connected");
+
+          // Send identification message
+          ws.send(JSON.stringify({ type: "identify", client: "phone" }));
+        };
+
+        ws.onclose = () => {
+          console.log("WebSocket disconnected");
+          updateStatus("error", "Disconnected");
+
+          // Reconnect after delay
+          if (isStreaming) {
+            setTimeout(connectWebSocket, WS_RECONNECT_DELAY);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error("WebSocket error:", error);
+          showToast("Connection error. Retrying...");
+        };
+
+        ws.onmessage = (event) => {
+          // Handle messages from server (like latency pings)
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "pong") {
+              const latency = Date.now() - data.timestamp;
+              latencyEl.textContent = latency + " ms";
+            }
+          } catch (e) {
+            // Not JSON, ignore
+          }
+        };
+      }
+
+      // Start camera
+      async function startCamera() {
+        if (isStreaming) {
+          stopCamera();
+          return;
+        }
+
+        try {
+          updateStatus("connecting", "Starting camera...");
+
+          const constraints = {
+            video: {
+              facingMode: facingMode,
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          };
+
+          videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+          video.srcObject = videoStream;
+
+          // Wait for video to be ready
+          await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+              video.play();
+              resolve();
+            };
+          });
+
+          // Setup canvas
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // Show video, hide placeholder
+          video.classList.add("active");
+          placeholder.classList.add("hidden");
+          overlay.style.display = "block";
+
+          // Update button
+          startBtn.innerHTML = "<span>⏹</span> Stop Camera";
+          startBtn.classList.remove("btn-primary");
+          startBtn.classList.add("btn-danger");
+          switchBtn.style.display = "flex";
+
+          isStreaming = true;
+
+          // Connect WebSocket
+          connectWebSocket();
+
+          // Start sending frames
+          startStreaming();
+        } catch (error) {
+          console.error("Camera error:", error);
+
+          if (error.name === "NotAllowedError") {
+            showToast("Camera permission denied. Please allow camera access.");
+          } else if (error.name === "NotFoundError") {
+            showToast("No camera found on this device.");
+          } else if (error.name === "NotReadableError") {
+            showToast("Camera is in use by another app.");
+          } else {
+            showToast("Could not access camera: " + error.message);
+          }
+
+          updateStatus("error", "Camera Error");
+        }
+      }
+
+      // Stop camera
+      function stopCamera() {
+        isStreaming = false;
+
+        // Stop frame sending
+        if (frameInterval) {
+          clearInterval(frameInterval);
+          frameInterval = null;
+        }
+
+        // Stop video tracks
+        if (videoStream) {
+          videoStream.getTracks().forEach((track) => track.stop());
+          videoStream = null;
+        }
+
+        // Close WebSocket
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+
+        // Hide video, show placeholder
+        video.classList.remove("active");
+        placeholder.classList.remove("hidden");
+        overlay.style.display = "none";
+
+        // Update button
+        startBtn.innerHTML = "<span>📹</span> Start Camera";
+        startBtn.classList.add("btn-primary");
+        startBtn.classList.remove("btn-danger");
+        switchBtn.style.display = "none";
+
+        updateStatus("", "Disconnected");
+      }
+
+      // Switch camera
+      async function switchCamera() {
+        facingMode = facingMode === "environment" ? "user" : "environment";
+
+        if (isStreaming) {
+          // Stop current stream
+          if (videoStream) {
+            videoStream.getTracks().forEach((track) => track.stop());
+          }
+
+          // Restart with new facing mode
+          try {
+            const constraints = {
+              video: {
+                facingMode: facingMode,
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              },
+              audio: false,
+            };
+
+            videoStream = await navigator.mediaDevices.getUserMedia(
+              constraints
+            );
+            video.srcObject = videoStream;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+          } catch (error) {
+            console.error("Switch camera error:", error);
+            showToast("Could not switch camera");
+            // Revert facing mode
+            facingMode = facingMode === "environment" ? "user" : "environment";
+          }
+        }
+      }
+
+      // Start streaming frames
+      function startStreaming() {
+        const frameDelay = 1000 / FRAME_RATE;
+
+        frameInterval = setInterval(() => {
+          if (!ws || ws.readyState !== WebSocket.OPEN || !isStreaming) return;
+
+          // Draw video to canvas
+          ctx.drawImage(video, 0, 0);
+
+          // Convert to JPEG
+          canvas.toBlob(
+            (blob) => {
+              if (blob && ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(blob);
+
+                // Update stats
+                frameCount++;
+                totalBytes += blob.size;
+                framesSentEl.textContent = frameCount.toLocaleString();
+                dataSizeEl.textContent = formatBytes(totalBytes);
+
+                // Calculate FPS
+                fpsCount++;
+                const now = Date.now();
+                if (now - lastFpsTime >= 1000) {
+                  fpsEl.textContent = fpsCount;
+                  fpsCount = 0;
+                  lastFpsTime = now;
+                }
+
+                // Send ping for latency measurement
+                if (frameCount % 30 === 0) {
+                  ws.send(
+                    JSON.stringify({ type: "ping", timestamp: Date.now() })
+                  );
+                }
+              }
+            },
+            "image/jpeg",
+            JPEG_QUALITY
+          );
+        }, frameDelay);
+      }
+
+      // Format bytes
+      function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      }
+
+      // Initialize
+      checkSecureContext();
+
+      // Handle page visibility
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && isStreaming) {
+          // Page hidden, reduce frame rate or pause
+          console.log("Page hidden, reducing activity");
+        }
+      });
+
+      // Handle beforeunload
+      window.addEventListener("beforeunload", () => {
+        if (ws) ws.close();
+        if (videoStream)
+          videoStream.getTracks().forEach((track) => track.stop());
+      });
+    </script>
+  </body>
+</html>
