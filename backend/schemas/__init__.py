@@ -6,6 +6,7 @@ from schemas.common import (
     FakeSource,
     SyncStatus,
     CaptureType,
+    PartNumberSource,
     SuccessResponse,
     ErrorResponse,
 )
@@ -27,6 +28,8 @@ from schemas.scan import (
 from schemas.queue import (
     QueueItem,
     QueueListResult,
+    QueueAddRequest,
+    QueueAddResponse,
 )
 from schemas.fake import (
     FakeRegistryItem,
@@ -71,6 +74,7 @@ __all__ = [
     "FakeSource",
     "SyncStatus",
     "CaptureType",
+    "PartNumberSource",
     "SuccessResponse",
     "ErrorResponse",
     # IC
@@ -89,6 +93,8 @@ __all__ = [
     # Queue
     "QueueItem",
     "QueueListResult",
+    "QueueAddRequest",
+    "QueueAddResponse",
     # Fake
     "FakeRegistryItem",
     "FakeListResult",

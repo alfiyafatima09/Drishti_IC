@@ -47,6 +47,13 @@ class CaptureType(str, Enum):
     BOTTOM = "BOTTOM"
 
 
+class PartNumberSource(str, Enum):
+    """Source/confidence level of part number identification."""
+    DATABASE_MATCH = "database_match"      # Verified - found in database
+    OCR_BEST_GUESS = "ocr_best_guess"      # Not found - using heuristic best guess
+    MANUAL_OVERRIDE = "manual_override"    # Operator corrected it
+
+
 class SuccessResponse(BaseModel):
     """Generic success response."""
     success: bool = True
