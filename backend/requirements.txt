@@ -1,31 +1,68 @@
-# FastAPI backend dependencies
+# Drishti IC Backend Dependencies
+# Python 3.11 recommended; 3.9-3.12 supported; 3.13+ will skip PaddleOCR automatically.
+# For the smoothest experience on any OS: use Docker (`make docker`).
+
+# ===========================================
+# Core FastAPI and Server
+# ===========================================
 fastapi>=0.95.0
 uvicorn[standard]>=0.22.0
-python-multipart>=0.0.6  # For file uploads
-pydantic>=2.11.7,<3.0  # Must be >=2.11.7 for supabase/realtime compatibility
+python-multipart>=0.0.6
+python-dotenv>=1.0.0
+
+# ===========================================
+# Data Validation
+# ===========================================
+pydantic>=2.0.0,<3.0
 pydantic-settings>=2.1.0
 
-# HTTP client
-requests>=2.31.0
+# ===========================================
+# Database
+# ===========================================
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+supabase>=2.0.0
+alembic>=1.8.0
 
-# Database - Supabase/PostgreSQL
-sqlalchemy[asyncio]>=2.0.25
-asyncpg>=0.29.0  # Async PostgreSQL driver
-supabase>=2.24.0  # Supabase Python client
+# ===========================================
+# HTTP Clients
+# ===========================================
+requests>=2.28.0
+httpx>=0.24.0
 
-# Image processing & OCR
-opencv-python>=4.10.0
-numpy>=2.0.0
-Pillow>=11.0.0
-paddlepaddle>=3.0.0
-paddleocr>=3.0.0
+# ===========================================
+# Image Processing & Computer Vision
+# ===========================================
+opencv-python>=4.7.0
+# numpy 2.x is still stabilizing across platforms; keep <2 for safety
+numpy>=1.24.0,<2.0.0
+Pillow>=9.0.0
 
+# ===========================================
+# OCR (PaddleOCR when supported, pytesseract fallback)
+# PaddleOCR currently supports Python <3.13; markers skip it on newer Python.
+# ===========================================
+paddlepaddle>=2.5.0; python_version < "3.13"
+paddleocr>=2.7.0; python_version < "3.13"
+pytesseract>=0.3.10
+
+# ===========================================
+# PDF Processing
+# ===========================================
+pdfplumber>=0.7.0
+PyPDF2>=3.0.0
+
+# ===========================================
+# AI/ML Services
+# ===========================================
+google-generativeai>=0.3.2
+
+# ===========================================
+# Web Scraping
+# ===========================================
+beautifulsoup4>=4.11.0
+
+# ===========================================
 # Utilities
-python-dotenv>=1.0.0
-httpx>=0.28.1  # Async HTTP client
-
-# PDF processing
-pdfplumber>=0.10.0
-
-# AI/ML services
-google-generativeai>=0.3.2  # Gemini API
+# ===========================================
+psutil>=5.9.0
