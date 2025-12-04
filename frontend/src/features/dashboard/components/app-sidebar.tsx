@@ -30,8 +30,8 @@ const items = [
     icon: ScanLine,
   },
   {
-    title: 'IC Database',
-    url: '/database',
+    title: 'Scrape & Manage',
+    url: '/scrape',
     icon: Database,
   },
   {
