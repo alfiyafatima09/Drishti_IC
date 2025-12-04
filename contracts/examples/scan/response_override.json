@@ -5,6 +5,10 @@
   "confidence_score": 85.0,
   "ocr_text": "LN555",
   "part_number": "LM555",
+  "part_number_candidates": [
+    "LN555"
+  ],
+  "part_number_source": "manual_override",
   "manufacturer_detected": null,
   "detected_pins": 8,
   "was_manual_override": true,
@@ -15,6 +19,7 @@
     "manufacturer_match": null
   },
   "queued_for_sync": false,
+  "queued_candidates_count": 0,
   "ic_specification": {
     "part_number": "LM555",
     "manufacturer": "Texas Instruments",
@@ -28,4 +33,3 @@
   "scanned_at": "2025-12-01T10:50:00Z",
   "completed_at": "2025-12-01T10:51:30Z"
 }
-

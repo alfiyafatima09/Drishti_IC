@@ -3,8 +3,10 @@
   "status": "FAIL",
   "action_required": "NONE",
   "confidence_score": 91.0,
-  "ocr_text": "LM555CN",
-  "part_number": "LM555",
+  "ocr_text": "LM555CN\nTI",
+  "part_number": "LM555CN",
+  "part_number_candidates": ["LM555CN", "TI", "LM555CNTI"],
+  "part_number_source": "database_match",
   "manufacturer_detected": "Texas Instruments",
   "detected_pins": 14,
   "message": "VERIFICATION FAILED: Pin count mismatch. Expected 8 pins for LM555, but detected 14 pins. This may indicate a relabeled or counterfeit component.",
@@ -14,6 +16,7 @@
     "manufacturer_match": true
   },
   "queued_for_sync": false,
+  "queued_candidates_count": 0,
   "ic_specification": {
     "part_number": "LM555",
     "manufacturer": "Texas Instruments",
@@ -22,7 +25,7 @@
     "description": "Precision Timer IC"
   },
   "fake_registry_info": null,
+  "was_manual_override": false,
   "scanned_at": "2025-12-01T10:45:00Z",
   "completed_at": "2025-12-01T10:45:02Z"
 }
-

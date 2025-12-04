@@ -1,0 +1,8 @@
+{
+  "success": true,
+  "added_count": 2,
+  "already_queued_count": 1,
+  "message": "Added 2 new items to queue, updated 1 existing items.",
+  "queued_items": ["LM555", "NE555", "STM32F407"]
+}
+
