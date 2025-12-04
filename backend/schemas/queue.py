@@ -1,5 +1,5 @@
 """Pydantic schemas for datasheet queue operations."""
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -26,4 +26,19 @@ class QueueListResult(BaseModel):
     total_count: int
     pending_count: int
     failed_count: int
+
+
+class QueueAddRequest(BaseModel):
+    """Request to manually add part number(s) to the queue."""
+    part_numbers: list[str] = Field(..., min_length=1, description="List of part numbers to add to queue")
+    source: Optional[str] = Field(None, description="Optional source/reason for adding")
+
+
+class QueueAddResponse(BaseModel):
+    """Response after adding to queue."""
+    success: bool = True
+    added_count: int
+    already_queued_count: int
+    message: str
+    queued_items: list[str]  # Part numbers that were added/updated
 

@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
-from schemas.common import ScanStatus, ActionRequired
+from schemas.common import ScanStatus, ActionRequired, PartNumberSource
 from schemas.ic import ICSpecificationResponse
 
 
@@ -30,11 +30,14 @@ class ScanResult(BaseModel):
     confidence_score: Optional[float] = Field(None, ge=0, le=100)
     ocr_text: Optional[str] = None
     part_number: Optional[str] = None
+    part_number_candidates: Optional[list[str]] = None 
+    part_number_source: PartNumberSource = PartNumberSource.OCR_BEST_GUESS 
     manufacturer_detected: Optional[str] = None
     detected_pins: Optional[int] = None
     message: Optional[str] = None
     match_details: Optional[MatchDetails] = None
     queued_for_sync: bool = False
+    queued_candidates_count: int = 0  # How many candidates were queued
     ic_specification: Optional[ICSpecificationResponse] = None
     fake_registry_info: Optional[FakeRegistryInfo] = None
     was_manual_override: bool = False
