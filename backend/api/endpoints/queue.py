@@ -5,7 +5,7 @@ import logging
 
 from core.database import get_db
 from services import QueueService
-from schemas import QueueListResult, QueueItem, SuccessResponse
+from schemas import QueueListResult, QueueItem, SuccessResponse, QueueAddRequest, QueueAddResponse
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,43 @@ async def list_queue(
         total_count=len(items),
         pending_count=pending_count,
         failed_count=failed_count,
+    )
+
+
+@router.post("/add", response_model=QueueAddResponse)
+async def add_to_queue(
+    request: QueueAddRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Manually add part number(s) to the sync queue.
+    
+    Use this to queue ICs for datasheet fetching. Duplicate entries
+    will increment the scan_count instead of creating new entries.
+    """
+    queued_items = []
+    already_queued = 0
+    
+    for part_number in request.part_numbers:
+        # Check if already exists
+        existing = await QueueService.get_by_part_number(db, part_number)
+        if existing:
+            already_queued += 1
+        
+        # Add or update (increments scan_count if exists)
+        await QueueService.add_to_queue(db, part_number)
+        queued_items.append(part_number.strip().upper())
+    
+    added_count = len(request.part_numbers) - already_queued
+    
+    logger.info(f"Queue add request: {len(request.part_numbers)} items, {added_count} new, {already_queued} updated")
+    
+    return QueueAddResponse(
+        success=True,
+        added_count=added_count,
+        already_queued_count=already_queued,
+        message=f"Added {added_count} new items to queue, updated {already_queued} existing items.",
+        queued_items=queued_items,
     )
 
 

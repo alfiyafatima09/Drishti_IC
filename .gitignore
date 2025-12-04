@@ -112,3 +112,5 @@ local_model/models/
 local_model/lib/
 local_model/bin/
 local_model/venv/
+
+*.md
