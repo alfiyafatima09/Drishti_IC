@@ -3,9 +3,22 @@
   "status": "PARTIAL",
   "action_required": "SCAN_BOTTOM",
   "confidence_score": 65.0,
-  "ocr_text": "ATMEGA328P-AU",
-  "part_number": "ATMEGA328P",
-  "manufacturer_detected": "Microchip",
+  "ocr_text": "ATMEL\nMEGA32U4\n-AU\n1035E KR",
+  "part_number": "ATMEGA32U4-AU",
+  "part_number_candidates": [
+    "ATMEL",
+    "MEGA32U4",
+    "-AU",
+    "1035EKR",
+    "ATMELMEGA32U4",
+    "MEGA32U4-AU",
+    "-AU1035EKR",
+    "ATMELMEGA32U4-AU",
+    "MEGA32U4-AU1035EKR",
+    "ATMEGA32U4-AU1035EKR"
+  ],
+  "part_number_source": "database_match",
+  "manufacturer_detected": "ATMEL",
   "detected_pins": 0,
   "message": "Pins not visible. This appears to be a bottom-terminated component (QFN/BGA). Please flip the IC and scan the bottom to verify pin count.",
   "match_details": {
@@ -14,19 +27,20 @@
     "manufacturer_match": true
   },
   "queued_for_sync": false,
+  "queued_candidates_count": 0,
   "ic_specification": {
-    "part_number": "ATMEGA328P",
+    "part_number": "ATMEGA32U4-AU",
     "manufacturer": "Microchip",
-    "pin_count": 32,
-    "package_type": "QFN",
-    "description": "8-bit AVR Microcontroller with 32KB Flash",
-    "datasheet_path": "/datasheets/ATMEGA328P.pdf",
+    "pin_count": 44,
+    "package_type": "TQFP",
+    "description": "8-bit AVR Microcontroller with 32KB Flash and USB",
+    "datasheet_path": "/datasheets/ATMEGA32U4.pdf",
     "has_datasheet": true,
-    "voltage_min": 1.8,
+    "voltage_min": 2.7,
     "voltage_max": 5.5
   },
   "fake_registry_info": null,
+  "was_manual_override": false,
   "scanned_at": "2025-12-01T10:32:00Z",
   "completed_at": null
 }
-

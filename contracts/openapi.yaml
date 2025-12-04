@@ -76,14 +76,22 @@ paths:
                 $ref: '#/components/schemas/ScanResult'
               examples:
                 Pass:
-                  summary: IC verified successfully
+                  summary: IC verified successfully (database match)
                   value:
                     scan_id: "550e8400-e29b-41d4-a716-446655440000"
                     status: "PASS"
                     action_required: "NONE"
                     confidence_score: 94.5
-                    ocr_text: "LM555CN"
-                    part_number: "LM555"
+                    ocr_text: "LM555CN\nTI\n2024"
+                    part_number: "LM555CN"
+                    part_number_candidates:
+                      - "LM555CN"
+                      - "TI"
+                      - "2024"
+                      - "LM555CNTI"
+                      - "TI2024"
+                      - "LM555CNTI2024"
+                    part_number_source: "database_match"
                     manufacturer_detected: "Texas Instruments"
                     detected_pins: 8
                     message: "IC verified successfully. All parameters match."
@@ -92,6 +100,7 @@ paths:
                       pin_count_match: true
                       manufacturer_match: true
                     queued_for_sync: false
+                    queued_candidates_count: 0
                     ic_specification:
                       part_number: "LM555"
                       manufacturer: "Texas Instruments"
@@ -108,25 +117,44 @@ paths:
                     status: "PARTIAL"
                     action_required: "SCAN_BOTTOM"
                     confidence_score: 65.0
-                    ocr_text: "ATMEGA328P-AU"
-                    part_number: "ATMEGA328P"
-                    manufacturer_detected: "Microchip"
+                    ocr_text: "ATMEL\nMEGA32U4\n-AU\n1035E KR"
+                    part_number: "ATMEGA32U4-AU"
+                    part_number_candidates:
+                      - "ATMEL"
+                      - "MEGA32U4"
+                      - "-AU"
+                      - "1035EKR"
+                      - "ATMELMEGA32U4"
+                      - "MEGA32U4-AU"
+                      - "ATMEGA32U4-AU"
+                    part_number_source: "database_match"
+                    manufacturer_detected: "ATMEL"
                     detected_pins: 0
                     message: "Pins not visible. Please flip and scan the bottom."
                     queued_for_sync: false
+                    queued_candidates_count: 0
                     scanned_at: "2025-12-01T10:32:00Z"
                 Unknown:
-                  summary: IC not in database
+                  summary: IC not in database (all candidates queued)
                   value:
                     scan_id: "550e8400-e29b-41d4-a716-446655440002"
                     status: "UNKNOWN"
                     action_required: "NONE"
                     confidence_score: 88.0
-                    ocr_text: "XYZ9999"
+                    ocr_text: "XYZ9999\nABC\n2024"
                     part_number: "XYZ9999"
+                    part_number_candidates:
+                      - "XYZ9999"
+                      - "ABC"
+                      - "2024"
+                      - "XYZ9999ABC"
+                      - "ABC2024"
+                      - "XYZ9999ABC2024"
+                    part_number_source: "ocr_best_guess"
                     detected_pins: 16
-                    message: "IC not found in database. Added to sync queue."
+                    message: "IC 'XYZ9999' not found in database. Added to sync queue."
                     queued_for_sync: true
+                    queued_candidates_count: 6
                     ic_specification: null
                     scanned_at: "2025-12-01T10:35:00Z"
                 Counterfeit:
@@ -138,9 +166,13 @@ paths:
                     confidence_score: 100.0
                     ocr_text: "FAKE123"
                     part_number: "FAKE123"
+                    part_number_candidates:
+                      - "FAKE123"
+                    part_number_source: "database_match"
                     detected_pins: 8
                     message: "ALERT: This IC is in the fake registry."
                     queued_for_sync: false
+                    queued_candidates_count: 0
                     fake_registry_info:
                       added_at: "2025-11-15T08:00:00Z"
                       source: "SYNC_NOT_FOUND"
@@ -613,6 +645,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/QueueListResult'
 
+  /api/v1/queue/add:
+    post:
+      tags: [Datasheet Queue]
+      summary: Add ICs to Queue
+      operationId: addToQueue
+      description: |
+        Manually add one or more part numbers to the sync queue.
+        
+        Use cases:
+        - Add ICs manually for datasheet fetching
+        - Bulk queue ICs from external source
+        
+        Duplicate entries will increment the scan_count instead of creating new entries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueueAddRequest'
+            examples:
+              SingleIC:
+                summary: Add single IC
+                value:
+                  part_numbers: ["LM555"]
+                  source: "manual_entry"
+              MultipleICs:
+                summary: Add multiple ICs
+                value:
+                  part_numbers: ["LM555", "NE555", "STM32F407"]
+                  source: "bulk_import"
+      responses:
+        '200':
+          description: Items added to queue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueAddResponse'
+              example:
+                success: true
+                added_count: 2
+                already_queued_count: 1
+                message: "Added 2 new items to queue, updated 1 existing items."
+                queued_items: ["LM555", "NE555", "STM32F407"]
+
   /api/v1/queue/{part_number}/remove:
     delete:
       tags: [Datasheet Queue]
@@ -960,10 +1036,24 @@ components:
           description: OCR/Vision confidence (0-100)
         ocr_text:
           type: string
-          description: Raw text extracted from chip
+          description: Raw text extracted from chip (newline-separated lines)
         part_number:
           type: string
-          description: Cleaned/parsed part number
+          description: |
+            Best-match or best-guess part number.
+            - If database match found: the matched part number
+            - If no match: heuristic-based best guess from candidates
+        part_number_candidates:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: |
+            All part number candidates generated from OCR text.
+            Includes single lines and adjacent line combinations (up to 4 lines).
+            Example: ["ATMEL", "MEGA32U4", "-AU", "ATMELMEGA32U4", "MEGA32U4-AU", "ATMEGA32U4-AU"]
+        part_number_source:
+          $ref: '#/components/schemas/PartNumberSource'
         manufacturer_detected:
           type: string
           nullable: true
@@ -978,11 +1068,19 @@ components:
           $ref: '#/components/schemas/MatchDetails'
         queued_for_sync:
           type: boolean
-          description: True if added to sync queue
+          description: True if added to sync queue (status is UNKNOWN)
+        queued_candidates_count:
+          type: integer
+          default: 0
+          description: Number of candidates queued for sync (when no match found, all candidates are queued)
         ic_specification:
           $ref: '#/components/schemas/ICSpecification'
         fake_registry_info:
           $ref: '#/components/schemas/FakeRegistryInfo'
+        was_manual_override:
+          type: boolean
+          default: false
+          description: True if part number was manually corrected by operator
         scanned_at:
           type: string
           format: date-time
@@ -1423,6 +1521,40 @@ components:
           type: string
           nullable: true
 
+    QueueAddRequest:
+      type: object
+      required: [part_numbers]
+      properties:
+        part_numbers:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: List of part numbers to add to queue
+        source:
+          type: string
+          nullable: true
+          description: Optional source/reason for adding (e.g., "manual_entry", "bulk_import")
+
+    QueueAddResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        added_count:
+          type: integer
+          description: Number of new items added
+        already_queued_count:
+          type: integer
+          description: Number of items that were already in queue (scan_count incremented)
+        message:
+          type: string
+        queued_items:
+          type: array
+          items:
+            type: string
+          description: List of part numbers that were added/updated
+
     # --------------------------------------------------
     # FAKE REGISTRY SCHEMAS
     # --------------------------------------------------
@@ -1718,6 +1850,16 @@ components:
     # --------------------------------------------------
     # COMMON SCHEMAS
     # --------------------------------------------------
+    PartNumberSource:
+      type: string
+      enum: [database_match, ocr_best_guess, manual_override]
+      default: ocr_best_guess
+      description: |
+        Indicates how the part_number was determined:
+        - **database_match**: Part number was found in the IC database (verified)
+        - **ocr_best_guess**: No database match; using heuristic-based best guess from OCR
+        - **manual_override**: Operator manually corrected the part number
+
     SuccessResponse:
       type: object
       properties:

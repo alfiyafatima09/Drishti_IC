@@ -3,28 +3,38 @@
   "status": "PASS",
   "action_required": "NONE",
   "confidence_score": 96.0,
-  "ocr_text": "ATMEGA328P-AU",
-  "part_number": "ATMEGA328P",
-  "manufacturer_detected": "Microchip",
-  "detected_pins": 32,
-  "message": "Bottom scan complete. Pin count verified (32 pins detected, 32 expected). IC is authentic.",
+  "ocr_text": "ATMEL\nMEGA32U4\n-AU",
+  "part_number": "ATMEGA32U4-AU",
+  "part_number_candidates": [
+    "ATMEL",
+    "MEGA32U4",
+    "-AU",
+    "ATMELMEGA32U4",
+    "MEGA32U4-AU",
+    "ATMEGA32U4-AU"
+  ],
+  "part_number_source": "database_match",
+  "manufacturer_detected": "ATMEL",
+  "detected_pins": 44,
+  "message": "Bottom scan complete. Pin count verified (44 pins detected, 44 expected). IC is authentic.",
   "match_details": {
     "part_number_match": true,
     "pin_count_match": true,
     "manufacturer_match": true
   },
   "queued_for_sync": false,
+  "queued_candidates_count": 0,
   "ic_specification": {
-    "part_number": "ATMEGA328P",
+    "part_number": "ATMEGA32U4-AU",
     "manufacturer": "Microchip",
-    "pin_count": 32,
-    "package_type": "QFN",
-    "description": "8-bit AVR Microcontroller with 32KB Flash",
-    "datasheet_path": "/datasheets/ATMEGA328P.pdf",
+    "pin_count": 44,
+    "package_type": "TQFP",
+    "description": "8-bit AVR Microcontroller with 32KB Flash and USB",
+    "datasheet_path": "/datasheets/ATMEGA32U4.pdf",
     "has_datasheet": true
   },
   "fake_registry_info": null,
+  "was_manual_override": false,
   "scanned_at": "2025-12-01T10:32:00Z",
   "completed_at": "2025-12-01T10:33:15Z"
 }
-
