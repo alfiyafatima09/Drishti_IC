@@ -91,6 +91,8 @@ images/modified.png
 *.venv
 
 *.md
+!README.md
+!**/README.md
 package-lock.json
 
 *logs/
@@ -101,3 +103,9 @@ backend/migrations/
 
 # Bun
 bun.lockb
+
+# Local Model - Large binary files (exclude from git, download separately)
+local_model/models/
+local_model/lib/
+local_model/bin/
+local_model/venv/
