@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 
 export function LoginHero() {
   return (
-    <div className="relative hidden flex-col justify-between overflow-hidden border-r border-zinc-800 bg-[#1a1a1a] bg-noise p-8 lg:flex lg:w-1/2 lg:p-16">
+    <div className="bg-noise relative hidden flex-col justify-between overflow-hidden border-r border-zinc-800 bg-[#1a1a1a] p-8 lg:flex lg:w-1/2 lg:p-16">
       {/* Abstract Background - Geometric/Architectural */}
       <div className="absolute inset-0 overflow-hidden opacity-20">
         <div className="absolute top-0 left-0 h-full w-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-zinc-800 via-[#1a1a1a] to-[#1a1a1a]" />
