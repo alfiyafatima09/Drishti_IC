@@ -16,7 +16,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
 
     setTimeout(() => {
       setIsLoading(false)
-      navigate('/dashboard')
+      navigate('/scan')
     }, 1500) // Reduced delay for faster feel
   }
 
@@ -25,7 +25,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
       <form onSubmit={onSubmit}>
         <div className="grid gap-5">
           <div className="grid gap-2">
-            <Label htmlFor="email" className="text-xs font-medium tracking-wide text-zinc-500">
+            <Label htmlFor="email" className="text-sm font-bold tracking-wide text-blue-700">
               Email Address
             </Label>
             <Input
@@ -36,17 +36,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               autoComplete="email"
               autoCorrect="off"
               disabled={isLoading}
-              className="h-11 rounded-xl border-zinc-200 bg-zinc-50/50 px-4 text-sm transition-all placeholder:text-zinc-400 hover:bg-zinc-100/50 focus:border-zinc-400 focus:bg-white focus:ring-4 focus:ring-zinc-100"
+              className="h-12 rounded-xl border-2 border-blue-300 bg-white px-4 text-base font-medium transition-all placeholder:text-blue-400 hover:border-blue-400 focus:border-cyan-500 focus:bg-blue-50 focus:ring-4 focus:ring-cyan-100 shadow-sm"
             />
           </div>
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password" className="text-xs font-medium tracking-wide text-zinc-500">
+              <Label htmlFor="password" className="text-sm font-bold tracking-wide text-blue-700">
                 Password
               </Label>
               <a
                 href="#"
-                className="text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
+                className="text-xs font-bold text-cyan-600 transition-colors hover:text-cyan-700"
               >
                 Forgot password?
               </a>
@@ -57,16 +57,16 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               autoCapitalize="none"
               autoComplete="current-password"
               disabled={isLoading}
-              className="h-11 rounded-xl border-zinc-200 bg-zinc-50/50 px-4 text-sm transition-all hover:bg-zinc-100/50 focus:border-zinc-400 focus:bg-white focus:ring-4 focus:ring-zinc-100"
+              className="h-12 rounded-xl border-2 border-blue-300 bg-white px-4 text-base font-medium transition-all hover:border-blue-400 focus:border-cyan-500 focus:bg-blue-50 focus:ring-4 focus:ring-cyan-100 shadow-sm"
             />
           </div>
           <Button
             disabled={isLoading}
-            className="mt-2 h-11 rounded-xl bg-zinc-900 text-sm font-medium text-white transition-all hover:bg-zinc-800 hover:shadow-lg hover:shadow-zinc-200 active:scale-[0.98]"
+            className="mt-2 h-14 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-base font-bold text-white transition-all hover:from-blue-700 hover:via-cyan-700 hover:to-blue-800 shadow-xl hover:shadow-2xl active:scale-[0.98]"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
             Sign In
-            {!isLoading && <ArrowRight className="ml-2 h-4 w-4 opacity-50" />}
+            {!isLoading && <ArrowRight className="ml-2 h-5 w-5" />}
           </Button>
         </div>
       </form>
