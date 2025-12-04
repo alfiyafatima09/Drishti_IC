@@ -1,82 +1,116 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { VideoFeed } from './components/video-feed';
-import { ResultsPanel } from './components/results-panel';
-import { StatsPanel } from './components/stats-panel';
-import type { ScanResult, DashboardStats } from '@/types/api';
+import { ImageUpload } from './components/image-upload';
+import { AnalysisPanel } from './components/analysis-panel';
+import { API_BASE } from '@/lib/config';
+import type { ScanResult } from '@/types/api';
 
 // ============================================================
 // COMPONENT
 // ============================================================
 
 export default function DashboardPage() {
-  // Scan state
   const [currentScanResult, setCurrentScanResult] = useState<ScanResult | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [_pendingScanId, setPendingScanId] = useState<string | null>(null);
-
-  // Stats state (placeholder - will be fetched from API)
-  const [stats] = useState<DashboardStats | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
-   * Called when an image is captured (for immediate preview)
+   * Handle camera capture - just show image, don't analyze yet
    */
-  const handleCapture = useCallback((scanId: string, imageUrl: string) => {
-    console.log('[Dashboard] Captured:', scanId);
-    setPendingScanId(scanId);
+  const handleCapture = useCallback((imageUrl: string) => {
+    console.log('[Dashboard] Image captured');
     setCapturedImage(imageUrl);
-    
-    // Clear previous result when new capture starts
-    if (scanId === 'pending') {
-      setCurrentScanResult(null);
+    setCurrentScanResult(null);
+  }, []);
+
+  /**
+   * Handle file upload - just show image, don't analyze yet
+   */
+  const handleFileSelect = useCallback((file: File) => {
+    console.log('[Dashboard] File selected');
+    const imageUrl = URL.createObjectURL(file);
+    setCapturedImage(imageUrl);
+    setCurrentScanResult(null);
+  }, []);
+
+  /**
+   * Analyze the captured/uploaded image
+   */
+  const handleAnalyze = useCallback(async () => {
+    if (!capturedImage || isAnalyzing) return;
+
+    setIsAnalyzing(true);
+
+    try {
+      // Convert image URL to File
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      const file = new File([blob], 'ic-image.jpg', { type: 'image/jpeg' });
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const apiResponse = await fetch(`${API_BASE}/scan`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!apiResponse.ok) {
+        console.error('[Dashboard] Scan failed:', apiResponse.status);
+        return;
+      }
+
+      const scanResult: ScanResult = await apiResponse.json();
+      console.log('[Dashboard] Scan result:', scanResult);
+      setCurrentScanResult(scanResult);
+    } catch (error) {
+      console.error('[Dashboard] Analysis error:', error);
+    } finally {
+      setIsAnalyzing(false);
     }
-  }, []);
-
-  /**
-   * Called when scan result is received from backend
-   */
-  const handleScanResult = useCallback((result: ScanResult) => {
-    console.log('[Dashboard] Scan result:', result);
-    setCurrentScanResult(result);
-    setPendingScanId(result.scan_id);
-  }, []);
-
-  /**
-   * Called when user wants to scan bottom of IC
-   */
-  const handleScanBottom = useCallback((scanId: string) => {
-    console.log('[Dashboard] Scan bottom requested:', scanId);
-    // This will be handled by the VideoFeed component
-    // TODO: Implement bottom scan flow
-  }, []);
+  }, [capturedImage, isAnalyzing]);
 
   return (
-    <div className="flex flex-col h-full gap-4 p-4 overflow-hidden">
-      {/* Stats Row */}
+    <div className="flex flex-col h-full gap-6 p-6 overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
+      {/* Header */}
       <div className="shrink-0">
-        <StatsPanel stats={stats} />
+        <div className="flex items-center justify-between bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-2 border-blue-200">
+          <div>
+            <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 bg-clip-text text-transparent mb-2">
+              Drishti IC
+            </h1>
+            <p className="text-base font-semibold text-slate-700">Intelligent Integrated Circuit Inspection System</p>
+          </div>
+          <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 shadow-lg">
+            <p className="text-sm text-white font-bold">AOI Technology</p>
+          </div>
+        </div>
       </div>
 
-      {/* Main Content - Video Feed and Results */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0 overflow-hidden">
-        {/* Video Feed - Takes 2/3 on large screens */}
-        <div className="lg:col-span-2 overflow-hidden">
-          <div className="h-full p-4 rounded-xl border border-zinc-800 bg-zinc-900/30">
-            <VideoFeed
-              onCapture={handleCapture}
-              onScanResult={handleScanResult}
-            />
+      {/* Main Content Grid */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0 overflow-hidden">
+        {/* Left Section - Camera & Upload */}
+        <div className="lg:col-span-2 flex flex-col gap-6 overflow-hidden">
+          {/* Video Feed */}
+          <div className="flex-1 min-h-0 bg-white rounded-2xl shadow-2xl border-2 border-blue-300 p-6">
+            <VideoFeed onCapture={handleCapture} />
+          </div>
+
+          {/* Upload Section */}
+          <div className="shrink-0">
+            <ImageUpload onFileSelect={handleFileSelect} fileInputRef={fileInputRef} disabled={isAnalyzing} />
           </div>
         </div>
 
-        {/* Results Panel - Takes 1/3 on large screens */}
+        {/* Right Section - Analysis Panel */}
         <div className="overflow-hidden">
-          <div className="h-full p-4 rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-y-auto">
-            <ResultsPanel
-              scanResult={currentScanResult}
-              capturedImage={capturedImage}
-              onScanBottom={handleScanBottom}
-            />
-          </div>
+          <AnalysisPanel
+            capturedImage={capturedImage}
+            scanResult={currentScanResult}
+            isAnalyzing={isAnalyzing}
+            onAnalyze={handleAnalyze}
+          />
         </div>
       </div>
     </div>

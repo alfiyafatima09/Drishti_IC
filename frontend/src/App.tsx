@@ -12,6 +12,9 @@ function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
         </Route>
+        <Route path="/scan" element={<DashboardLayout />}>
+          <Route index element={<DashboardPage />} />
+        </Route>
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
