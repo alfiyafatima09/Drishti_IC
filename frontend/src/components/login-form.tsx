@@ -27,7 +27,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           <div className="grid gap-2">
             <Label
               htmlFor="email"
-              className="text-xs font-light tracking-wider text-zinc-500 uppercase"
+              className="text-xs font-medium tracking-wide text-zinc-500"
             >
               Email Address
             </Label>
@@ -39,22 +39,22 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               autoComplete="email"
               autoCorrect="off"
               disabled={isLoading}
-              className="h-10 rounded-none border-0 border-b border-zinc-200 bg-transparent px-0 transition-colors placeholder:text-zinc-300 focus-visible:border-zinc-900 focus-visible:ring-0 dark:border-zinc-800 dark:placeholder:text-zinc-700 dark:focus-visible:border-zinc-100"
+              className="h-11 rounded-xl border-zinc-200 bg-zinc-50/50 px-4 text-sm transition-all placeholder:text-zinc-400 hover:bg-zinc-100/50 focus:border-zinc-400 focus:bg-white focus:ring-4 focus:ring-zinc-100"
             />
           </div>
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <Label
                 htmlFor="password"
-                className="text-xs font-light tracking-wider text-zinc-500 uppercase"
+                className="text-xs font-medium tracking-wide text-zinc-500"
               >
                 Password
               </Label>
               <a
                 href="#"
-                className="text-[10px] font-medium tracking-widest text-zinc-400 uppercase transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
+                className="text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-900"
               >
-                Forgot?
+                Forgot password?
               </a>
             </div>
             <Input
@@ -63,16 +63,16 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               autoCapitalize="none"
               autoComplete="current-password"
               disabled={isLoading}
-              className="h-10 rounded-none border-0 border-b border-zinc-200 bg-transparent px-0 transition-colors focus-visible:border-zinc-900 focus-visible:ring-0 dark:border-zinc-800 dark:focus-visible:border-zinc-100"
+              className="h-11 rounded-xl border-zinc-200 bg-zinc-50/50 px-4 text-sm transition-all hover:bg-zinc-100/50 focus:border-zinc-400 focus:bg-white focus:ring-4 focus:ring-zinc-100"
             />
           </div>
           <Button
             disabled={isLoading}
-            className="mt-4 h-10 bg-zinc-900 font-medium tracking-wide text-zinc-50 transition-all hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200"
+            className="mt-2 h-11 rounded-xl bg-zinc-900 text-sm font-medium text-white transition-all hover:bg-zinc-800 hover:shadow-lg hover:shadow-zinc-200 active:scale-[0.98]"
           >
-            {isLoading && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
-            {!isLoading && <ArrowRight className="ml-2 h-3 w-3 opacity-50" />}
+            {!isLoading && <ArrowRight className="ml-2 h-4 w-4 opacity-50" />}
           </Button>
         </div>
       </form>

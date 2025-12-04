@@ -4,7 +4,7 @@ import { RotatingTooltip } from '@/components/rotating-tooltip'
 
 export function LoginPage() {
   return (
-    <div className="flex min-h-screen w-full bg-white dark:bg-zinc-950">
+    <div className="flex min-h-screen w-full bg-white">
       <LoginHero />
 
       {/* Right Side - Login Form */}
