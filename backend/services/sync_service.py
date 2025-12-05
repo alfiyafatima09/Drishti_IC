@@ -1,8 +1,8 @@
 """Service for sync job operations."""
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from typing import Optional
-from datetime import datetime
+from typing import Optional, List
+from datetime import datetime, timedelta
 from uuid import UUID
 import logging
 import asyncio
@@ -11,9 +11,13 @@ from models import SyncJob, DatasheetQueue
 from services.queue_service import QueueService
 from services.fake_service import FakeService
 from services.ic_service import ICService
-from schemas import ICSpecificationCreate
+from services.datasheet import datasheet_service
+from core.constants import get_supported_manufacturers
 
 logger = logging.getLogger(__name__)
+
+# Max retries before marking as fake
+MAX_RETRY_COUNT = 3
 
 
 class SyncService:
@@ -21,6 +25,7 @@ class SyncService:
 
     # Track active job (simple in-memory tracking)
     _active_job_id: Optional[UUID] = None
+    _cancel_requested: bool = False
 
     @staticmethod
     async def get_active_job(db: AsyncSession) -> Optional[SyncJob]:
@@ -36,7 +41,7 @@ class SyncService:
         max_items: Optional[int] = None,
         retry_failed: bool = True,
     ) -> SyncJob:
-        """Start a new sync job."""
+        """Start a new sync job (creates job record, actual processing is separate)."""
         # Check if already running
         active = await SyncService.get_active_job(db)
         if active:
@@ -71,9 +76,193 @@ class SyncService:
         await db.refresh(job)
 
         SyncService._active_job_id = job.job_id
+        SyncService._cancel_requested = False
         logger.info(f"Started sync job {job.job_id} with {len(all_items)} items")
 
         return job
+
+    @staticmethod
+    async def run_sync_job(db: AsyncSession, job_id: UUID):
+        """
+        Run the actual sync processing in background.
+        This is the main worker that processes queue items.
+        """
+        logger.info(f"Starting background sync processing for job {job_id}")
+        
+        try:
+            # Get the job
+            result = await db.execute(
+                select(SyncJob).where(SyncJob.job_id == job_id)
+            )
+            job = result.scalar_one_or_none()
+            if not job:
+                logger.error(f"Sync job {job_id} not found")
+                return
+            
+            # Get all items to process
+            pending_items = await QueueService.get_pending_items(db)
+            failed_items = await QueueService.get_failed_items(db)
+            all_items = pending_items + [f for f in failed_items if f not in pending_items]
+            
+            if job.total_items > 0 and len(all_items) > job.total_items:
+                all_items = all_items[:job.total_items]
+            
+            logger.info(f"Processing {len(all_items)} queue items")
+            
+            processed = 0
+            success = 0
+            failed = 0
+            fake = 0
+            
+            for queue_item in all_items:
+                # Check for cancellation
+                if SyncService._cancel_requested:
+                    logger.info(f"Sync job {job_id} cancelled by user")
+                    break
+                
+                part_number = queue_item.part_number
+                logger.info(f"Processing: {part_number} ({processed + 1}/{len(all_items)})")
+                
+                # Update current item
+                job.current_item = part_number
+                await db.commit()
+                
+                # Mark queue item as processing
+                queue_item.status = "PROCESSING"
+                await db.commit()
+                
+                try:
+                    # Try to download datasheet from all manufacturers
+                    result = await datasheet_service.download_datasheet(
+                        part_number=part_number,
+                        manufacturer_code=None,  # Try all manufacturers
+                        db=db
+                    )
+                    
+                    if result["success"]:
+                        # SUCCESS - Found on at least one manufacturer
+                        logger.info(f"SUCCESS: {part_number} found on {result['manufacturers_found']}")
+                        
+                        # Remove from queue (it's now in ic_specifications)
+                        await QueueService.remove_from_queue(db, part_number)
+                        success += 1
+                        
+                        # Add log entry
+                        job.log = job.log + [{
+                            "part_number": part_number,
+                            "result": "SUCCESS",
+                            "manufacturers": result["manufacturers_found"],
+                            "timestamp": datetime.utcnow().isoformat()
+                        }]
+                    else:
+                        # NOT FOUND on any manufacturer
+                        queue_item.retry_count += 1
+                        queue_item.error_message = result.get("message", "Not found on any manufacturer")
+                        
+                        if queue_item.retry_count >= MAX_RETRY_COUNT:
+                            # Max retries reached - move to fake registry
+                            logger.warning(f"FAKE: {part_number} not found after {MAX_RETRY_COUNT} attempts")
+                            
+                            try:
+                                await FakeService.mark_as_fake(
+                                    db=db,
+                                    part_number=part_number,
+                                    reason=f"Not found on any manufacturer website after {MAX_RETRY_COUNT} sync attempts",
+                                    source="SYNC_NOT_FOUND",
+                                    scrape_attempts=queue_item.retry_count,
+                                    manufacturers_checked=get_supported_manufacturers(),
+                                )
+                            except ValueError:
+                                # Already in fake registry
+                                pass
+                            
+                            # Remove from queue
+                            await QueueService.remove_from_queue(db, part_number)
+                            fake += 1
+                            
+                            job.log = job.log + [{
+                                "part_number": part_number,
+                                "result": "FAKE",
+                                "reason": "Not found after max retries",
+                                "timestamp": datetime.utcnow().isoformat()
+                            }]
+                        else:
+                            # Still has retries left - mark as failed for next sync
+                            logger.info(f"FAILED: {part_number} (retry {queue_item.retry_count}/{MAX_RETRY_COUNT})")
+                            queue_item.status = "FAILED"
+                            failed += 1
+                            
+                            job.log = job.log + [{
+                                "part_number": part_number,
+                                "result": "FAILED",
+                                "retry_count": queue_item.retry_count,
+                                "timestamp": datetime.utcnow().isoformat()
+                            }]
+                    
+                except Exception as e:
+                    logger.error(f"Error processing {part_number}: {e}")
+                    queue_item.status = "FAILED"
+                    queue_item.error_message = str(e)
+                    queue_item.retry_count += 1
+                    failed += 1
+                    
+                    job.log = job.log + [{
+                        "part_number": part_number,
+                        "result": "ERROR",
+                        "error": str(e),
+                        "timestamp": datetime.utcnow().isoformat()
+                    }]
+                
+                # Update job progress
+                processed += 1
+                job.processed_items = processed
+                job.success_count = success
+                job.failed_count = failed
+                job.fake_count = fake
+                
+                # Commit after each item (so progress is saved)
+                await db.commit()
+            
+            # Job complete
+            if SyncService._cancel_requested:
+                job.status = "CANCELLED"
+                job.error_message = f"Cancelled by user. Processed {processed}/{len(all_items)} items."
+            else:
+                job.status = "COMPLETED"
+            
+            job.current_item = None
+            job.completed_at = datetime.utcnow()
+            
+            SyncService._active_job_id = None
+            SyncService._cancel_requested = False
+            
+            await db.commit()
+            
+            logger.info(
+                f"Sync job {job_id} completed: "
+                f"{success} success, {failed} failed, {fake} fake"
+            )
+            
+        except Exception as e:
+            logger.exception(f"Sync job {job_id} failed with error: {e}")
+            
+            # Try to mark job as error
+            try:
+                result = await db.execute(
+                    select(SyncJob).where(SyncJob.job_id == job_id)
+                )
+                job = result.scalar_one_or_none()
+                if job:
+                    job.status = "ERROR"
+                    job.error_message = str(e)
+                    job.completed_at = datetime.utcnow()
+                    job.current_item = None
+                    await db.commit()
+            except Exception:
+                pass
+            
+            SyncService._active_job_id = None
+            SyncService._cancel_requested = False
 
     @staticmethod
     async def get_status(db: AsyncSession) -> dict:
@@ -107,15 +296,12 @@ class SyncService:
         if not active:
             return None
 
-        active.status = "CANCELLED"
-        active.completed_at = datetime.utcnow()
-        active.error_message = f"Cancelled. {active.processed_items} of {active.total_items} items processed."
-
-        SyncService._active_job_id = None
-
-        await db.flush()
-        await db.refresh(active)
-        logger.info(f"Cancelled sync job {active.job_id}")
+        # Signal cancellation to the background worker
+        SyncService._cancel_requested = True
+        
+        # The actual status update will happen in run_sync_job
+        # But we return current state for immediate feedback
+        logger.info(f"Cancellation requested for sync job {active.job_id}")
         return active
 
     @staticmethod
@@ -200,34 +386,3 @@ class SyncService:
         await db.refresh(job)
         logger.info(f"Completed sync job {job_id} with status {status}")
         return job
-
-    @staticmethod
-    async def process_queue_item(
-        db: AsyncSession,
-        job_id: UUID,
-        part_number: str,
-    ) -> dict:
-        """
-        Process a single queue item during sync.
-        This is where the actual scraping would happen.
-        
-        Returns dict with result: SUCCESS, FAILED, or FAKE
-        """
-        # TODO: Implement actual scraping logic
-        # For now, this is a placeholder that simulates scraping
-        
-        logger.info(f"Processing queue item: {part_number}")
-        
-        # Update job with current item
-        await SyncService.update_job_progress(db, job_id, current_item=part_number)
-        
-        # Simulate scraping delay
-        await asyncio.sleep(0.1)
-        
-        # In a real implementation:
-        # 1. Try scraping from Mouser, DigiKey, AllDatasheet, etc.
-        # 2. If found, create ICSpecification and remove from queue
-        # 3. If not found after max retries, add to fake registry
-        
-        return {"part_number": part_number, "result": "PENDING"}
-
