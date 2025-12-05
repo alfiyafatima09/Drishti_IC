@@ -2,13 +2,17 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+import asyncio
 import logging
 import re
+from pathlib import Path
 from typing import Optional
+import uuid
 
 from core.database import get_db
 from services import ScanService, ICService, FakeService, QueueService
 from services.ocr import extract_text_from_image, OCRResponse
+from services.llm import LLM
 from schemas import (
     ScanResult,
     ManualOverrideRequest,
@@ -160,9 +164,22 @@ async def scan_image(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
+    
     # Read image
     image_data = await file.read()
-    
+
+    # Persist image to disk for auditing/debugging
+    backend_root = Path(__file__).resolve().parent.parent.parent
+    image_dir = backend_root / "scanned_images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+
+    suffix = Path(file.filename).suffix if file.filename else ".img"
+    image_path = image_dir / f"{uuid.uuid4()}{suffix}"
+    await asyncio.to_thread(image_path.write_bytes, image_data)
+    stored_image_path = str(image_path.relative_to(backend_root))
+    llm_result = LLM().analyze_image(stored_image_path)
+    print(llm_result)
+    return llm_result
     # ========== OCR Processing ==========
     logger.info(f"Processing scan for file: {file.filename}, size: {len(image_data)} bytes")
     
@@ -239,6 +256,7 @@ async def scan_image(
     
     # ========== Placeholders for Vision Analysis ==========
     # TODO: Integrate with pin detection service (Gemini Vision or local model)
+    LLM().analyze_image(stored_image_path)
     detected_pins = 0  # Placeholder - would come from vision analysis
     manufacturer_detected = None  # Placeholder - could be extracted from OCR or vision
     
@@ -294,6 +312,7 @@ async def scan_image(
         part_number_candidates=candidates if candidates else None,
         part_number_source=part_number_source,
         manufacturer_detected=scan.manufacturer_detected,
+        image_path=stored_image_path,
         detected_pins=scan.detected_pins,
         message=scan.message,
         match_details=scan.match_details,

@@ -29,6 +29,7 @@ class ScanResult(BaseModel):
     action_required: ActionRequired = ActionRequired.NONE
     confidence_score: Optional[float] = Field(None, ge=0, le=100)
     ocr_text: Optional[str] = None
+    image_path: Optional[str] = None
     part_number: Optional[str] = None
     part_number_candidates: Optional[list[str]] = None 
     part_number_source: PartNumberSource = PartNumberSource.OCR_BEST_GUESS 

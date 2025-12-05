@@ -114,3 +114,4 @@ local_model/bin/
 local_model/venv/
 
 *.md
+backend/scanned_images
