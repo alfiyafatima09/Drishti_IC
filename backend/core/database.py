@@ -67,6 +67,21 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+async def get_db_for_background() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Get database session for background tasks.
+    Unlike get_db(), this doesn't auto-commit - the task manages its own commits.
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
 async def init_db() -> None:
     """
     Initialize database - create tables if they don't exist.

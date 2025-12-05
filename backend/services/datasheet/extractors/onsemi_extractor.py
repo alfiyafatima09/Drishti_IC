@@ -1,7 +1,7 @@
 """
-STMicroelectronics PDF datasheet extractor.
-Extracts IC specification data from STM PDF datasheets.
-A single PDF can contain multiple IC variants (e.g., LM358D, LM358DT).
+OnSemi (onsemi) PDF datasheet extractor.
+Extracts IC specification data from OnSemi PDF datasheets.
+A single PDF can contain multiple IC variants.
 """
 import re
 from pathlib import Path
@@ -21,12 +21,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class STMExtractor(DatasheetExtractor):
-    """Extractor for STMicroelectronics PDF datasheets."""
+class OnSemiExtractor(DatasheetExtractor):
+    """Extractor for OnSemi PDF datasheets."""
     
     def extract(self, pdf_path: Path) -> List[Dict]:
         """
-        Extract IC specification data from STM PDF datasheet.
+        Extract IC specification data from OnSemi PDF datasheet.
         Extracts all IC variants found in package dimension tables.
         
         Args:
@@ -43,7 +43,7 @@ class STMExtractor(DatasheetExtractor):
             return []
         
         try:
-            logger.debug(f"Extracting data from STM PDF: {pdf_path}")
+            logger.debug(f"Extracting data from OnSemi PDF: {pdf_path}")
             
             ic_variants = []
             voltage_specs = {}  # Extract once, apply to all variants
@@ -57,40 +57,32 @@ class STMExtractor(DatasheetExtractor):
                 for page_num, page in enumerate(pdf.pages, 1):
                     tables = page.extract_tables()
                     
-                    for table_idx, table in enumerate(tables):
+                    for table in tables:
                         if not table or len(table) < 2:
                             continue
                         
                         header_row = table[0] if table else []
                         header_text = " ".join(str(cell) if cell else "" for cell in header_row).lower()
                         
-                        # Debug: Log table headers to understand PDF structure
-                        logger.debug(f"Page {page_num}, Table {table_idx}: Header = {header_text[:100]}")
-                        
                         # Check if this is a package/ordering information table
-                        # STM datasheets often use varied terminology, so be flexible
                         if any(keyword in header_text for keyword in [
-                            "order code", "ordering", "part number", "package", 
-                            "device summary", "ordering information", "packing",
-                            "temperature range", "sales type"
+                            "order", "ordering", "part number", "package", 
+                            "device", "ordering information", "marking"
                         ]):
-                            logger.debug(f"Found potential ordering table on page {page_num}")
                             variants = self._extract_from_table(table, header_row, voltage_specs, temp_specs)
-                            if variants:
-                                logger.info(f"Extracted {len(variants)} variants from page {page_num}, table {table_idx}")
                             ic_variants.extend(variants)
             
             if not ic_variants:
                 logger.debug(f"No IC variants found in PDF: {pdf_path}")
                 return [self._create_basic_entry(pdf_path, voltage_specs, temp_specs)]
             
-            logger.info(f"Extracted {len(ic_variants)} IC variants from STM PDF")
+            logger.info(f"Extracted {len(ic_variants)} IC variants from OnSemi PDF")
             return ic_variants
             
         except Exception as e:
-            logger.error(f"Failed to extract data from STM PDF {pdf_path}: {e}")
+            logger.error(f"Failed to extract data from OnSemi PDF {pdf_path}: {e}")
             raise DatasheetExtractionException(
-                f"Failed to extract data from STM PDF: {str(e)}"
+                f"Failed to extract data from OnSemi PDF: {str(e)}"
             )
     
     def _extract_operating_conditions(self, pdf) -> Tuple[Dict, Dict]:
@@ -145,7 +137,7 @@ class STMExtractor(DatasheetExtractor):
         return voltage_specs, temp_specs
     
     def _extract_voltage_range(self, text: str) -> Optional[Dict]:
-        """Extract voltage min/max from text like '3 to 30' or '3V to 30V'."""
+        """Extract voltage min/max from text like '3 to 32' or '3V to 32V'."""
         if not text:
             return None
         
@@ -161,13 +153,12 @@ class STMExtractor(DatasheetExtractor):
             except ValueError:
                 pass
         
-        # Single value pattern (e.g., "30" for max voltage)
+        # Single value pattern (e.g., "32" for max voltage)
         pattern_single = r'(\d+\.?\d*)\s*V?'
         match_single = re.search(pattern_single, text)
         if match_single:
             try:
                 val = float(match_single.group(1))
-                # Assume it's max voltage if single value
                 if val > 1:
                     return {"voltage_max": val}
             except ValueError:
@@ -225,7 +216,7 @@ class STMExtractor(DatasheetExtractor):
             if not row or len(row) < 2:
                 continue
             
-            # Extract part number/order code
+            # Extract part number/device
             part_number = self._get_cell_value(row, col_indices.get("part_number"))
             if not part_number or not part_number.strip():
                 continue
@@ -241,32 +232,25 @@ class STMExtractor(DatasheetExtractor):
             # Extract pin count
             pins = self._extract_pin_count(row, col_indices.get("pins"))
             
-            # Extract temperature grade if available
-            temp_grade = self._get_cell_value(row, col_indices.get("temp_grade"))
-            temp_override = self._parse_temperature_grade(temp_grade) if temp_grade else {}
-            
-            # Extract packing/marking info
-            packing = self._get_cell_value(row, col_indices.get("packing"))
+            # Extract marking code
             marking = self._get_cell_value(row, col_indices.get("marking"))
             
             # Create IC specification entry with voltage and temp specs
             variant = {
                 "part_number": part_number,
-                "manufacturer": "STM",
+                "manufacturer": "ONSEMI",
                 "pin_count": pins or 0,
                 "package_type": package_type or None,
-                "description": f"STM {part_number} - {package_type or 'Unknown Package'}",
+                "description": f"OnSemi {part_number} - {package_type or 'Unknown Package'}",
                 "voltage_min": voltage_specs.get("voltage_min"),
                 "voltage_max": voltage_specs.get("voltage_max"),
-                "operating_temp_min": temp_override.get("operating_temp_min") or temp_specs.get("operating_temp_min"),
-                "operating_temp_max": temp_override.get("operating_temp_max") or temp_specs.get("operating_temp_max"),
+                "operating_temp_min": temp_specs.get("operating_temp_min"),
+                "operating_temp_max": temp_specs.get("operating_temp_max"),
                 "dimension_length": None,
                 "dimension_width": None,
                 "dimension_height": None,
                 "electrical_specs": {
-                    "packing": packing,
                     "marking": marking,
-                    "temperature_grade": temp_grade,
                 }
             }
             
@@ -277,7 +261,7 @@ class STMExtractor(DatasheetExtractor):
     def _find_column_indices(self, header_row: List) -> Dict[str, int]:
         """
         Find column indices for key fields in the table.
-        STM datasheets typically use "Order code", "Package", "Packing" columns.
+        OnSemi datasheets typically use "Device", "Package", "Marking" columns.
         """
         indices = {}
         
@@ -287,74 +271,30 @@ class STMExtractor(DatasheetExtractor):
             
             cell_lower = str(cell).lower().strip()
             
-            # Part number/Order code column - be very flexible
-            if any(keyword in cell_lower for keyword in [
-                "order code", "order_code", "ordercode",
-                "part number", "part_number", "partnumber",
-                "type", "device", "sales type"
-            ]) and "part_number" not in indices:
+            # Part number/Device column
+            if any(keyword in cell_lower for keyword in ["device", "part number", "type", "order"]) and "part_number" not in indices:
                 indices["part_number"] = idx
-                logger.debug(f"Found part_number column at index {idx}: '{cell}'")
             
             # Package column
             if "package" in cell_lower and "package" not in indices:
                 indices["package"] = idx
-                logger.debug(f"Found package column at index {idx}: '{cell}'")
             
             # Pins column
             if "pin" in cell_lower and "pins" not in indices:
                 indices["pins"] = idx
-                logger.debug(f"Found pins column at index {idx}: '{cell}'")
-            
-            # Temperature grade/range column
-            if any(keyword in cell_lower for keyword in [
-                "temp", "temperature grade", "temperature range", "grade"
-            ]) and "temp_grade" not in indices:
-                indices["temp_grade"] = idx
-                logger.debug(f"Found temp_grade column at index {idx}: '{cell}'")
-            
-            # Packing column
-            if "packing" in cell_lower and "packing" not in indices:
-                indices["packing"] = idx
-                logger.debug(f"Found packing column at index {idx}: '{cell}'")
             
             # Marking column
             if "marking" in cell_lower and "marking" not in indices:
                 indices["marking"] = idx
-                logger.debug(f"Found marking column at index {idx}: '{cell}'")
         
-        logger.debug(f"Column indices found: {indices}")
         return indices
     
     def _get_cell_value(self, row: List, col_index: Optional[int]) -> Optional[str]:
-        """Get cell value from row, handling None indices and sparse tables.
-        
-        STM PDFs often have merged cells, so we look for non-None values
-        around col_index. The header might be offset from actual data due to
-        merged cells, so we check both before and after the index.
-        """
+        """Get cell value from row, handling None indices."""
         if col_index is None or col_index >= len(row):
             return None
-        
-        # First try the exact column
         value = row[col_index]
-        if value and str(value).strip():
-            return str(value).strip()
-        
-        # Check one column before (header might be offset by 1)
-        if col_index > 0:
-            value = row[col_index - 1]
-            if value and str(value).strip():
-                return str(value).strip()
-        
-        # If still None, check next few columns for merged cell data (up to 3 columns ahead)
-        for offset in range(1, 4):
-            if col_index + offset < len(row):
-                value = row[col_index + offset]
-                if value and str(value).strip():
-                    return str(value).strip()
-        
-        return None
+        return str(value).strip() if value else None
     
     def _clean_part_number(self, part_number: str) -> str:
         """Clean and normalize part number."""
@@ -376,12 +316,12 @@ class STMExtractor(DatasheetExtractor):
                     except ValueError:
                         pass
         
-        # Try to extract from package name (e.g., "SO8", "TSSOP8", "DIP14")
+        # Try to extract from package name (e.g., "SOIC8", "DIP14", "TO92")
         for cell in row:
             if cell:
                 cell_str = str(cell).upper()
-                # Look for patterns like SO8, SOIC8, TSSOP8, DIP14, etc.
-                match = re.search(r'(SO|SOIC|TSSOP|DIP|QFP|LQFP|SSOP|MSOP|VSSOP)(\d+)', cell_str)
+                # Look for patterns like SOIC8, DIP14, etc.
+                match = re.search(r'(SO|SOIC|TSSOP|DIP|QFP|LQFP|SSOP|MSOP|VSSOP|PDIP)(\d+)', cell_str)
                 if match:
                     try:
                         return int(match.group(2))
@@ -390,47 +330,16 @@ class STMExtractor(DatasheetExtractor):
         
         return None
     
-    def _parse_temperature_grade(self, temp_grade: str) -> Dict:
-        """
-        Parse temperature grade codes like '0 to 70°C', 'Industrial', 'Automotive'.
-        Common STM temperature grades:
-        - Commercial: 0°C to 70°C
-        - Industrial: -40°C to 85°C
-        - Automotive: -40°C to 125°C or -40°C to 150°C
-        """
-        if not temp_grade:
-            return {}
-        
-        temp_grade_lower = temp_grade.lower()
-        
-        # Direct range extraction
-        temp_range = self._extract_temperature_range(temp_grade)
-        if temp_range:
-            return temp_range
-        
-        # Named grades
-        if "commercial" in temp_grade_lower or "0" in temp_grade_lower and "70" in temp_grade_lower:
-            return {"operating_temp_min": 0, "operating_temp_max": 70}
-        elif "industrial" in temp_grade_lower:
-            return {"operating_temp_min": -40, "operating_temp_max": 85}
-        elif "automotive" in temp_grade_lower:
-            # Default automotive range
-            return {"operating_temp_min": -40, "operating_temp_max": 125}
-        elif "extended" in temp_grade_lower:
-            return {"operating_temp_min": -40, "operating_temp_max": 125}
-        
-        return {}
-    
     def _create_basic_entry(self, pdf_path: Path, voltage_specs: Dict, temp_specs: Dict) -> Dict:
         """Create a basic entry when no table data is found."""
         part_number = pdf_path.stem.upper()
         
         return {
             "part_number": part_number,
-            "manufacturer": "STM",
+            "manufacturer": "ONSEMI",
             "pin_count": 0,
             "package_type": None,
-            "description": f"STM {part_number}",
+            "description": f"OnSemi {part_number}",
             "voltage_min": voltage_specs.get("voltage_min"),
             "voltage_max": voltage_specs.get("voltage_max"),
             "operating_temp_min": temp_specs.get("operating_temp_min"),
@@ -440,4 +349,3 @@ class STMExtractor(DatasheetExtractor):
             "dimension_height": None,
             "electrical_specs": {},
         }
-
