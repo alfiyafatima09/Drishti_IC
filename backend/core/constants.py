@@ -19,7 +19,7 @@ class Manufacturer(str, Enum):
     TI = "TI"
     NXP = "NXP"
     ANALOG_DEVICES = "ANALOG_DEVICES"
-    ONSEMI = "ONSEMI"
+    # ONSEMI = "ONSEMI"
     
     # MICROCHIP = "MICROCHIP"
     # INFINEON = "INFINEON"
@@ -31,7 +31,7 @@ MANUFACTURER_NAMES: Dict[str, str] = {
     Manufacturer.TI: "Texas Instruments",
     Manufacturer.NXP: "NXP Semiconductors",
     Manufacturer.ANALOG_DEVICES: "Analog Devices",
-    Manufacturer.ONSEMI: "onsemi",
+    # Manufacturer.ONSEMI: "onsemi",
     # Manufacturer.MICROCHIP: "Microchip Technology", 
     # Manufacturer.INFINEON: "Infineon Technologies",
 }
