@@ -1,0 +1,10 @@
+{
+  "manufacturer": "Microchip",
+  "package_type": "QFN",
+  "min_pins": 16,
+  "max_pins": 128,
+  "sort_by": "updated_at",
+  "sort_dir": "desc",
+  "limit": 20,
+  "offset": 0
+}
