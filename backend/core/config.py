@@ -61,6 +61,12 @@ class Settings(BaseSettings):
         extra="ignore",  # Ignore extra fields like NEXT_PUBLIC_*
     )
 
+    # DigiKey API configuration
+    DIGIKEY_CLIENT_ID: str = os.environ.get("DIGIKEY_CLIENT_ID", "")
+    DIGIKEY_CLIENT_SECRET: str = os.environ.get("DIGIKEY_CLIENT_SECRET", "")
+    DIGIKEY_TOKEN_URL: str = os.environ.get("DIGIKEY_TOKEN_URL", "https://api.digikey.com/v1/oauth2/token")
+    DIGIKEY_SEARCH_URL: str = os.environ.get("DIGIKEY_SEARCH_URL", "https://api.digikey.com/products/v4/search/keyword")
+
 
 @lru_cache()
 def get_settings() -> Settings:
