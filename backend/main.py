@@ -7,6 +7,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import logging
 
+from api.endpoints import datasheets
+from api.endpoints import digikey as digikey_router
 from core.config import settings
 from core.database import init_db
 from api.endpoints import (
@@ -73,6 +75,7 @@ app.include_router(camera_router)
 app.include_router(images.router)
 app.include_router(datasheets.router)
 app.include_router(ic_analysis.router)
+app.include_router(digikey_router.router)
 
 
 @app.get("/", tags=["Root"])

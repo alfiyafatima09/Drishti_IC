@@ -19,10 +19,10 @@ class Manufacturer(str, Enum):
     TI = "TI"
     NXP = "NXP"
     ANALOG_DEVICES = "ANALOG_DEVICES"
+    ONSEMI = "ONSEMI"
     
-    # MICROCHIP = "MICROCHIP" //
+    # MICROCHIP = "MICROCHIP"
     # INFINEON = "INFINEON"
-    # ONSEMI = "ONSEMI"
 
 
 # Manufacturer display names (for UI and API responses)
@@ -31,9 +31,9 @@ MANUFACTURER_NAMES: Dict[str, str] = {
     Manufacturer.TI: "Texas Instruments",
     Manufacturer.NXP: "NXP Semiconductors",
     Manufacturer.ANALOG_DEVICES: "Analog Devices",
+    Manufacturer.ONSEMI: "onsemi",
     # Manufacturer.MICROCHIP: "Microchip Technology", 
     # Manufacturer.INFINEON: "Infineon Technologies",
-    # Manufacturer.ONSEMI: "onsemi",
 }
 
 # Manufacturer datasheet URL patterns
