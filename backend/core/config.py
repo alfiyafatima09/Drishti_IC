@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = os.environ.get("DATABASE_URL", "")
 
     # API Keys
-    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
+    # GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
     
     # Storage settings
     MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", "data"))
