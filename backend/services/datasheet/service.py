@@ -31,7 +31,6 @@ from .storage import (
     store_ic_specification,
     store_multiple_ic_specifications,
 )
-from .downloader import generate_hash
 
 logger = logging.getLogger(__name__)
 
