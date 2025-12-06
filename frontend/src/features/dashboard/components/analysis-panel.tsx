@@ -14,18 +14,25 @@ import {
   Thermometer,
   ExternalLink,
   Sparkles,
-  Loader2
+  Loader2,
+  Upload,
+  Edit3,
 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { ScanResult, ScanStatus } from '@/types/api';
+import { API_BASE } from '@/lib/config';
 
 interface AnalysisPanelProps {
   capturedImage: string | null;
   scanResult: ScanResult | null;
   isAnalyzing: boolean;
   onAnalyze: () => void;
+  onResultUpdate: (result: ScanResult) => void;
 }
 
 const STATUS_CONFIG: Record<ScanStatus, {
@@ -42,7 +49,23 @@ const STATUS_CONFIG: Record<ScanStatus, {
   COUNTERFEIT: { icon: ShieldAlert, label: 'Counterfeit', color: 'text-red-700', bgColor: 'bg-red-100', badgeColor: 'bg-red-600' },
 };
 
-export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyze }: AnalysisPanelProps) {
+export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyze, onResultUpdate }: AnalysisPanelProps) {
+  const bottomFileRef = useRef<HTMLInputElement>(null);
+  const [bottomUploading, setBottomUploading] = useState(false);
+  const [overridePart, setOverridePart] = useState('');
+  const [overrideNote, setOverrideNote] = useState('');
+  const [overrideLoading, setOverrideLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (scanResult?.part_number) {
+      setOverridePart(scanResult.part_number);
+    } else {
+      setOverridePart('');
+    }
+    setLocalError(null);
+  }, [scanResult?.scan_id]);
+
   if (!capturedImage) {
     return (
       <div className="h-full flex flex-col bg-white rounded-2xl shadow-2xl border-2 border-blue-300 p-6">
@@ -61,6 +84,64 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
 
   const config = scanResult ? STATUS_CONFIG[scanResult.status] : null;
   const StatusIcon = config?.icon;
+
+  const needsBottomScan =
+    scanResult &&
+    (scanResult.detected_pins === 0 || scanResult.action_required === 'SCAN_BOTTOM');
+
+  const handleBottomUpload = async (file: File) => {
+    if (!scanResult) return;
+    setLocalError(null);
+    setBottomUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const resp = await fetch(`${API_BASE}/scan/${encodeURIComponent(scanResult.scan_id)}/bottom`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!resp.ok) {
+        throw new Error(`Bottom scan failed: ${resp.status}`);
+      }
+      const data: ScanResult = await resp.json();
+      onResultUpdate(data);
+    } catch (err: any) {
+      console.error('Bottom scan error:', err);
+      setLocalError('Failed to upload bottom scan. Please try again.');
+    } finally {
+      setBottomUploading(false);
+      if (bottomFileRef.current) bottomFileRef.current.value = '';
+    }
+  };
+
+  const handleOverride = async () => {
+    if (!scanResult || !overridePart.trim()) return;
+    setLocalError(null);
+    setOverrideLoading(true);
+    try {
+      const payload = {
+        scan_id: scanResult.scan_id,
+        manual_part_number: overridePart.trim(),
+        operator_note: overrideNote.trim() || undefined,
+      };
+      const resp = await fetch(`${API_BASE}/scan/override`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) {
+        throw new Error(`Override failed: ${resp.status}`);
+      }
+      const data: ScanResult = await resp.json();
+      onResultUpdate(data);
+      setOverrideNote('');
+    } catch (err: any) {
+      console.error('Override error:', err);
+      setLocalError('Failed to override part number. Please try again.');
+    } finally {
+      setOverrideLoading(false);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-white rounded-2xl shadow-2xl border-2 border-blue-300 overflow-hidden">
@@ -128,6 +209,88 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
                 </div>
               </div>
             </div>
+
+            {/* Bottom Scan prompt */}
+            {needsBottomScan && (
+              <div className="p-4 rounded-xl border-2 border-amber-400 bg-amber-50 space-y-3">
+                <div className="flex items-center gap-2 text-amber-700 font-semibold">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span>Pins not visible. Please upload bottom-view image.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={bottomFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleBottomUpload(file);
+                    }}
+                  />
+                  <Button
+                    disabled={bottomUploading}
+                    onClick={() => bottomFileRef.current?.click()}
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold"
+                  >
+                    {bottomUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Bottom View
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Override */}
+            <div className="p-4 rounded-xl border-2 border-blue-200 bg-blue-50 space-y-3">
+              <div className="flex items-center gap-2 text-blue-800 font-semibold">
+                <Edit3 className="w-5 h-5" />
+                <span>Manual Part Number Override</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                <Input
+                  placeholder="Enter correct part number"
+                  value={overridePart}
+                  onChange={(e) => setOverridePart(e.target.value)}
+                  className="border-2 border-blue-200"
+                />
+                <Textarea
+                  placeholder="Note (optional)"
+                  value={overrideNote}
+                  onChange={(e) => setOverrideNote(e.target.value)}
+                  rows={2}
+                  className="border-2 border-blue-200"
+                />
+                <Button
+                  disabled={overrideLoading || !overridePart.trim()}
+                  onClick={handleOverride}
+                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold"
+                >
+                  {overrideLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Override'
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {localError && (
+              <div className="p-3 rounded-lg border-2 border-red-300 bg-red-50 text-sm text-red-700">
+                {localError}
+              </div>
+            )}
 
             {/* Parameters Grid */}
             <div className="grid grid-cols-2 gap-3">
