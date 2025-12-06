@@ -111,11 +111,6 @@ async def get_ic_datasheet(
 async def search_ics(
     q: str = Query(..., min_length=1, description="Search query"),
     manufacturer: Optional[str] = Query(None, description="Filter by manufacturer"),
-    package_type: Optional[str] = Query(None, description="Filter by package type"),
-    min_pins: Optional[int] = Query(None, ge=1, description="Minimum pin count"),
-    max_pins: Optional[int] = Query(None, ge=1, description="Maximum pin count"),
-    sort_by: str = Query("part_number", description="Sort field"),
-    sort_dir: str = Query("asc", description="Sort direction: asc|desc"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -123,32 +118,22 @@ async def search_ics(
     """
     Search IC database.
     """
-    try:
-        ics, total_count = await ICService.find(
-            db=db,
-            query=q,
-            manufacturer=manufacturer,
-            package_type=package_type,
-            min_pins=min_pins,
-            max_pins=max_pins,
-            sort_by=sort_by,
-            sort_dir=sort_dir,
-            limit=limit,
-            offset=offset,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+    ics, total_count = await ICService.search(
+        db=db,
+        query=q,
+        manufacturer=manufacturer,
+        limit=limit,
+        offset=offset,
+    )
     
     return ICSearchResult(
         results=[
             {
                 "part_number": ic.part_number,
                 "manufacturer": ic.manufacturer,
-                "manufacturer_name": ic.manufacturer,
                 "pin_count": ic.pin_count,
                 "package_type": ic.package_type,
                 "description": ic.description,
-                "has_datasheet": bool(ic.datasheet_path),
             }
             for ic in ics
         ],
@@ -157,52 +142,3 @@ async def search_ics(
         offset=offset,
     )
 
-
-@router.get("/list", response_model=ICSearchResult)
-async def list_ics(
-    manufacturer: Optional[str] = Query(None, description="Filter by manufacturer"),
-    package_type: Optional[str] = Query(None, description="Filter by package type"),
-    min_pins: Optional[int] = Query(None, ge=1, description="Minimum pin count"),
-    max_pins: Optional[int] = Query(None, ge=1, description="Maximum pin count"),
-    sort_by: str = Query("part_number", description="Sort field"),
-    sort_dir: str = Query("asc", description="Sort direction: asc|desc"),
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    List ICs with pagination, filters, and sorting (no text query required).
-    """
-    try:
-        ics, total_count = await ICService.find(
-            db=db,
-            query=None,
-            manufacturer=manufacturer,
-            package_type=package_type,
-            min_pins=min_pins,
-            max_pins=max_pins,
-            sort_by=sort_by,
-            sort_dir=sort_dir,
-            limit=limit,
-            offset=offset,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-
-    return ICSearchResult(
-        results=[
-            {
-                "part_number": ic.part_number,
-                "manufacturer": ic.manufacturer,
-                "manufacturer_name": ic.manufacturer,
-                "pin_count": ic.pin_count,
-                "package_type": ic.package_type,
-                "description": ic.description,
-                "has_datasheet": bool(ic.datasheet_path),
-            }
-            for ic in ics
-        ],
-        total_count=total_count,
-        limit=limit,
-        offset=offset,
-    )
