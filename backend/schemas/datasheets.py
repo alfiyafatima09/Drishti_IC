@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Literal, get_args
 from datetime import datetime
 
-from core.constants import get_supported_manufacturers, Manufacturer
+from core.constants import Manufacturer, get_supported_manufacturers
 
-_supported_manufacturers = get_supported_manufacturers()
-ManufacturerCode = Literal[*_supported_manufacturers] 
+# Use the Manufacturer Literal directly from constants
+ManufacturerCode = Manufacturer 
 
 
 class DatasheetDownloadRequest(BaseModel):

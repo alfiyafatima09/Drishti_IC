@@ -332,6 +332,7 @@ class DatasheetService:
                     source_map = {
                         Manufacturer.STM: ICSource.SCRAPED_STM,
                         Manufacturer.TI: ICSource.SCRAPED_TI,
+                        Manufacturer.INFINEON: ICSource.SCRAPED_INFINEON,
                     }
                     source = source_map.get(mfr_code, ICSource.MANUAL)
                     
