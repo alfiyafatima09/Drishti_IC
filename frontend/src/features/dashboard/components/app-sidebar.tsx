@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { LayoutDashboard, ScanLine, Database, History, Settings, Shield } from 'lucide-react'
+import { LayoutDashboard, ScanLine, Database, History, Settings, Shield, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import * as React from 'react'
@@ -28,6 +28,11 @@ const items = [
     title: 'New Scan',
     url: '/scan',
     icon: ScanLine,
+  },
+  {
+    title: 'IC Database',
+    url: '/ic',
+    icon: Search,
   },
   {
     title: 'Scrape & Manage',
