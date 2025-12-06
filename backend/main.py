@@ -25,7 +25,6 @@ from api.endpoints import (
 )
 from api.endpoints import images, datasheets, ic_analysis
 
-# Static files directory
 STATIC_DIR = Path(__file__).parent / "static"
 
 logging.basicConfig(
@@ -85,8 +84,6 @@ async def root():
         "version": settings.APP_VERSION,
         "status": "running",
         "docs": "/docs",
-        "redoc": "/redoc",
-        "camera": "/camera",
     }
 
 
