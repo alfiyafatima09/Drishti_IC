@@ -3,6 +3,7 @@ import { LoginPage } from '@/features/auth/login/login-page'
 import DashboardLayout from '@/features/dashboard/dashboard-layout'
 import DashboardPage from '@/features/dashboard/dashboard-page'
 import ScrapingPage from '@/features/scraping/scraping-page'
+import ICDatabasePage from '@/features/ic-database/ic-database-page'
 import './App.css'
 
 function App() {
@@ -15,6 +16,9 @@ function App() {
         </Route>
         <Route path="/scan" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
+        </Route>
+        <Route path="/ic" element={<DashboardLayout />}>
+          <Route index element={<ICDatabasePage />} />
         </Route>
         <Route path="/scrape" element={<DashboardLayout />}>
           <Route index element={<ScrapingPage />} />
