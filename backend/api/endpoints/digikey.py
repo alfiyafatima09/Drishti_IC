@@ -88,18 +88,14 @@ async def save_variants_to_db(
 
     for variant in variants:
         try:
-            # Normalize manufacturer code
-            manufacturer = variant.get("manufacturer", "").upper()
-            if "STMICRO" in manufacturer.upper():
-                manufacturer = "STM"
-            elif "TEXAS" in manufacturer.upper():
-                manufacturer = "TI"
-            elif "NXP" in manufacturer.upper():
-                manufacturer = "NXP"
-            elif "ONSEMI" in manufacturer.upper():
-                manufacturer = "ONSEMI"
-            elif "MICROCHIP" in manufacturer.upper() or "ATMEL" in manufacturer.upper():
-                manufacturer = "MICROCHIP"
+            # Normalize manufacturer code using centralized mapping
+            from core.constants import get_manufacturer_code_from_name
+            manufacturer = variant.get("manufacturer", "")
+            normalized = get_manufacturer_code_from_name(manufacturer)
+            if normalized:
+                manufacturer = normalized
+            else:
+                manufacturer = manufacturer.upper()
 
             # Prepare the data for upsert
             ic_data = {
