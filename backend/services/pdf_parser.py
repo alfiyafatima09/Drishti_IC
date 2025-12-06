@@ -111,6 +111,8 @@ def _normalize_manufacturer(manufacturer: str) -> Optional[str]:
         return "NXP"
     elif "analog" in mfr_lower:
         return "ANALOG_DEVICES"
+    elif "microchip" in mfr_lower or "atmel" in mfr_lower:
+        return "MICROCHIP"
     else:
         # Return as-is if already a code
         return manufacturer.upper()
@@ -147,6 +149,9 @@ def _detect_manufacturer(path: Path) -> Optional[str]:
     elif any(keyword in path_str for keyword in ['analog.com', 'analogdevices']):
         logger.info(f"Detected ANALOG_DEVICES manufacturer from path: {path}")
         return 'ANALOG_DEVICES'
+    elif any(keyword in path_str for keyword in ['microchip.com', 'microchip', 'atmel']):
+        logger.info(f"Detected MICROCHIP manufacturer from path: {path}")
+        return 'MICROCHIP'
     
     logger.warning(f"Could not auto-detect manufacturer from path: {path}")
     return None

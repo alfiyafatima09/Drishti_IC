@@ -10,11 +10,13 @@ Uses a hybrid approach:
 3. Store extracted data in database
 """
 from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 import logging
 import re
+import json
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -96,6 +98,8 @@ async def save_variants_to_db(
                 manufacturer = "NXP"
             elif "ONSEMI" in manufacturer.upper():
                 manufacturer = "ONSEMI"
+            elif "MICROCHIP" in manufacturer.upper() or "ATMEL" in manufacturer.upper():
+                manufacturer = "MICROCHIP"
 
             # Prepare the data for upsert
             ic_data = {
@@ -281,7 +285,7 @@ def merge_variant_with_api_data(variant: Dict[str, Any], api_specs: Dict[str, An
     return merged
 
 
-@router.post("/search", response_model=DigiKeySearchResponse)
+@router.post("/search")
 async def digikey_search(
     request: DigiKeySearchRequest,
     db: AsyncSession = Depends(get_db)
@@ -300,7 +304,7 @@ async def digikey_search(
         db: Database session (injected)
 
     Returns:
-        DigiKeySearchResponse with datasheet path and extracted IC specifications
+        Pretty-printed JSON with datasheet path and extracted IC specifications
         including part numbers, pin counts, voltage ranges, temperature ranges, etc.
     """
     keyword = request.keyword.strip()
@@ -394,7 +398,7 @@ async def digikey_search(
                 logger.error(f"Database save failed: {db_error}")
                 # Continue even if DB save fails
 
-        return DigiKeySearchResponse(
+        response_data = DigiKeySearchResponse(
             datasheet_path=str(local_pdf),
             manufacturer=parsed.get("manufacturer") or manufacturer,
             parse_status=parsed.get("status", "unknown"),
@@ -402,6 +406,12 @@ async def digikey_search(
             ic_variants=ic_variants,
             saved_to_db=saved_count,
             error=parsed.get("error")
+        )
+        
+        # Return pretty-printed JSON
+        return JSONResponse(
+            content=json.loads(response_data.model_dump_json()),
+            media_type="application/json"
         )
 
     except Exception as e:
@@ -438,7 +448,7 @@ async def digikey_search(
             except Exception as db_error:
                 logger.error(f"Database save failed for API-only variant: {db_error}")
             
-            return DigiKeySearchResponse(
+            response_data = DigiKeySearchResponse(
                 datasheet_path=str(local_pdf),
                 manufacturer=manufacturer,
                 parse_status="partial",
@@ -447,12 +457,22 @@ async def digikey_search(
                 saved_to_db=saved_count,
                 error=f"PDF parsing failed, using API data: {str(e)}"
             )
+            
+            return JSONResponse(
+                content=json.loads(response_data.model_dump_json()),
+                media_type="application/json"
+            )
 
-        return DigiKeySearchResponse(
+        response_data = DigiKeySearchResponse(
             datasheet_path=str(local_pdf),
             manufacturer=manufacturer,
             parse_status="error",
             total_variants=0,
             ic_variants=[],
             error=f"PDF parsing failed: {str(e)}"
+        )
+        
+        return JSONResponse(
+            content=json.loads(response_data.model_dump_json()),
+            media_type="application/json"
         )

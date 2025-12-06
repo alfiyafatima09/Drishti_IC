@@ -1,8 +1,8 @@
 """
-STMicroelectronics PDF datasheet extractor.
-Extracts IC specification data from STM PDF datasheets using hybrid approach:
-- Regex-based text parsing (like NXP) for STM32 microcontrollers
-- Table-based extraction for older analog parts
+Microchip Technology PDF datasheet extractor.
+Extracts IC specification data from Microchip PDF datasheets using hybrid approach:
+- Regex-based text parsing for PIC, AVR, SAM, and other microcontrollers
+- Table-based extraction for older parts
 """
 import re
 from pathlib import Path
@@ -22,40 +22,43 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class STMExtractor(DatasheetExtractor):
-    """Extractor for STMicroelectronics PDF datasheets."""
+class MicrochipExtractor(DatasheetExtractor):
+    """Extractor for Microchip Technology PDF datasheets."""
     
-    # STM32 part number patterns (more specific first)
+    # Microchip part number patterns (more specific first)
     PART_NUMBER_PATTERNS = [
-        # STM32 series: STM32F103C8, STM32L476RG, STM32H743ZI, etc.
-        r'\b(STM32[A-Z]\d{2,3}[A-Z]{1,2}\d{1,2}[A-Z]?)\b',
-        # STM8 series: STM8S105C6, STM8L152C6, etc.
-        r'\b(STM8[A-Z]\d{3}[A-Z]\d)\b',
-        # Legacy STM parts
-        r'\b(L\d{3,4}[A-Z]?)\b',  # L293, L298, etc.
-        r'\b(LM\d{3,4}[A-Z]*)\b',  # LM358, LM324, etc.
+        # PIC series: PIC16F15213, PIC18F47Q10, PIC32MX795F512L, etc.
+        r'\b(PIC\d{2}[A-Z]*\d{3,5}[A-Z]*\d*[A-Z]*)\b',
+        # AVR series (Atmel): ATMEGA328P, ATTINY85, etc.
+        r'\b(AT(?:MEGA|TINY|XMEGA)\d{2,4}[A-Z]*)\b',
+        # SAM series (ARM): ATSAMD21G18, ATSAME70Q21, etc.
+        r'\b(ATSAM[A-Z]\d{2}[A-Z]\d{2}[A-Z]?)\b',
+        # dsPIC series: dsPIC33FJ128GP802, etc.
+        r'\b(dsPIC\d{2}[A-Z]+\d+[A-Z]*\d*)\b',
+        # MCP series: MCP23017, MCP4725, etc.
+        r'\b(MCP\d{4,5}[A-Z]*)\b',
     ]
     
     # Package patterns with pin counts
     PACKAGE_PATTERNS = [
-        (r'\b(LQFP)(\d+)\b', 'LQFP'),
-        (r'\b(UFQFPN)(\d+)\b', 'UFQFPN'),
-        (r'\b(WLCSP)(\d+)\b', 'WLCSP'),
-        (r'\b(TFBGA)(\d+)\b', 'TFBGA'),
-        (r'\b(TSSOP)(\d+)\b', 'TSSOP'),
-        (r'\b(SOIC)(\d+)\b', 'SOIC'),
-        (r'\b(SO)(\d+)\b', 'SO'),
-        (r'\b(DIP)(\d+)\b', 'DIP'),
-        (r'\b(QFN)(\d+)\b', 'QFN'),
-        (r'\b(QFP)(\d+)\b', 'QFP'),
-        (r'\b(UFBGA)(\d+)\b', 'UFBGA'),
-        # Pattern for "48-pin" or "48 pins"
+        (r'\b(SOIC)[\s-]?(\d+)\b', 'SOIC'),
+        (r'\b(TSSOP)[\s-]?(\d+)\b', 'TSSOP'),
+        (r'\b(QFN)[\s-]?(\d+)\b', 'QFN'),
+        (r'\b(QFP)[\s-]?(\d+)\b', 'QFP'),
+        (r'\b(DIP)[\s-]?(\d+)\b', 'DIP'),
+        (r'\b(PDIP)[\s-]?(\d+)\b', 'PDIP'),
+        (r'\b(PLCC)[\s-]?(\d+)\b', 'PLCC'),
+        (r'\b(VQFN)[\s-]?(\d+)\b', 'VQFN'),
+        (r'\b(UQFN)[\s-]?(\d+)\b', 'UQFN'),
+        (r'\b(SSOP)[\s-]?(\d+)\b', 'SSOP'),
+        (r'\b(MSOP)[\s-]?(\d+)\b', 'MSOP'),
+        # Pattern for "8-pin" or "8 pins"
         (r'(\d+)[\s-]?(?:pin|lead)s?', None),
     ]
     
     def extract(self, pdf_path: Path) -> List[Dict]:
         """
-        Extract IC specification data from STM PDF datasheet.
+        Extract IC specification data from Microchip PDF datasheet.
         Uses hybrid approach: regex text parsing + table extraction.
         
         Args:
@@ -72,33 +75,33 @@ class STMExtractor(DatasheetExtractor):
             return []
         
         try:
-            logger.debug(f"Extracting data from STM PDF: {pdf_path}")
+            logger.debug(f"Extracting data from Microchip PDF: {pdf_path}")
             
             with pdfplumber.open(pdf_path) as pdf:
                 # Extract full text for regex-based parsing
                 full_text = self._extract_full_text(pdf)
                 
-                # Extract voltage and temperature from text (more reliable than tables)
+                # Extract voltage and temperature from text
                 voltage_specs = self._extract_voltage_from_text(full_text)
                 temp_specs = self._extract_temperature_from_text(full_text)
                 
                 logger.debug(f"Extracted voltage specs: {voltage_specs}")
                 logger.debug(f"Extracted temp specs: {temp_specs}")
                 
-                # Try regex-based variant extraction (works well for STM32)
+                # Try regex-based variant extraction
                 ic_variants = self._extract_variants_from_text(full_text, voltage_specs, temp_specs)
             
             if not ic_variants:
                 logger.debug(f"No IC variants found in PDF: {pdf_path}")
                 return [self._create_basic_entry(pdf_path, voltage_specs, temp_specs)]
             
-            logger.info(f"Extracted {len(ic_variants)} IC variants from STM PDF")
+            logger.info(f"Extracted {len(ic_variants)} IC variants from Microchip PDF")
             return ic_variants
             
         except Exception as e:
-            logger.error(f"Failed to extract data from STM PDF {pdf_path}: {e}")
+            logger.error(f"Failed to extract data from Microchip PDF {pdf_path}: {e}")
             raise DatasheetExtractionException(
-                f"Failed to extract data from STM PDF: {str(e)}"
+                f"Failed to extract data from Microchip PDF: {str(e)}"
             )
     
     def _extract_full_text(self, pdf) -> str:
@@ -115,13 +118,13 @@ class STMExtractor(DatasheetExtractor):
         voltage_specs = {}
         
         patterns = [
-            # VDD/VCC range
+            # VDD range
             r'V[Dd][Dd][A-Z]?\s*[=:]\s*(\d+\.?\d*)\s*V?\s*(?:to|[-–~])\s*(\d+\.?\d*)\s*V',
             r'V[Cc][Cc]\s*[=:]\s*(\d+\.?\d*)\s*V?\s*(?:to|[-–~])\s*(\d+\.?\d*)\s*V',
             # Supply voltage range
             r'[Ss]upply\s+[Vv]oltage[:\s]+(\d+\.?\d*)\s*V?\s*(?:to|[-–~])\s*(\d+\.?\d*)\s*V',
             r'[Oo]perating\s+[Vv]oltage[:\s]+(\d+\.?\d*)\s*V?\s*(?:to|[-–~])\s*(\d+\.?\d*)\s*V',
-            # Generic voltage range (e.g., "2.0V to 3.6V")
+            # Generic voltage range
             r'(\d+\.?\d*)\s*V\s*(?:to|[-–~])\s*(\d+\.?\d*)\s*V(?:\s|$|,)',
         ]
         
@@ -149,14 +152,14 @@ class STMExtractor(DatasheetExtractor):
         normalized_text = text.replace('(cid:176)', '°').replace('°', '°')
         
         patterns = [
-            # Pattern for "-40°C to +85°C" with various separators
+            # Pattern for "-40°C to +85°C"
             r'[-–]\s*(\d+)\s*°?\s*C?\s*to\s*\+?(\d+)\s*°?\s*C',
             # Temperature range with degree symbol
             r'(-?\d+)\s*°?\s*C\s*(?:to|[-–~])\s*\+?(\d+)\s*°?\s*C',
             # Operating/ambient temperature
             r'[Oo]perating\s+[Tt]emperature[:\s]+(-?\d+)\s*(?:°C)?\s*(?:to|[-–~])\s*\+?(\d+)',
             r'[Aa]mbient\s+[Tt]emperature[:\s]+(-?\d+)\s*(?:°C)?\s*(?:to|[-–~])\s*\+?(\d+)',
-            # Industrial temperature range pattern
+            # Industrial temperature range
             r'[-–]\s*(40)\s*°?\s*C?\s*to\s*\+?(85|125|150)\s*°?\s*C',
         ]
         
@@ -166,11 +169,11 @@ class STMExtractor(DatasheetExtractor):
                 try:
                     min_t_str = match.group(1)
                     min_t = float(min_t_str)
-                    # Handle negative temperature (check if there's a minus before)
+                    # Handle negative temperature
                     if min_t > 0 and ('- ' + min_t_str in normalized_text or '–' + min_t_str in normalized_text):
                         min_t = -min_t
                     max_t = float(match.group(2))
-                    # Sanity check: reasonable temperature range
+                    # Sanity check
                     if -65 <= min_t <= 25 and 50 <= max_t <= 200:
                         temp_specs = {"operating_temp_min": min_t, "operating_temp_max": max_t}
                         logger.debug(f"Found temperature range: {min_t}°C to {max_t}°C")
@@ -186,11 +189,11 @@ class STMExtractor(DatasheetExtractor):
         voltage_specs: Dict,
         temp_specs: Dict
     ) -> List[Dict]:
-        """Extract IC variants from text using regex (STM32 focused)."""
+        """Extract IC variants from text using regex."""
         variants = []
         seen_parts = set()
         
-        # Find ordering/device summary section (first 5000 chars usually contain summary)
+        # Find ordering/device summary section
         ordering_section = self._find_ordering_section(text)
         search_text = ordering_section if ordering_section else text[:5000]
         
@@ -206,7 +209,7 @@ class STMExtractor(DatasheetExtractor):
                     continue
                 
                 # Skip common false positives
-                if part_number in ['TABLE', 'FLASH', 'PACKAGE', 'ORDER', 'LQFP', 'TSSOP']:
+                if part_number in ['TABLE', 'DEVICE', 'PACKAGE', 'ORDER', 'SOIC', 'TSSOP']:
                     continue
                 
                 seen_parts.add(part_number)
@@ -221,10 +224,10 @@ class STMExtractor(DatasheetExtractor):
                 
                 variant = {
                     "part_number": part_number,
-                    "manufacturer": "STM",
+                    "manufacturer": "MICROCHIP",
                     "pin_count": pin_count or 0,
                     "package_type": package_type,
-                    "description": f"STM {part_number}" + (f" - {package_type}" if package_type else ""),
+                    "description": f"Microchip {part_number}" + (f" - {package_type}" if package_type else ""),
                     "voltage_min": voltage_specs.get("voltage_min"),
                     "voltage_max": voltage_specs.get("voltage_max"),
                     "operating_temp_min": temp_specs.get("operating_temp_min"),
@@ -244,7 +247,8 @@ class STMExtractor(DatasheetExtractor):
         patterns = [
             r'(?:ordering\s+information|order\s+information|device\s+summary)(.{500,3000})',
             r'(?:part\s+numbering.*?package)(.{200,2000})',
-            r'(?:table\s+\d+\..*?device\s+summary)(.{200,2000})',
+            r'(?:table\s+\d+\..*?device\s+variants)(.{200,2000})',
+            r'(?:device\s+selection)(.{200,2000})',
         ]
         
         for pattern in patterns:
@@ -265,14 +269,14 @@ class STMExtractor(DatasheetExtractor):
             match = re.search(pattern, context, re.IGNORECASE)
             if match:
                 if pkg_name:
-                    # Pattern like LQFP48
+                    # Pattern like SOIC8
                     package_type = f"{pkg_name}{match.group(2)}"
                     try:
                         pin_count = int(match.group(2))
                     except (ValueError, IndexError):
                         pass
                 else:
-                    # Pattern like "48-pin"
+                    # Pattern like "8-pin"
                     try:
                         pin_count = int(match.group(1))
                     except (ValueError, IndexError):
@@ -295,17 +299,17 @@ class STMExtractor(DatasheetExtractor):
         part_number = pdf_path.stem.upper()
         
         # Remove manufacturer prefix if present
-        for prefix in ["STM_", "STM-", "ST_", "ST-"]:
+        for prefix in ["MICROCHIP_", "MICROCHIP-", "ATMEL_", "ATMEL-"]:
             if part_number.startswith(prefix):
                 part_number = part_number[len(prefix):]
                 break
         
         return {
             "part_number": part_number,
-            "manufacturer": "STM",
+            "manufacturer": "MICROCHIP",
             "pin_count": 0,
             "package_type": None,
-            "description": f"STM {part_number}",
+            "description": f"Microchip {part_number}",
             "voltage_min": voltage_specs.get("voltage_min"),
             "voltage_max": voltage_specs.get("voltage_max"),
             "operating_temp_min": temp_specs.get("operating_temp_min"),
