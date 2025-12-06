@@ -110,6 +110,7 @@ export default function DashboardPage() {
             scanResult={currentScanResult}
             isAnalyzing={isAnalyzing}
             onAnalyze={handleAnalyze}
+            onResultUpdate={setCurrentScanResult}
           />
         </div>
       </div>

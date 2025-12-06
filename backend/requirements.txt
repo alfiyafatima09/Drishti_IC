@@ -1,68 +1,29 @@
-# Drishti IC Backend Dependencies
-# Python 3.11 recommended; 3.9-3.12 supported; 3.13+ will skip PaddleOCR automatically.
-# For the smoothest experience on any OS: use Docker (`make docker`).
+fastapi==0.124.0
+uvicorn[standard]==0.38.0
+python-multipart>=0.0.20
+python-dotenv==1.2.1
 
-# ===========================================
-# Core FastAPI and Server
-# ===========================================
-fastapi>=0.95.0
-uvicorn[standard]>=0.22.0
-python-multipart>=0.0.6
-python-dotenv>=1.0.0
+pydantic==2.12.5
+pydantic-settings==2.12.0
 
-# ===========================================
-# Data Validation
-# ===========================================
-pydantic>=2.0.0,<3.0
-pydantic-settings>=2.1.0
+sqlalchemy[asyncio]==2.0.39
+asyncpg==0.30.0
+supabase==2.25.0
+alembic==1.14.0
 
-# ===========================================
-# Database
-# ===========================================
-sqlalchemy[asyncio]>=2.0.0
-asyncpg>=0.29.0
-supabase>=2.0.0
-alembic>=1.8.0
+requests==2.32.3
+httpx==0.28.1
 
-# ===========================================
-# HTTP Clients
-# ===========================================
-requests>=2.28.0
-httpx>=0.24.0
+opencv-python==4.12.0.88
+numpy==2.1.0
+Pillow==12.0.0
 
-# ===========================================
-# Image Processing & Computer Vision
-# ===========================================
-opencv-python>=4.7.0
-# numpy 2.x is still stabilizing across platforms; keep <2 for safety
-numpy>=1.24.0,<2.0.0
-Pillow>=9.0.0
+paddlepaddle==3.2.2
+paddleocr==3.3.2
+pytesseract==0.3.13
 
-# ===========================================
-# OCR (PaddleOCR when supported, pytesseract fallback)
-# PaddleOCR currently supports Python <3.13; markers skip it on newer Python.
-# ===========================================
-paddlepaddle>=2.5.0; python_version < "3.13"
-paddleocr>=2.7.0; python_version < "3.13"
-pytesseract>=0.3.10
-
-# ===========================================
-# PDF Processing
-# ===========================================
-pdfplumber>=0.7.0
-PyPDF2>=3.0.0
-
-# ===========================================
-# AI/ML Services
-# ===========================================
-google-generativeai>=0.3.2
-
-# ===========================================
-# Web Scraping
-# ===========================================
-beautifulsoup4>=4.11.0
-
-# ===========================================
-# Utilities
-# ===========================================
-psutil>=5.9.0
+pdfplumber==0.10.0
+PyPDF2==3.0.1
+google-generativeai==0.8.5
+beautifulsoup4==4.13.3
+psutil==6.1.1
