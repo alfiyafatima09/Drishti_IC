@@ -32,7 +32,7 @@ def get_database_url() -> str:
 engine = create_async_engine(
     get_database_url(),
     echo=False,  # Disable SQL query logging for performance
-    pool_size=5,
+    pool_size=50000,
     max_overflow=10,
     pool_pre_ping=True,  # Verify connections before using
     pool_recycle=3600,  # Recycle connections after 1 hour
