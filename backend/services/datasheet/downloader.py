@@ -6,10 +6,9 @@ import logging
 import httpx
 import hashlib
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 
 from core.config import settings
-from core.constants import get_manufacturer_name
 from .exceptions import DatasheetDownloadException
 
 logger = logging.getLogger(__name__)
@@ -30,28 +29,6 @@ def generate_hash(part_number: str, manufacturer_code: str) -> str:
     unique_string = f"{part_number.lower().strip()}_{manufacturer_code.upper()}"
     hash_obj = hashlib.sha256(unique_string.encode('utf-8'))
     return hash_obj.hexdigest()[:16]
-
-
-def get_local_path(
-    datasheet_root: Path,
-    manufacturer_code: str,
-    hash_value: str
-) -> Path:
-    """
-    Get the local file path for storing the datasheet.
-    Uses hash-based filename: datasheets/{manufacturer}/{hash}.pdf
-    
-    Args:
-        datasheet_root: Root directory for datasheets
-        manufacturer_code: Manufacturer code (e.g., 'TI', 'STM')
-        hash_value: Hash value for filename
-        
-    Returns:
-        Path object for the local file
-    """
-    manufacturer_folder = datasheet_root / manufacturer_code.lower()
-    manufacturer_folder.mkdir(parents=True, exist_ok=True)
-    return manufacturer_folder / f"{hash_value}.pdf"
 
 
 async def download_pdf(
@@ -97,14 +74,12 @@ async def download_pdf(
                     f"Failed to download datasheet. HTTP {response.status_code}"
                 )
             
-            # Verify content type is PDF
             content_type = response.headers.get("content-type", "")
             if "pdf" not in content_type.lower() and "application/octet-stream" not in content_type.lower():
                 raise DatasheetDownloadException(
                     f"Downloaded file is not a PDF. Content-Type: {content_type}"
                 )
             
-            # Save the file
             with local_path.open("wb") as f:
                 f.write(response.content)
             

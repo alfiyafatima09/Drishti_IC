@@ -19,7 +19,7 @@ class Manufacturer(str, Enum):
     TI = "TI"
     NXP = "NXP"
     ANALOG_DEVICES = "ANALOG_DEVICES"
-    # ONSEMI = "ONSEMI"
+    ONSEMI = "ONSEMI"
     
     # MICROCHIP = "MICROCHIP"
     # INFINEON = "INFINEON"
@@ -31,7 +31,7 @@ MANUFACTURER_NAMES: Dict[str, str] = {
     Manufacturer.TI: "Texas Instruments",
     Manufacturer.NXP: "NXP Semiconductors",
     Manufacturer.ANALOG_DEVICES: "Analog Devices",
-    # Manufacturer.ONSEMI: "onsemi",
+    Manufacturer.ONSEMI: "onsemi",
     # Manufacturer.MICROCHIP: "Microchip Technology", 
     # Manufacturer.INFINEON: "Infineon Technologies",
 }
@@ -42,6 +42,7 @@ MANUFACTURER_URL_PATTERNS: Dict[str, str] = {
     Manufacturer.TI: "https://www.ti.com/lit/ds/symlink/{ic_id}.pdf",
     Manufacturer.NXP: "https://www.nxp.com/docs/en/data-sheet/{ic_id}.pdf",
     Manufacturer.ANALOG_DEVICES: "https://www.analog.com/media/en/technical-documentation/{ic_id}.pdf",
+    Manufacturer.ONSEMI: "https://www.onsemi.com/pdf/datasheet/{ic_id}.pdf",
     # Manufacturer.MOUSER: "https://www.mouser.com/datasheet/{ic_id}.pdf",
     # Manufacturer.DIGIKEY: "https://www.digikey.com/datasheet/{ic_id}.pdf",
     # Manufacturer.ALLDATASHEET: "https://www.all-datasheet.com/datasheet/{ic_id}.pdf",
