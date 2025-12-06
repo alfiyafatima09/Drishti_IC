@@ -7,6 +7,7 @@ from .stm_extractor import STMExtractor
 from .ti_extractor import TIExtractor
 from .onsemi_extractor import OnSemiExtractor
 from .nxp_extractor import NXPExtractor
+from .microchip_extractor import MicrochipExtractor
 
 # Registry of supported manufacturers -> extractor classes
 EXTRACTORS = {
@@ -14,6 +15,7 @@ EXTRACTORS = {
     "TI": TIExtractor,
     "ONSEMI": OnSemiExtractor,
     "NXP": NXPExtractor,
+    "MICROCHIP": MicrochipExtractor,
 }
 
 __all__ = [
@@ -22,6 +24,7 @@ __all__ = [
     "TIExtractor",
     "OnSemiExtractor",
     "NXPExtractor",
+    "MicrochipExtractor",
     "EXTRACTORS",
 ]
 
