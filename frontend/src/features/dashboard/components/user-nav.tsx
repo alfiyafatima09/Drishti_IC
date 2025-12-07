@@ -79,9 +79,12 @@ export function UserNav() {
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent className="border-2 border-blue-100 bg-white text-slate-800">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-slate-900">Sign out?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold text-slate-900">
+              Sign out?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-slate-600">
-              Are you sure you want to sign out? You'll need to sign in again to access the dashboard.
+              Are you sure you want to sign out? You'll need to sign in again to access the
+              dashboard.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
