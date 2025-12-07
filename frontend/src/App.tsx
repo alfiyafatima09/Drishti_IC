@@ -1,5 +1,5 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { LoginPage } from '@/features/auth/login/login-page'
+// import { LoginPage } from '@/features/auth/login/login-page'
 import DashboardLayout from '@/features/dashboard/dashboard-layout'
 import DashboardPage from '@/features/dashboard/dashboard-page'
 import ScrapingPage from '@/features/scraping/scraping-page'
@@ -10,7 +10,8 @@ function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/" element={<LoginPage />} />
+        {/* <Route path="/" element={<LoginPage />} /> */}
+        <Route path="/" element={<Navigate to="/scan" replace />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
         </Route>
@@ -33,7 +34,7 @@ function App() {
           <Route index element={<DashboardPage />} />
         </Route>
         {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/scan" replace />} />
       </Routes>
     </HashRouter>
   )
