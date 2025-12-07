@@ -43,7 +43,7 @@ function StatCard({ label, value, icon: Icon, trend, color = 'text-zinc-400' }: 
   )
 }
 
-export function StatsPanel({ stats, isLoading }: StatsPanelProps) {
+export function StatsPanel({ stats }: StatsPanelProps) {
   // Default values when no stats provided
   const data: DashboardStats = stats ?? {
     total_scans: 0,
