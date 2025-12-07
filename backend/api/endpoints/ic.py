@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/ic", tags=["IC Database"])
 
 
-@router.get("/{part_number}/details", response_model=ICSpecificationResponse)
+@router.get("/details", response_model=ICSpecificationResponse)
 async def get_ic_details(
-    part_number: str,
+    part_number: str = Query(..., description="IC part number (e.g., LM334SM/NOPB)"),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -56,9 +56,9 @@ async def get_ic_details(
     )
 
 
-@router.get("/{part_number}/datasheet")
+@router.get("/datasheet")
 async def get_ic_datasheet(
-    part_number: str,
+    part_number: str = Query(..., description="IC part number (e.g., LM334SM/NOPB)"),
     db: AsyncSession = Depends(get_db),
 ):
     """

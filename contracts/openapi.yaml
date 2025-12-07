@@ -261,7 +261,7 @@ paths:
   # ================================================================
   # IC DATABASE ENDPOINTS
   # ================================================================
-  /api/v1/ic/{part_number}/details:
+  /api/v1/ic/details:
     get:
       tags: [IC Database]
       summary: Get IC Specification
@@ -269,8 +269,9 @@ paths:
       description: Fetch IC details from the Golden Record database.
       parameters:
         - name: part_number
-          in: path
+          in: query
           required: true
+          description: IC part number (e.g., LM334SM/NOPB)
           schema:
             type: string
           example: "LM555"
@@ -292,7 +293,7 @@ paths:
                 message: "Part number 'XYZ999' not found in database."
                 suggestion: "This IC may be in the sync queue or fake registry."
 
-  /api/v1/ic/{part_number}/datasheet:
+  /api/v1/ic/datasheet:
     get:
       tags: [IC Database]
       summary: Download IC Datasheet PDF
@@ -300,8 +301,9 @@ paths:
       description: Stream the locally stored PDF datasheet for an IC.
       parameters:
         - name: part_number
-          in: path
+          in: query
           required: true
+          description: IC part number (e.g., LM334SM/NOPB)
           schema:
             type: string
           example: "LM555"

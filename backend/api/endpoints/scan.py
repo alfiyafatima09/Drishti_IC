@@ -175,6 +175,7 @@ async def scan_image(
     # Run OCR on the uploaded image
     logger.debug("Starting OCR extraction...")
     ocr_response = extract_text_from_image(image_data, preprocess=True)
+    print(ocr_response)
     
     if ocr_response.status == "error":
         logger.error(f"OCR failed: {ocr_response.error}")

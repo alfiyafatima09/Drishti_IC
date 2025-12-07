@@ -123,7 +123,7 @@ export default function ICDatabasePage() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/v1/ic/${encodeURIComponent(partNumber)}/details`);
+      const response = await fetch(`${API_BASE}/api/v1/ic/details?part_number=${encodeURIComponent(partNumber)}`);
       
       if (!response.ok) {
         throw new Error('Failed to load IC details');
@@ -141,7 +141,7 @@ export default function ICDatabasePage() {
 
   const handleDownloadDatasheet = useCallback(async (partNumber: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/v1/ic/${encodeURIComponent(partNumber)}/datasheet`);
+      const response = await fetch(`${API_BASE}/api/v1/ic/datasheet?part_number=${encodeURIComponent(partNumber)}`);
       
       if (!response.ok) {
         throw new Error('Failed to download datasheet');
