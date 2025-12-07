@@ -11,14 +11,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import {
-  LayoutDashboard,
-  ScanLine,
-  Database,
-  History,
-  Shield,
-  Search,
-} from 'lucide-react'
+import { LayoutDashboard, ScanLine, Database, History, Shield, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import * as React from 'react'
@@ -111,8 +104,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-
       </SidebarContent>
 
       <SidebarFooter className="border-t-2 border-cyan-400 bg-white/10 p-4 backdrop-blur-sm group-data-[collapsible=icon]:p-2">
