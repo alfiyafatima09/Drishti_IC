@@ -115,3 +115,6 @@ local_model/venv/
 
 *.md
 backend/scanned_images
+
+#makefile
+Makefile
