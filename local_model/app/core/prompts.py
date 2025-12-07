@@ -1,4 +1,5 @@
-# Prompt templates for model inference
+# Prompt templates for IC analysis
+
 IC_ANALYSIS_PROMPT = """Analyze the attached IC image and return ONLY a valid JSON object with the following structure:
 
 {
