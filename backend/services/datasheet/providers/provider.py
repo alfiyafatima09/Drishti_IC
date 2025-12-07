@@ -29,12 +29,13 @@ def construct_datasheet_url(manufacturer_code: str, part_number: str) -> str:
 
 
 class DatasheetProvider:
-    def __init__(self, manufacturer_code: str):
+    def __init__(self, datasheet_root: Optional[Path] = None, manufacturer_code: str = ""):
         manufacturer_code = manufacturer_code.upper().strip()
         
         if not is_valid_manufacturer(manufacturer_code):
             raise ValueError(f"Unsupported manufacturer: {manufacturer_code}")
         
+        self.datasheet_root = datasheet_root or settings.DATASHEET_FOLDER
         self.manufacturer_code = manufacturer_code
         self.manufacturer_name = get_manufacturer_name(manufacturer_code)
     
