@@ -104,8 +104,7 @@ backend/migrations/
 # Bun
 bun.lockb
 models/constraints_req.txt
-*tests*/
-*test*
+
 
 # Local Model - Large binary files (exclude from git, download separately)
 local_model/models/

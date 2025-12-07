@@ -31,4 +31,4 @@ async def upload_vision(
         return process_vision_request(request_data)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

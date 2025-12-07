@@ -9,3 +9,4 @@ ruff
 mypy
 pytest
 types-requests
+httpx

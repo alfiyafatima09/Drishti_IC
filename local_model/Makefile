@@ -1,12 +1,23 @@
-.PHONY: install run format lint clean
+.PHONY: install run format lint type-check test clean help
+
+# Default target
+help:
+	@echo "Available commands:"
+	@echo "  make install      - Install dependencies"
+	@echo "  make run          - Run the API server"
+	@echo "  make format       - Format code using Ruff"
+	@echo "  make lint         - Lint code using Ruff"
+	@echo "  make type-check   - Run static type checking using Mypy"
+	@echo "  make test         - Run tests using Pytest"
+	@echo "  make clean        - Clean up cache files"
 
 # Install dependencies
 install:
 	./venv/bin/pip install -r requirements.txt
 
-# Run the API server with auto-reload
+# Run the API server and Model server
 run:
-	./start_server.sh
+	./start_services.sh
 
 # Format code using Ruff
 format:
@@ -20,9 +31,9 @@ lint:
 type-check:
 	./venv/bin/mypy app
 
-# Run tests using Pytest
+# Run tests using Pytest (invoke via python -m to add CWD to path)
 test:
-	./venv/bin/pytest
+	./venv/bin/python -m pytest
 
 # Clean up cache files
 clean:
