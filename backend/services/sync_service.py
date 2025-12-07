@@ -22,8 +22,6 @@ MAX_RETRY_COUNT = 3
 
 class SyncService:
     """Service for managing weekly sync operations."""
-
-    # Track active job (simple in-memory tracking)
     _active_job_id: Optional[UUID] = None
     _cancel_requested: bool = False
 
@@ -42,17 +40,14 @@ class SyncService:
         retry_failed: bool = True,
     ) -> SyncJob:
         """Start a new sync job (creates job record, actual processing is separate)."""
-        # Check if already running
         active = await SyncService.get_active_job(db)
         if active:
             raise ValueError("A sync job is already running")
 
-        # Get items to process
         pending_items = await QueueService.get_pending_items(db, limit=max_items)
         
         if retry_failed:
             failed_items = await QueueService.get_failed_items(db)
-            # Combine, prioritizing pending
             all_items = pending_items + [f for f in failed_items if f not in pending_items]
         else:
             all_items = pending_items
@@ -60,7 +55,6 @@ class SyncService:
         if max_items:
             all_items = all_items[:max_items]
 
-        # Create sync job
         job = SyncJob(
             status="PROCESSING",
             started_at=datetime.utcnow(),
@@ -90,7 +84,6 @@ class SyncService:
         logger.info(f"Starting background sync processing for job {job_id}")
         
         try:
-            # Get the job
             result = await db.execute(
                 select(SyncJob).where(SyncJob.job_id == job_id)
             )
@@ -99,7 +92,6 @@ class SyncService:
                 logger.error(f"Sync job {job_id} not found")
                 return
             
-            # Get all items to process
             pending_items = await QueueService.get_pending_items(db)
             failed_items = await QueueService.get_failed_items(db)
             all_items = pending_items + [f for f in failed_items if f not in pending_items]
@@ -115,7 +107,6 @@ class SyncService:
             fake = 0
             
             for queue_item in all_items:
-                # Check for cancellation
                 if SyncService._cancel_requested:
                     logger.info(f"Sync job {job_id} cancelled by user")
                     break
@@ -123,31 +114,25 @@ class SyncService:
                 part_number = queue_item.part_number
                 logger.info(f"Processing: {part_number} ({processed + 1}/{len(all_items)})")
                 
-                # Update current item
                 job.current_item = part_number
                 await db.commit()
                 
-                # Mark queue item as processing
                 queue_item.status = "PROCESSING"
                 await db.commit()
                 
                 try:
-                    # Try to download datasheet from all manufacturers
                     result = await datasheet_service.download_datasheet(
                         part_number=part_number,
-                        manufacturer_code=None,  # Try all manufacturers
+                        manufacturer_code=None,
                         db=db
                     )
                     
                     if result["success"]:
-                        # SUCCESS - Found on at least one manufacturer
                         logger.info(f"SUCCESS: {part_number} found on {result['manufacturers_found']}")
                         
-                        # Remove from queue (it's now in ic_specifications)
                         await QueueService.remove_from_queue(db, part_number)
                         success += 1
                         
-                        # Add log entry
                         job.log = job.log + [{
                             "part_number": part_number,
                             "result": "SUCCESS",
@@ -155,28 +140,25 @@ class SyncService:
                             "timestamp": datetime.utcnow().isoformat()
                         }]
                     else:
-                        # NOT FOUND on any manufacturer
                         queue_item.retry_count += 1
                         queue_item.error_message = result.get("message", "Not found on any manufacturer")
                         
                         if queue_item.retry_count >= MAX_RETRY_COUNT:
-                            # Max retries reached - move to fake registry
                             logger.warning(f"FAKE: {part_number} not found after {MAX_RETRY_COUNT} attempts")
                             
                             try:
                                 await FakeService.mark_as_fake(
                                     db=db,
                                     part_number=part_number,
-                                    reason=f"Not found on any manufacturer website after {MAX_RETRY_COUNT} sync attempts",
+                                    reason=f"Not found on any manufacturer website or DigiKey after {MAX_RETRY_COUNT} sync attempts",
                                     source="SYNC_NOT_FOUND",
                                     scrape_attempts=queue_item.retry_count,
-                                    manufacturers_checked=get_supported_manufacturers(),
+                                    manufacturers_checked=get_supported_manufacturers() + ["DIGIKEY"],
                                 )
-                            except ValueError:
-                                # Already in fake registry
+                            except ValueError:  # Already in fake registry
                                 pass
                             
-                            # Remove from queue
+                          
                             await QueueService.remove_from_queue(db, part_number)
                             fake += 1
                             
@@ -187,7 +169,7 @@ class SyncService:
                                 "timestamp": datetime.utcnow().isoformat()
                             }]
                         else:
-                            # Still has retries left - mark as failed for next sync
+                           
                             logger.info(f"FAILED: {part_number} (retry {queue_item.retry_count}/{MAX_RETRY_COUNT})")
                             queue_item.status = "FAILED"
                             failed += 1
@@ -212,18 +194,16 @@ class SyncService:
                         "error": str(e),
                         "timestamp": datetime.utcnow().isoformat()
                     }]
-                
-                # Update job progress
+               
                 processed += 1
                 job.processed_items = processed
                 job.success_count = success
                 job.failed_count = failed
                 job.fake_count = fake
                 
-                # Commit after each item (so progress is saved)
                 await db.commit()
             
-            # Job complete
+          
             if SyncService._cancel_requested:
                 job.status = "CANCELLED"
                 job.error_message = f"Cancelled by user. Processed {processed}/{len(all_items)} items."
@@ -246,7 +226,7 @@ class SyncService:
         except Exception as e:
             logger.exception(f"Sync job {job_id} failed with error: {e}")
             
-            # Try to mark job as error
+           
             try:
                 result = await db.execute(
                     select(SyncJob).where(SyncJob.job_id == job_id)
@@ -272,7 +252,6 @@ class SyncService:
         if active:
             return active.to_dict()
         
-        # Return idle status with queue info
         queue_size = await QueueService.get_queue_size(db)
         return {
             "job_id": None,
@@ -295,12 +274,8 @@ class SyncService:
         active = await SyncService.get_active_job(db)
         if not active:
             return None
-
-        # Signal cancellation to the background worker
         SyncService._cancel_requested = True
-        
-        # The actual status update will happen in run_sync_job
-        # But we return current state for immediate feedback
+
         logger.info(f"Cancellation requested for sync job {active.job_id}")
         return active
 
@@ -309,7 +284,6 @@ class SyncService:
         db: AsyncSession, limit: int = 10
     ) -> tuple[list[SyncJob], int]:
         """Get sync job history."""
-        # Get completed jobs (not IDLE or PROCESSING)
         result = await db.execute(
             select(SyncJob).where(
                 SyncJob.status.in_(["COMPLETED", "ERROR", "CANCELLED"])
@@ -317,14 +291,12 @@ class SyncService:
         )
         jobs = list(result.scalars().all())
 
-        # Total count
         count_result = await db.execute(
             select(func.count()).select_from(SyncJob).where(
                 SyncJob.status.in_(["COMPLETED", "ERROR", "CANCELLED"])
             )
         )
         total = count_result.scalar() or 0
-
         return jobs, total
 
     @staticmethod
