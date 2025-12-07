@@ -1,10 +1,11 @@
-import { useCallback, useState, RefObject } from 'react'
+import { useCallback, useState } from 'react'
+import type { RefObject } from 'react'
 import { Upload, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ImageUploadProps {
   onFileSelect: (file: File) => void
-  fileInputRef: RefObject<HTMLInputElement>
+  fileInputRef: RefObject<HTMLInputElement | null>
   disabled?: boolean
 }
 
@@ -99,7 +100,7 @@ export function ImageUpload({ onFileSelect, fileInputRef, disabled }: ImageUploa
           'relative cursor-pointer rounded-xl border-3 border-dashed p-8 transition-all',
           'hover:border-purple-500 hover:bg-purple-50',
           isDragging &&
-            'scale-105 border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 shadow-xl',
+          'scale-105 border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 shadow-xl',
           !isDragging && 'border-purple-300 bg-gradient-to-br from-slate-50 to-purple-50',
           disabled && 'cursor-not-allowed opacity-50',
         )}

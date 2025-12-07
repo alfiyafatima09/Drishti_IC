@@ -103,7 +103,7 @@ export function AnalysisPanel({
       setOverridePart('')
     }
     setLocalError(null)
-  }, [scanResult?.scan_id])
+  }, [scanResult?.scan_id, scanResult?.part_number])
 
   if (!capturedImage) {
     return (
@@ -146,7 +146,7 @@ export function AnalysisPanel({
       }
       const data: ScanResult = await resp.json()
       onResultUpdate(data)
-    } catch (err: any) {
+    } catch (err) {
       console.error('Bottom scan error:', err)
       setLocalError('Failed to upload bottom scan. Please try again.')
     } finally {
@@ -176,7 +176,7 @@ export function AnalysisPanel({
       const data: ScanResult = await resp.json()
       onResultUpdate(data)
       setOverrideNote('')
-    } catch (err: any) {
+    } catch (err) {
       console.error('Override error:', err)
       setLocalError('Failed to override part number. Please try again.')
     } finally {

@@ -1,7 +1,7 @@
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
+  // SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,7 +15,7 @@ import { LayoutDashboard, ScanLine, Database, History, Shield, Search } from 'lu
 import { Link } from 'react-router-dom'
 
 import * as React from 'react'
-import { UserNav } from './user-nav'
+// import { UserNav } from './user-nav'
 
 // Menu items.
 const items = [
@@ -106,13 +106,13 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t-2 border-cyan-400 bg-white/10 p-4 backdrop-blur-sm group-data-[collapsible=icon]:p-2">
+      {/* <SidebarFooter className="border-t-2 border-cyan-400 bg-white/10 p-4 backdrop-blur-sm group-data-[collapsible=icon]:p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <UserNav />
           </SidebarMenuItem>
         </SidebarMenu>
-      </SidebarFooter>
+      </SidebarFooter> */}
       <SidebarRail />
     </Sidebar>
   )
