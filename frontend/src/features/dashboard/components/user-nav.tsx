@@ -1,7 +1,6 @@
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -18,7 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { SidebarMenuButton } from '@/components/ui/sidebar'
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles, User } from 'lucide-react'
+import { ChevronsUpDown, LogOut, User } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -37,60 +36,38 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton
             size="lg"
-            className="transition-colors group-data-[collapsible=icon]:justify-center hover:bg-zinc-800/50 data-[state=open]:bg-zinc-800/50 data-[state=open]:text-[#F0F0F0]"
+            className="text-white transition-colors group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white data-[state=open]:bg-white/20 data-[state=open]:text-white"
           >
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-[#D0D0D0]">
+            <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg border-2 border-cyan-300 bg-white text-blue-600 shadow-sm">
               <User className="size-4" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate font-medium text-[#F0F0F0]">Admin User</span>
-              <span className="truncate text-xs text-[#A0A0A0]">admin@drishti.ic</span>
+              <span className="truncate font-bold">Admin User</span>
+              <span className="truncate text-xs font-medium text-cyan-100">admin@drishti.ic</span>
             </div>
-            <ChevronsUpDown className="ml-auto size-4 text-[#777777] group-data-[collapsible=icon]:hidden" />
+            <ChevronsUpDown className="ml-auto size-4 text-cyan-100 group-data-[collapsible=icon]:hidden" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg border-zinc-800 bg-[#1a1a1a] text-[#F0F0F0]"
+          className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl border-2 border-blue-100 bg-white/95 p-2 text-slate-700 shadow-xl backdrop-blur-md"
           side="bottom"
           align="end"
           sideOffset={4}
         >
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-[#D0D0D0]">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600">
                 <User className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Admin User</span>
-                <span className="truncate text-xs text-[#A0A0A0]">admin@drishti.ic</span>
+                <span className="truncate font-bold text-slate-800">Admin User</span>
+                <span className="truncate text-xs text-slate-500">admin@drishti.ic</span>
               </div>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-zinc-800" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem className="focus:bg-zinc-800 focus:text-[#F0F0F0]">
-              <Sparkles className="mr-2 h-4 w-4" />
-              Upgrade to Pro
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-zinc-800" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem className="focus:bg-zinc-800 focus:text-[#F0F0F0]">
-              <BadgeCheck className="mr-2 h-4 w-4" />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem className="focus:bg-zinc-800 focus:text-[#F0F0F0]">
-              <CreditCard className="mr-2 h-4 w-4" />
-              Billing
-            </DropdownMenuItem>
-            <DropdownMenuItem className="focus:bg-zinc-800 focus:text-[#F0F0F0]">
-              <Bell className="mr-2 h-4 w-4" />
-              Notifications
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-zinc-800" />
+          <DropdownMenuSeparator className="my-1 bg-blue-100" />
           <DropdownMenuItem
-            className="text-red-400 focus:bg-zinc-800 focus:text-[#F0F0F0] focus:text-red-400"
+            className="cursor-pointer font-medium text-red-600 focus:bg-red-50 focus:text-red-700"
             onSelect={() => setShowLogoutDialog(true)}
           >
             <LogOut className="mr-2 h-4 w-4" />
@@ -100,21 +77,20 @@ export function UserNav() {
       </DropdownMenu>
 
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <AlertDialogContent className="border-zinc-800 bg-[#1a1a1a] text-[#F0F0F0]">
+        <AlertDialogContent className="border-2 border-blue-100 bg-white text-slate-800">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#A0A0A0]">
-              This action will log you out of your account. You will need to sign in again to access
-              the dashboard.
+            <AlertDialogTitle className="text-xl font-bold text-slate-900">Sign out?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-600">
+              Are you sure you want to sign out? You'll need to sign in again to access the dashboard.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 bg-transparent text-[#F0F0F0] hover:bg-zinc-800 hover:text-[#F0F0F0]">
+            <AlertDialogCancel className="border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-900">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleLogout}
-              className="bg-zinc-50 text-zinc-900 hover:bg-zinc-200"
+              className="bg-red-600 text-white hover:bg-red-700"
             >
               Log out
             </AlertDialogAction>

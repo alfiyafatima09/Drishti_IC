@@ -16,7 +16,6 @@ import {
   ScanLine,
   Database,
   History,
-  Settings,
   Shield,
   Search,
 } from 'lucide-react'
@@ -113,26 +112,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-auto pb-4">
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-2 px-3 group-data-[collapsible=icon]:px-0">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Settings"
-                  className="h-11 rounded-lg font-semibold text-white transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white"
-                >
-                  <Link to="/settings">
-                    <Settings className="h-5 w-5 shrink-0" />
-                    <span className="font-semibold tracking-wide group-data-[collapsible=icon]:hidden">
-                      Settings
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+
       </SidebarContent>
 
       <SidebarFooter className="border-t-2 border-cyan-400 bg-white/10 p-4 backdrop-blur-sm group-data-[collapsible=icon]:p-2">
