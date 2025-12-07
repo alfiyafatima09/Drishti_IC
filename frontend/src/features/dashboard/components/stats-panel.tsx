@@ -1,22 +1,22 @@
-import { TrendingUp, CheckCircle2, XCircle, Database } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { DashboardStats } from '@/types/api';
+import { TrendingUp, CheckCircle2, XCircle, Database } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { DashboardStats } from '@/types/api'
 
 // ============================================================
 // TYPES
 // ============================================================
 
 interface StatCardProps {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  trend?: string;
-  color?: string;
+  label: string
+  value: string | number
+  icon: React.ElementType
+  trend?: string
+  color?: string
 }
 
 interface StatsPanelProps {
-  stats?: DashboardStats | null;
-  isLoading?: boolean;
+  stats?: DashboardStats | null
+  isLoading?: boolean
 }
 
 // ============================================================
@@ -25,22 +25,22 @@ interface StatsPanelProps {
 
 function StatCard({ label, value, icon: Icon, trend, color = 'text-zinc-400' }: StatCardProps) {
   return (
-    <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
-      <div className="flex items-center justify-between mb-2">
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="mb-2 flex items-center justify-between">
         <span className="text-xs text-zinc-500">{label}</span>
-        <Icon className={cn('w-4 h-4', color)} />
+        <Icon className={cn('h-4 w-4', color)} />
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-2xl font-bold text-zinc-100 font-mono">{value}</span>
+        <span className="font-mono text-2xl font-bold text-zinc-100">{value}</span>
         {trend && (
           <span className="flex items-center gap-1 text-xs text-emerald-500">
-            <TrendingUp className="w-3 h-3" />
+            <TrendingUp className="h-3 w-3" />
             {trend}
           </span>
         )}
       </div>
     </div>
-  );
+  )
 }
 
 export function StatsPanel({ stats, isLoading }: StatsPanelProps) {
@@ -57,10 +57,10 @@ export function StatsPanel({ stats, isLoading }: StatsPanelProps) {
     queue_size: 0,
     fake_registry_size: 0,
     database_ic_count: 0,
-  };
+  }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <StatCard
         label="Today's Scans"
         value={data.scans_today}
@@ -73,12 +73,7 @@ export function StatsPanel({ stats, isLoading }: StatsPanelProps) {
         icon={CheckCircle2}
         color="text-emerald-400"
       />
-      <StatCard
-        label="Failed"
-        value={data.fail_count}
-        icon={XCircle}
-        color="text-red-400"
-      />
+      <StatCard label="Failed" value={data.fail_count} icon={XCircle} color="text-red-400" />
       <StatCard
         label="ICs in Database"
         value={data.database_ic_count.toLocaleString()}
@@ -86,5 +81,5 @@ export function StatsPanel({ stats, isLoading }: StatsPanelProps) {
         color="text-zinc-400"
       />
     </div>
-  );
+  )
 }
