@@ -1,6 +1,6 @@
 """Pydantic schemas for datasheet queue operations."""
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 from schemas.common import QueueStatus
@@ -21,11 +21,13 @@ class QueueItem(BaseModel):
 
 
 class QueueListResult(BaseModel):
-    """List of queue items with counts."""
+    """List of queue items with counts and pagination."""
     queue_items: list[QueueItem]
     total_count: int
     pending_count: int
     failed_count: int
+    limit: int = 100
+    offset: int = 0
 
 
 class QueueAddRequest(BaseModel):
@@ -41,4 +43,3 @@ class QueueAddResponse(BaseModel):
     already_queued_count: int
     message: str
     queued_items: list[str]  # Part numbers that were added/updated
-

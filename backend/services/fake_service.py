@@ -99,3 +99,47 @@ class FakeService:
         )
         return result.scalar() or 0
 
+    @staticmethod
+    async def transfer_all_to_queue(db: AsyncSession) -> tuple[int, int]:
+        """
+        Transfer all fake registry items to the datasheet queue for retry.
+        
+        Removes items from fake_registry and adds them to datasheet_queue
+        with status PENDING.
+        
+        Returns:
+            Tuple of (transferred_count, already_in_queue_count)
+        """
+        from services.queue_service import QueueService
+        
+        # Get all fake entries
+        fakes, total = await FakeService.list_fakes(db)
+        
+        transferred = 0
+        already_queued = 0
+        
+        for fake in fakes:
+            part_number = fake.part_number
+            
+            # Check if already in queue
+            existing = await QueueService.get_by_part_number(db, part_number)
+            if existing:
+                already_queued += 1
+                # Still remove from fake registry
+                await FakeService.unmark_fake(db, part_number)
+                continue
+            
+            # Add to queue
+            await QueueService.add_to_queue(db, part_number)
+            
+            # Remove from fake registry
+            await FakeService.unmark_fake(db, part_number)
+            
+            transferred += 1
+            logger.info(f"Transferred '{part_number}' from fake registry to queue")
+        
+        await db.commit()
+        logger.info(f"Transferred {transferred} items from fake registry to queue ({already_queued} were already in queue)")
+        
+        return transferred, already_queued
+
