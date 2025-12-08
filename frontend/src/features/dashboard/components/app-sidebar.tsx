@@ -99,10 +99,11 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       tooltip={item.title}
-                      className={`h-11 rounded-lg font-semibold transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white ${isActive
-                        ? 'border-l-4 border-cyan-300 bg-white/30 text-white shadow-lg'
-                        : 'text-white'
-                        }`}
+                      className={`h-11 rounded-lg font-semibold transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white ${
+                        isActive
+                          ? 'border-l-4 border-cyan-300 bg-white/30 text-white shadow-lg'
+                          : 'text-white'
+                      }`}
                     >
                       <Link to={item.url}>
                         <item.icon className="h-5 w-5 shrink-0" />

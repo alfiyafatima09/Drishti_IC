@@ -91,8 +91,7 @@ class ScanService:
             scanned_at=datetime.utcnow(),
         )
         db.add(scan)
-        await db.refresh(scan)
-        logger.info(f"Created extraction scan: {scan.scan_id}")
+        logger.info(f"Created extraction scan object: {scan.scan_id}")
         return scan
 
     @staticmethod
@@ -115,8 +114,9 @@ class ScanService:
         scan.status = "EXTRACTED"
         scan.action_required = ActionRequired.VERIFY.value
         
+        await db.flush()
         await db.refresh(scan)
-        await db.refresh(scan)
+
         logger.info(f"Updated bottom scan: {scan_id}, detected_pins: {detected_pins}")
         
         # Broadcast update

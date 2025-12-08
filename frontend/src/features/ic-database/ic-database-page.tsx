@@ -289,13 +289,13 @@ export default function ICDatabasePage() {
   const totalPages = searchResults ? Math.ceil(searchResults.total_count / ITEMS_PER_PAGE) : 0
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-slate-50/50 p-4 animate-in fade-in duration-500">
-      <div className="mx-auto w-full max-w-7xl flex-1 flex flex-col min-h-0">
+    <div className="animate-in fade-in flex h-full w-full flex-col overflow-hidden bg-slate-50/50 p-4 duration-500">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col">
         {/* Header Section */}
-        <div className="flex shrink-0 items-end justify-between mb-4">
+        <div className="mb-4 flex shrink-0 items-end justify-between">
           <div className="space-y-1">
             <h1 className="text-3xl font-black tracking-tight text-slate-900">IC Database</h1>
-            <p className="text-slate-500 font-medium">
+            <p className="font-medium text-slate-500">
               Browse and manage integrated circuit specifications
             </p>
           </div>
@@ -303,10 +303,11 @@ export default function ICDatabasePage() {
           {/* Filter Toggle Button moved to header area for better layout */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 rounded-full px-5 py-2.5 font-bold text-sm transition-all shadow-sm ${showFilters || hasActiveFilters
-              ? 'bg-blue-600 text-white shadow-blue-200'
-              : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
-              }`}
+            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all ${
+              showFilters || hasActiveFilters
+                ? 'bg-blue-600 text-white shadow-blue-200'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-600'
+            }`}
           >
             <Filter size={16} />
             Filters
@@ -315,30 +316,34 @@ export default function ICDatabasePage() {
                 !
               </span>
             )}
-            {showFilters ? <ChevronUp size={16} className="ml-1" /> : <ChevronDown size={16} className="ml-1" />}
+            {showFilters ? (
+              <ChevronUp size={16} className="ml-1" />
+            ) : (
+              <ChevronDown size={16} className="ml-1" />
+            )}
           </button>
         </div>
 
         {/* Search & Filters Container */}
-        <div className="shrink-0 space-y-4 mb-4 relative z-20">
+        <div className="relative z-20 mb-4 shrink-0 space-y-4">
           {/* Search Bar */}
-          <div className="relative group max-w-2xl">
+          <div className="group relative max-w-2xl">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by part number, description..."
-              className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-4 pl-14 text-base shadow-sm hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none transition-all placeholder:text-slate-400"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-4 pl-14 text-base shadow-sm transition-all placeholder:text-slate-400 hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none"
               aria-label="Search ICs"
             />
             <Search
-              className="absolute top-1/2 left-5 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+              className="absolute top-1/2 left-5 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-blue-500"
               size={22}
             />
             {query && (
               <button
                 onClick={() => setQuery('')}
-                className="absolute top-1/2 right-5 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
+                className="absolute top-1/2 right-5 -translate-y-1/2 rounded-full p-1 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-600"
               >
                 <X size={18} />
               </button>
@@ -347,11 +352,11 @@ export default function ICDatabasePage() {
 
           {/* Filters Panel */}
           {showFilters && (
-            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 animate-in slide-in-from-top-2 duration-200 z-50">
+            <div className="animate-in slide-in-from-top-2 absolute top-full right-0 left-0 z-50 mt-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 duration-200">
               <div className="flex flex-wrap items-end gap-4">
                 {/* Manufacturer */}
                 <div className="min-w-[140px] flex-1">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <label className="mb-2 block text-xs font-bold tracking-wider text-slate-500 uppercase">
                     Manufacturer
                   </label>
                   <input
@@ -359,56 +364,64 @@ export default function ICDatabasePage() {
                     value={filters.manufacturer}
                     onChange={(e) => updateFilter('manufacturer', e.target.value)}
                     placeholder="e.g. TI, STM"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                   />
                 </div>
 
                 {/* Package Type */}
                 <div className="min-w-[120px] flex-1">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Package</label>
+                  <label className="mb-2 block text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Package
+                  </label>
                   <input
                     type="text"
                     value={filters.package_type}
                     onChange={(e) => updateFilter('package_type', e.target.value)}
                     placeholder="e.g. DIP, SOIC"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                   />
                 </div>
 
                 {/* Min Pins */}
                 <div className="w-[90px]">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Min Pins</label>
+                  <label className="mb-2 block text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Min Pins
+                  </label>
                   <input
                     type="number"
                     value={filters.min_pins}
                     onChange={(e) => updateFilter('min_pins', e.target.value)}
                     placeholder="1"
                     min="1"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                   />
                 </div>
 
                 {/* Max Pins */}
                 <div className="w-[90px]">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Max Pins</label>
+                  <label className="mb-2 block text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Max Pins
+                  </label>
                   <input
                     type="number"
                     value={filters.max_pins}
                     onChange={(e) => updateFilter('max_pins', e.target.value)}
                     placeholder="256"
                     min="1"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                   />
                 </div>
 
                 {/* Sort By */}
                 <div className="w-[150px]">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Sort By</label>
+                  <label className="mb-2 block text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Sort By
+                  </label>
                   <div className="relative">
                     <select
                       value={filters.sort_by}
                       onChange={(e) => updateFilter('sort_by', e.target.value as ICSortBy)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm appearance-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer"
+                      className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                     >
                       <option value="part_number">Part Number</option>
                       <option value="manufacturer">Manufacturer</option>
@@ -417,23 +430,31 @@ export default function ICDatabasePage() {
                       <option value="created_at">Newest First</option>
                       <option value="updated_at">Recently Updated</option>
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                    <ChevronDown
+                      className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-slate-400"
+                      size={14}
+                    />
                   </div>
                 </div>
 
                 {/* Sort Direction */}
                 <div className="w-[110px]">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Order</label>
+                  <label className="mb-2 block text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Order
+                  </label>
                   <div className="relative">
                     <select
                       value={filters.sort_dir}
                       onChange={(e) => updateFilter('sort_dir', e.target.value as SortDirection)}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm appearance-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all cursor-pointer"
+                      className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                     >
                       <option value="asc">Asc ↑</option>
                       <option value="desc">Desc ↓</option>
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                    <ChevronDown
+                      className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-slate-400"
+                      size={14}
+                    />
                   </div>
                 </div>
 
@@ -441,7 +462,7 @@ export default function ICDatabasePage() {
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="rounded-xl px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 active:scale-95 duration-200"
+                    className="rounded-xl px-4 py-2 text-sm font-semibold text-red-600 transition-colors duration-200 hover:bg-red-50 hover:text-red-700 active:scale-95"
                   >
                     Clear All
                   </button>
@@ -460,9 +481,9 @@ export default function ICDatabasePage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 min-h-0 flex-1">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Left Panel: Search Results */}
-          <div className="flex flex-col min-h-0">
+          <div className="flex min-h-0 flex-col">
             {isLoading && !hasLoadedOnce && (
               <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 shadow-lg shadow-slate-200/50">
                 <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
@@ -474,7 +495,7 @@ export default function ICDatabasePage() {
             )}
 
             {searchResults && (
-              <div className="flex flex-1 flex-col rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50 overflow-hidden">
+              <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50">
                 <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
                   <h2 className="text-lg font-bold text-slate-900">
                     {query.trim() ? 'Search Results' : 'IC Catalog'}
@@ -492,36 +513,45 @@ export default function ICDatabasePage() {
                 </div>
 
                 {/* Results List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto p-4">
                   {searchResults.results.map((ic, index) => (
                     <div
                       key={`${ic.part_number}-${ic.manufacturer}-${index}`}
                       onClick={() => handleICClick(ic.part_number)}
-                      className={`group cursor-pointer rounded-xl border p-4 transition-all duration-200 ${selectedIC?.part_number === ic.part_number &&
+                      className={`group cursor-pointer rounded-xl border p-4 transition-all duration-200 ${
+                        selectedIC?.part_number === ic.part_number &&
                         selectedIC?.manufacturer === ic.manufacturer
-                        ? 'border-blue-400 bg-blue-50/50 shadow-sm ring-1 ring-blue-400/20'
-                        : 'border-slate-100 bg-white hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5'
-                        }`}
+                          ? 'border-blue-400 bg-blue-50/50 shadow-sm ring-1 ring-blue-400/20'
+                          : 'border-slate-100 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md'
+                      }`}
                     >
                       <div className="mb-2 flex items-start justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${selectedIC?.part_number === ic.part_number ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
-                            }`}>
+                          <div
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                              selectedIC?.part_number === ic.part_number
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-100 text-slate-500 group-hover:text-slate-700'
+                            }`}
+                          >
                             <Cpu size={18} />
                           </div>
-                          <h3 className="text-base font-bold text-slate-900 break-all">
+                          <h3 className="text-base font-bold break-all text-slate-900">
                             {ic.part_number}
                           </h3>
                         </div>
                         {ic.has_datasheet && (
                           <span title="Datasheet available">
-                            <FileText className="text-slate-300 group-hover:text-blue-500" size={16} />
+                            <FileText
+                              className="text-slate-300 group-hover:text-blue-500"
+                              size={16}
+                            />
                           </span>
                         )}
                       </div>
 
                       <div className="space-y-2 pl-[42px]">
-                        <p className="text-sm font-medium text-slate-600 break-words">
+                        <p className="text-sm font-medium break-words text-slate-600">
                           {ic.manufacturer_name || ic.manufacturer}
                         </p>
                         <div className="flex flex-wrap gap-2 text-xs">
@@ -535,7 +565,9 @@ export default function ICDatabasePage() {
                           </span>
                         </div>
                         {ic.description && (
-                          <p className="line-clamp-2 text-xs text-slate-500 leading-relaxed">{ic.description}</p>
+                          <p className="line-clamp-2 text-xs leading-relaxed text-slate-500">
+                            {ic.description}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -548,7 +580,7 @@ export default function ICDatabasePage() {
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 0 || isLoading}
-                      className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-white hover:shadow-sm hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-white hover:text-blue-600 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <ChevronLeft size={16} />
                       Prev
@@ -561,7 +593,7 @@ export default function ICDatabasePage() {
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || isLoading}
-                      className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-white hover:shadow-sm hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-white hover:text-blue-600 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Next
                       <ChevronRight size={16} />
@@ -585,24 +617,24 @@ export default function ICDatabasePage() {
           </div>
 
           {/* Right Panel: IC Details */}
-          <div className="flex flex-col min-h-0">
+          <div className="flex min-h-0 flex-col">
             {isLoadingDetails && (
-              <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 shadow-lg shadow-slate-200/50 min-h-[200px]">
+              <div className="flex min-h-[200px] flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 shadow-lg shadow-slate-200/50">
                 <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
                 <p className="font-medium text-slate-500">Loading IC details...</p>
               </div>
             )}
 
             {selectedIC && !isLoadingDetails && (
-              <div className="flex flex-1 flex-col rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50 overflow-hidden">
+              <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50">
                 {/* Header */}
                 <div className="shrink-0 border-b border-slate-100 bg-white px-6 py-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h2 className="text-2xl font-black tracking-tight text-slate-900 break-all leading-tight">
+                      <h2 className="text-2xl leading-tight font-black tracking-tight break-all text-slate-900">
                         {selectedIC.part_number}
                       </h2>
-                      <p className="text-sm font-semibold text-slate-500 mt-1 flex items-center gap-1.5 break-words">
+                      <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold break-words text-slate-500">
                         <Building2 size={14} className="shrink-0" />
                         {selectedIC.manufacturer_name || selectedIC.manufacturer}
                       </p>
@@ -610,7 +642,7 @@ export default function ICDatabasePage() {
                     {selectedIC.has_datasheet && (
                       <button
                         onClick={() => handleViewDatasheet(selectedIC.part_number)}
-                        className="flex shrink-0 items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95"
+                        className="flex shrink-0 items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/20 transition-all hover:bg-blue-700 active:scale-95"
                       >
                         <FileText size={14} />
                         Datasheet
@@ -619,22 +651,25 @@ export default function ICDatabasePage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-
+                <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-6">
                   {/* Compact Grid for Core Specs */}
                   <div className="grid grid-cols-2 gap-3">
                     {/* Package */}
-                    <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm hover:border-slate-300 transition-all">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Package Type</span>
-                      <div className="flex items-center gap-1.5 font-bold text-slate-900 truncate">
+                    <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                      <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                        Package Type
+                      </span>
+                      <div className="flex items-center gap-1.5 truncate font-bold text-slate-900">
                         <Package className="h-3.5 w-3.5 text-slate-400" />
                         <span className="truncate">{selectedIC.package_type || 'N/A'}</span>
                       </div>
                     </div>
 
                     {/* Pins */}
-                    <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm hover:border-slate-300 transition-all">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Pin Count</span>
+                    <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                      <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                        Pin Count
+                      </span>
                       <div className="flex items-center gap-1.5 font-bold text-slate-900">
                         <Cpu className="h-3.5 w-3.5 text-slate-400" />
                         <span>{selectedIC.pin_count} pins</span>
@@ -645,7 +680,9 @@ export default function ICDatabasePage() {
                   {/* Description */}
                   {selectedIC.description && (
                     <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-                      <p className="text-sm leading-relaxed text-slate-600 font-medium">{selectedIC.description}</p>
+                      <p className="text-sm leading-relaxed font-medium text-slate-600">
+                        {selectedIC.description}
+                      </p>
                     </div>
                   )}
 
@@ -655,50 +692,55 @@ export default function ICDatabasePage() {
                   {((selectedIC.voltage_min !== null && selectedIC.voltage_min !== undefined) ||
                     (selectedIC.operating_temp_min !== null &&
                       selectedIC.operating_temp_min !== undefined)) && (
-                      <div className="space-y-4">
-                        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-900">
-                          <Zap className="text-blue-500" size={14} />
-                          Operating Conditions
-                        </h3>
+                    <div className="space-y-4">
+                      <h3 className="flex items-center gap-2 text-sm font-bold tracking-wider text-slate-900 uppercase">
+                        <Zap className="text-blue-500" size={14} />
+                        Operating Conditions
+                      </h3>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          {selectedIC.voltage_min !== null &&
-                            selectedIC.voltage_min !== undefined &&
-                            selectedIC.voltage_max !== null &&
-                            selectedIC.voltage_max !== undefined && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm hover:border-slate-300 transition-all">
-                                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                  Voltage
-                                </p>
-                                <p className="text-sm font-bold text-slate-900">
-                                  {selectedIC.voltage_min}V - {selectedIC.voltage_max}V
-                                </p>
-                              </div>
-                            )}
+                      <div className="grid grid-cols-2 gap-3">
+                        {selectedIC.voltage_min !== null &&
+                          selectedIC.voltage_min !== undefined &&
+                          selectedIC.voltage_max !== null &&
+                          selectedIC.voltage_max !== undefined && (
+                            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-slate-300">
+                              <p className="mb-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                                Voltage
+                              </p>
+                              <p className="text-sm font-bold text-slate-900">
+                                {selectedIC.voltage_min}V - {selectedIC.voltage_max}V
+                              </p>
+                            </div>
+                          )}
 
-                          {selectedIC.operating_temp_min !== null &&
-                            selectedIC.operating_temp_min !== undefined &&
-                            selectedIC.operating_temp_max !== null &&
-                            selectedIC.operating_temp_max !== undefined && (
-                              <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm hover:border-slate-300 transition-all">
-                                <div className="mb-1 flex items-center justify-between">
-                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Temp</p>
-                                  <Thermometer className="text-slate-300" size={12} />
-                                </div>
-                                <p className="text-sm font-bold text-slate-900">
-                                  {selectedIC.operating_temp_min}°C to {selectedIC.operating_temp_max}°C
+                        {selectedIC.operating_temp_min !== null &&
+                          selectedIC.operating_temp_min !== undefined &&
+                          selectedIC.operating_temp_max !== null &&
+                          selectedIC.operating_temp_max !== undefined && (
+                            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all hover:border-slate-300">
+                              <div className="mb-1 flex items-center justify-between">
+                                <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                                  Temp
                                 </p>
+                                <Thermometer className="text-slate-300" size={12} />
                               </div>
-                            )}
-                        </div>
+                              <p className="text-sm font-bold text-slate-900">
+                                {selectedIC.operating_temp_min}°C to {selectedIC.operating_temp_max}
+                                °C
+                              </p>
+                            </div>
+                          )}
                       </div>
-                    )}
+                    </div>
+                  )}
 
                   {/* Electrical Specifications */}
                   {selectedIC.electrical_specs &&
                     Object.keys(selectedIC.electrical_specs).length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Specs</h3>
+                        <h3 className="text-sm font-bold tracking-wider text-slate-900 uppercase">
+                          Specs
+                        </h3>
                         <div className="grid grid-cols-2 gap-3">
                           {Object.entries(selectedIC.electrical_specs)
                             .map(([key, value]) => ({ key, formattedValue: formatValue(value) }))
@@ -706,12 +748,15 @@ export default function ICDatabasePage() {
                             .map(({ key, formattedValue }) => (
                               <div
                                 key={key}
-                                className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm hover:border-slate-300 transition-all"
+                                className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300"
                               >
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 break-words" title={key.replace(/_/g, ' ')}>
+                                <span
+                                  className="text-[10px] font-bold tracking-wider break-words text-slate-500 uppercase"
+                                  title={key.replace(/_/g, ' ')}
+                                >
                                   {key.replace(/_/g, ' ')}
                                 </span>
-                                <span className="text-sm font-bold text-slate-900 break-words">
+                                <span className="text-sm font-bold break-words text-slate-900">
                                   {formattedValue}
                                 </span>
                               </div>
@@ -723,7 +768,7 @@ export default function ICDatabasePage() {
                   {/* Metadata */}
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                      <p className="text-[10px] uppercase font-bold text-slate-400">Data Source</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Data Source</p>
                       <div className="flex items-center gap-1.5">
                         <div className="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
                         <p className="text-xs font-bold text-slate-700">
@@ -732,7 +777,7 @@ export default function ICDatabasePage() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                      <p className="text-[10px] uppercase font-bold text-slate-400">Last Updated</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Last Updated</p>
                       <p className="text-xs font-bold text-slate-700">
                         {selectedIC.updated_at
                           ? new Date(selectedIC.updated_at).toLocaleDateString()
@@ -740,19 +785,20 @@ export default function ICDatabasePage() {
                       </p>
                     </div>
                   </div>
-
                 </div>
               </div>
             )}
 
             {!selectedIC && !isLoadingDetails && (
-              <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 text-center shadow-lg shadow-slate-200/50 min-h-[200px]">
+              <div className="flex min-h-[200px] flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 text-center shadow-lg shadow-slate-200/50">
                 <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-50 text-slate-300">
                   <Cpu size={40} />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">Select an IC</h3>
-                  <p className="text-slate-500 max-w-[200px] mx-auto">Click on a component from the list to view its full specifications</p>
+                  <p className="mx-auto max-w-[200px] text-slate-500">
+                    Click on a component from the list to view its full specifications
+                  </p>
                 </div>
               </div>
             )}

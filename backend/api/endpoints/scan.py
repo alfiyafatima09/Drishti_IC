@@ -147,7 +147,6 @@ def _parse_pin_count(raw_pin_count) -> int:
 @router.post("/scan", response_model=ScanExtractResult)
 async def scan_image(
     file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     **Phase 1: Extract & Detect**
@@ -178,7 +177,7 @@ async def scan_image(
     
     # ========== OCR Processing ==========
     logger.debug("Starting OCR extraction...")
-    ocr_response = extract_text_from_image(image_data, preprocess=True)
+    ocr_response = await asyncio.to_thread(extract_text_from_image, image_data, preprocess=True)
     print(ocr_response)
     
     if ocr_response.status == "error":
@@ -257,7 +256,9 @@ async def scan_image(
     detected_pins = 0
     is_vision_fallback = False
     try:
-        llm_result = await run_pipeline(str(image_path))
+        llm_client = LLM()
+        llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
+        print(str(image_path))
         print(llm_result)
         
         if llm_result.get("_fallback"):
@@ -291,6 +292,7 @@ async def scan_image(
         action_required = ActionRequired.VERIFY
         message = "Data extracted successfully. Ready for database verification."
     
+    # ========== Create Scan Record ==========
     scan = await ScanService.create_extraction_scan(
         db=db,
         ocr_text=ocr_text,
@@ -303,12 +305,12 @@ async def scan_image(
     )
     
     logger.info(
-        f"Extraction complete - scan_id: {scan.scan_id}, "
+        f"Extraction complete - scan_id: {scan_id}, "
         f"part_number: {best_part_number}, pins: {detected_pins}, status: {status}"
     )
     
     return ScanExtractResult(
-        scan_id=scan.scan_id,
+        scan_id=scan_id,
         status=status,
         action_required=action_required,
         confidence_score=avg_confidence,
@@ -318,7 +320,7 @@ async def scan_image(
         manufacturer_detected=manufacturer_detected,
         detected_pins=detected_pins,
         message=message,
-        scanned_at=scan.scanned_at,
+        scanned_at=scanned_at,
     )
 
 

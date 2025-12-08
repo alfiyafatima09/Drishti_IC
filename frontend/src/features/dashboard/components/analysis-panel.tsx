@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import type { ScanResult, ScanStatus } from '@/types/api'
 import { API_BASE } from '@/lib/config'
+import { VerificationModal } from './verification-modal'
 
 interface AnalysisPanelProps {
   capturedImage: string | null
@@ -68,6 +69,34 @@ const STATUS_CONFIG: Record<
     label: 'Counterfeit',
     variant: 'destructive',
   },
+  EXTRACTED: {
+    icon: Sparkles,
+    label: 'Extracted',
+    variant: 'secondary',
+    className: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+  },
+  NEED_BOTTOM_SCAN: {
+    icon: AlertTriangle,
+    label: 'Top Scan Only',
+    variant: 'secondary',
+    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+  },
+  MATCH_FOUND: {
+    icon: CheckCircle2,
+    label: 'Authentic',
+    variant: 'default',
+    className: 'bg-emerald-600 hover:bg-emerald-700',
+  },
+  PIN_MISMATCH: {
+    icon: AlertTriangle,
+    label: 'Pin Mismatch',
+    variant: 'destructive',
+  },
+  NOT_IN_DATABASE: {
+    icon: HelpCircle,
+    label: 'Not in DB',
+    variant: 'secondary',
+  }
 }
 
 export function AnalysisPanel({
@@ -83,6 +112,7 @@ export function AnalysisPanel({
   const [overrideNote, setOverrideNote] = useState('')
   const [overrideLoading, setOverrideLoading] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
+  const [showVerification, setShowVerification] = useState(false)
 
   useEffect(() => {
     const pn = scanResult?.part_number_detected || scanResult?.part_number || ''
@@ -102,7 +132,8 @@ export function AnalysisPanel({
     )
   }
 
-  const config = scanResult ? STATUS_CONFIG[scanResult.status] : null
+  // Handle status config more gracefully for new statuses
+  const config = scanResult ? (STATUS_CONFIG[scanResult.status as ScanStatus] || STATUS_CONFIG['UNKNOWN']) : null
   const StatusIcon = config?.icon
 
   const needsBottomScan =
@@ -165,267 +196,306 @@ export function AnalysisPanel({
     }
   }
 
+  const handleVerificationComplete = (result: ScanResult) => {
+    onResultUpdate(result)
+  }
+
   return (
-    <Card className="flex h-full flex-col overflow-hidden rounded-2xl border-slate-200 bg-white shadow-lg shadow-slate-200/50">
-      <CardHeader className="border-b border-slate-100 bg-white pb-4">
-        <div className="flex items-center justify-between w-full">
-          <CardTitle className="text-xl font-bold text-slate-900">Analysis</CardTitle>
-          {scanResult && config && (
-            <Badge variant={config.variant} className={cn("px-2.5 py-0.5 font-bold", config.className)}>
-              {StatusIcon && <StatusIcon className="mr-1.5 h-3.5 w-3.5" />}
-              {config.label}
-            </Badge>
-          )}
-        </div>
-        <CardDescription className="text-slate-500">
-          {scanResult ? 'Results and specifications' : 'Ready to analyze captured image'}
-        </CardDescription>
-      </CardHeader>
+    <>
+      <VerificationModal
+        isOpen={showVerification}
+        onOpenChange={setShowVerification}
+        scanResult={scanResult}
+        onVerificationComplete={handleVerificationComplete}
+      />
 
-      <CardContent className="flex-1 overflow-y-auto space-y-6">
-        {/* Image Preview */}
-        <div className="relative rounded-lg overflow-hidden border bg-muted">
-          <img
-            src={capturedImage}
-            alt="Captured IC"
-            className="aspect-video w-full object-contain"
-          />
-          {scanResult && (
-            <Badge className="absolute top-2 right-2 backdrop-blur-md bg-background/80 text-foreground hover:bg-background/90" variant="outline">
-              Confidence: {scanResult.confidence_score.toFixed(0)}%
-            </Badge>
-          )}
-        </div>
-
-        {/* Analyze Button */}
-        {!scanResult && !isAnalyzing && (
-          <Button
-            onClick={onAnalyze}
-            size="lg"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Analyze IC Image
-          </Button>
-        )}
-
-        {/* Analyzing State */}
-        {isAnalyzing && (
-          <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-            <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
-            <p className="font-medium">Processing Image...</p>
-            <p className="text-sm">Extracting component features</p>
+      <Card className="flex h-full flex-col overflow-hidden rounded-2xl border-slate-200 bg-white shadow-lg shadow-slate-200/50">
+        <CardHeader className="border-b border-slate-100 bg-white pb-4">
+          <div className="flex items-center justify-between w-full">
+            <CardTitle className="text-xl font-bold text-slate-900">Analysis</CardTitle>
+            {scanResult && config && (
+              <Badge variant={config.variant} className={cn("px-2.5 py-0.5 font-bold", config.className)}>
+                {StatusIcon && <StatusIcon className="mr-1.5 h-3.5 w-3.5" />}
+                {config.label}
+              </Badge>
+            )}
           </div>
-        )}
+          <CardDescription className="text-slate-500">
+            {scanResult ? 'Results and specifications' : 'Ready to analyze captured image'}
+          </CardDescription>
+        </CardHeader>
 
-        {/* Results */}
-        {scanResult && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 p-1">
-            {/* Status Message */}
-            <div className={cn("px-4 py-3 rounded-xl border text-sm font-medium shadow-sm",
-              scanResult.status === 'PASS' ? "bg-emerald-50 text-emerald-900 border-emerald-100" :
-                scanResult.status === 'FAIL' ? "bg-red-50 text-red-900 border-red-100" :
-                  "bg-slate-50 text-slate-700 border-slate-200"
-            )}>
-              <p>{scanResult.message}</p>
+        <CardContent className="flex-1 overflow-y-auto space-y-6">
+          {/* Image Preview */}
+          <div className="relative rounded-lg overflow-hidden border bg-muted">
+            <img
+              src={capturedImage}
+              alt="Captured IC"
+              className="aspect-video w-full object-contain"
+            />
+            {scanResult && (
+              <Badge className="absolute top-2 right-2 backdrop-blur-md bg-background/80 text-foreground hover:bg-background/90" variant="outline">
+                Confidence: {scanResult.confidence_score.toFixed(0)}%
+              </Badge>
+            )}
+          </div>
+
+          {/* Analyze Button */}
+          {!scanResult && !isAnalyzing && (
+            <Button
+              onClick={onAnalyze}
+              size="lg"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Analyze IC Image
+            </Button>
+          )}
+
+          {/* Analyzing State */}
+          {isAnalyzing && (
+            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+              <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
+              <p className="font-medium">Processing Image...</p>
+              <p className="text-sm">Extracting component features</p>
             </div>
+          )}
 
-            {/* Bottom Scan prompt */}
-            {needsBottomScan && (
-              <div className="space-y-3 p-4 rounded-lg border border-amber-200 bg-amber-50">
-                <div className="flex items-center gap-2 font-medium text-amber-800">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>Pins hidden. Bottom view required.</span>
+          {/* Results */}
+          {scanResult && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 p-1">
+
+              {/* Verification Ready State Trigger */}
+              {(scanResult.status === 'EXTRACTED' || scanResult.status === 'NEED_BOTTOM_SCAN') && (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center border",
+                      "bg-blue-100 border-blue-200 text-blue-600"
+                    )}>
+                      <Sparkles size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">Analysis Complete</h4>
+                      <p className="text-xs text-slate-500">Data extracted. Ready for validation.</p>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => setShowVerification(true)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5"
+                  >
+                    Ready for Validation
+                    <CheckCircle2 className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={bottomFileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleBottomUpload(file)
-                    }}
+              )}
+
+              {/* Status Message */}
+              <div className={cn("px-4 py-3 rounded-xl border text-sm font-medium shadow-sm",
+                scanResult.message.includes("success") || scanResult.status === 'MATCH_FOUND' ? "bg-emerald-50 text-emerald-900 border-emerald-100" :
+                  scanResult.status?.includes('FAIL') || scanResult.status === 'COUNTERFEIT' ? "bg-red-50 text-red-900 border-red-100" :
+                    "bg-slate-50 text-slate-700 border-slate-200"
+              )}>
+                <p>{scanResult.message}</p>
+              </div>
+
+              {/* Bottom Scan prompt */}
+              {needsBottomScan && (
+                <div className="space-y-3 p-4 rounded-lg border border-amber-200 bg-amber-50">
+                  <div className="flex items-center gap-2 font-medium text-amber-800">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Pins hidden. Bottom view required.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={bottomFileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleBottomUpload(file)
+                      }}
+                    />
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                      disabled={bottomUploading}
+                      onClick={() => bottomFileRef.current?.click()}
+                    >
+                      {bottomUploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Bottom
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Parameters List - Compact */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium leading-none text-slate-900">Detected Information</h4>
+                <div className="grid grid-cols-2 gap-3">
+
+                  {/* Part Number */}
+                  <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Part Number</span>
+                    <div className="font-mono text-base font-bold text-slate-900 truncate">
+                      {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
+                    </div>
+                  </div>
+
+                  {/* Manufacturer */}
+                  <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Manufacturer</span>
+                    <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                      <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <span className="break-words">{scanResult.manufacturer_detected || 'Unknown'}</span>
+                    </div>
+                  </div>
+
+                  {/* Pins */}
+                  <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Pins Detected</span>
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                      <Cpu className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{scanResult.detected_pins}</span>
+                    </div>
+                  </div>
+
+                  {/* Confidence */}
+                  <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Confidence</span>
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                      <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+                      <span>{scanResult.confidence_score.toFixed(1)}%</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* IC Specifications */}
+              {scanResult.ic_specification && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium leading-none">Specifications</h4>
+
+                  <div className="grid gap-4 text-sm">
+                    {scanResult.ic_specification.description && (
+                      <p className="text-muted-foreground leading-relaxed">
+                        {scanResult.ic_specification.description}
+                      </p>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      {scanResult.ic_specification.package_type && (
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground">Package</span>
+                          <span className="font-medium">{scanResult.ic_specification.package_type}</span>
+                        </div>
+                      )}
+
+                      {scanResult.ic_specification.pin_count && (
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground">Spec Pins</span>
+                          <span className="font-medium">{scanResult.ic_specification.pin_count}</span>
+                        </div>
+                      )}
+
+                      {(scanResult.ic_specification.voltage_min && scanResult.ic_specification.voltage_max) && (
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground">Voltage</span>
+                          <span className="font-medium">{scanResult.ic_specification.voltage_min}V - {scanResult.ic_specification.voltage_max}V</span>
+                        </div>
+                      )}
+
+                      {(scanResult.ic_specification.operating_temp_min && scanResult.ic_specification.operating_temp_max) && (
+                        <div className="flex justify-between border-b pb-2">
+                          <span className="text-muted-foreground">Temp</span>
+                          <span className="font-medium">{scanResult.ic_specification.operating_temp_min}°C to {scanResult.ic_specification.operating_temp_max}°C</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {scanResult.ic_specification.datasheet_path && (
+                    <Button variant="outline" className="w-full" asChild>
+                      <a
+                        href={scanResult.ic_specification.datasheet_path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        View Datasheet
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Manual Override */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Edit3 className="h-4 w-4 text-muted-foreground" />
+                  <span>Manual Override</span>
+                </div>
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Part Number"
+                    value={overridePart}
+                    onChange={(e) => setOverridePart(e.target.value)}
+                  />
+                  <Textarea
+                    placeholder="Notes (optional)"
+                    value={overrideNote}
+                    onChange={(e) => setOverrideNote(e.target.value)}
+                    className="min-h-[60px]"
                   />
                   <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-amber-600 hover:bg-amber-700 text-white"
-                    disabled={bottomUploading}
-                    onClick={() => bottomFileRef.current?.click()}
+                    disabled={overrideLoading || !overridePart.trim()}
+                    onClick={handleOverride}
+                    className="w-full"
+                    variant="secondary"
                   >
-                    {bottomUploading ? (
+                    {overrideLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading
+                        Saving...
                       </>
                     ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Bottom
-                      </>
+                      'Save Override'
                     )}
                   </Button>
                 </div>
               </div>
-            )}
 
-            {/* Parameters List - Compact */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium leading-none text-slate-900">Detected Information</h4>
-              <div className="grid grid-cols-2 gap-3">
-
-                {/* Part Number */}
-                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Part Number</span>
-                  <div className="font-mono text-base font-bold text-slate-900 truncate">
-                    {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
-                  </div>
+              {localError && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive font-medium">
+                  {localError}
                 </div>
+              )}
 
-                {/* Manufacturer */}
-                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Manufacturer</span>
-                  <div className="flex items-center gap-1.5 font-medium text-slate-900">
-                    <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span className="break-words">{scanResult.manufacturer_detected || 'Unknown'}</span>
-                  </div>
-                </div>
-
-                {/* Pins */}
-                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Pins Detected</span>
-                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                    <Cpu className="h-3.5 w-3.5 text-slate-400" />
-                    <span>{scanResult.detected_pins}</span>
-                  </div>
-                </div>
-
-                {/* Confidence */}
-                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Confidence</span>
-                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-                    <span>{scanResult.confidence_score.toFixed(1)}%</span>
-                  </div>
-                </div>
-
+              <div className="text-xs text-muted-foreground flex justify-between pt-2">
+                <span>Scan ID: <span className="font-mono">{scanResult.scan_id.slice(0, 8)}</span></span>
+                <span>{new Date(scanResult.scanned_at).toLocaleTimeString()}</span>
               </div>
             </div>
-
-            <Separator />
-
-            {/* IC Specifications */}
-            {scanResult.ic_specification && (
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium leading-none">Specifications</h4>
-
-                <div className="grid gap-4 text-sm">
-                  {scanResult.ic_specification.description && (
-                    <p className="text-muted-foreground leading-relaxed">
-                      {scanResult.ic_specification.description}
-                    </p>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    {scanResult.ic_specification.package_type && (
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Package</span>
-                        <span className="font-medium">{scanResult.ic_specification.package_type}</span>
-                      </div>
-                    )}
-
-                    {scanResult.ic_specification.pin_count && (
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Spec Pins</span>
-                        <span className="font-medium">{scanResult.ic_specification.pin_count}</span>
-                      </div>
-                    )}
-
-                    {(scanResult.ic_specification.voltage_min && scanResult.ic_specification.voltage_max) && (
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Voltage</span>
-                        <span className="font-medium">{scanResult.ic_specification.voltage_min}V - {scanResult.ic_specification.voltage_max}V</span>
-                      </div>
-                    )}
-
-                    {(scanResult.ic_specification.operating_temp_min && scanResult.ic_specification.operating_temp_max) && (
-                      <div className="flex justify-between border-b pb-2">
-                        <span className="text-muted-foreground">Temp</span>
-                        <span className="font-medium">{scanResult.ic_specification.operating_temp_min}°C to {scanResult.ic_specification.operating_temp_max}°C</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {scanResult.ic_specification.datasheet_path && (
-                  <Button variant="outline" className="w-full" asChild>
-                    <a
-                      href={scanResult.ic_specification.datasheet_path}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      View Datasheet
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            )}
-
-            <Separator />
-
-            {/* Manual Override */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Edit3 className="h-4 w-4 text-muted-foreground" />
-                <span>Manual Override</span>
-              </div>
-              <div className="space-y-3">
-                <Input
-                  placeholder="Part Number"
-                  value={overridePart}
-                  onChange={(e) => setOverridePart(e.target.value)}
-                />
-                <Textarea
-                  placeholder="Notes (optional)"
-                  value={overrideNote}
-                  onChange={(e) => setOverrideNote(e.target.value)}
-                  className="min-h-[60px]"
-                />
-                <Button
-                  disabled={overrideLoading || !overridePart.trim()}
-                  onClick={handleOverride}
-                  className="w-full"
-                  variant="secondary"
-                >
-                  {overrideLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Override'
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {localError && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive font-medium">
-                {localError}
-              </div>
-            )}
-
-            <div className="text-xs text-muted-foreground flex justify-between pt-2">
-              <span>Scan ID: <span className="font-mono">{scanResult.scan_id.slice(0, 8)}</span></span>
-              <span>{new Date(scanResult.scanned_at).toLocaleTimeString()}</span>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </>
   )
 }
