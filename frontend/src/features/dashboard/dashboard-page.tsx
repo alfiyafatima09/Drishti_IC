@@ -75,19 +75,19 @@ export default function DashboardPage() {
   }, [capturedImage, isAnalyzing])
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl animate-in fade-in duration-500">
+    <div className="animate-in fade-in container mx-auto max-w-7xl p-6 duration-500">
       <div className="flex flex-col gap-6">
         {/* Header */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">Drishti IC</h1>
+              <h1 className="text-foreground text-3xl font-bold tracking-tight">Drishti IC</h1>
               <p className="text-muted-foreground">
                 Intelligent Integrated Circuit Inspection System
               </p>
             </div>
             <div className="hidden md:block">
-              <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
+              <span className="bg-primary/10 text-primary ring-primary/20 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">
                 AOI Enabled
               </span>
             </div>
@@ -96,7 +96,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Left Section - Camera & Upload */}
           <div className="flex flex-col gap-6 lg:col-span-2">
             <Card className="border-border shadow-sm">

@@ -87,27 +87,25 @@ export function ImageUpload({ onFileSelect, fileInputRef, disabled }: ImageUploa
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className={cn(
-          'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center transition-colors cursor-pointer',
+          'relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center transition-colors',
           isDragging
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50',
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >
-        <div className="rounded-full bg-muted p-4 mb-4">
+        <div className="bg-muted mb-4 rounded-full p-4">
           {isDragging ? (
-            <Upload className="h-6 w-6 text-primary" />
+            <Upload className="text-primary h-6 w-6" />
           ) : (
-            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+            <ImageIcon className="text-muted-foreground h-6 w-6" />
           )}
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-foreground text-sm font-medium">
             {isDragging ? 'Drop image here' : 'Click or drag image to upload'}
           </p>
-          <p className="text-xs text-muted-foreground">
-            JPG or PNG (max 10MB)
-          </p>
+          <p className="text-muted-foreground text-xs">JPG or PNG (max 10MB)</p>
         </div>
       </div>
     </div>

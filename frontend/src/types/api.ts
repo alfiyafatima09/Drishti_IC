@@ -7,7 +7,17 @@
 // ENUMS
 // ============================================================
 
-export type ScanStatus = 'PASS' | 'FAIL' | 'PARTIAL' | 'UNKNOWN' | 'COUNTERFEIT'
+export type ScanStatus =
+  | 'PASS'
+  | 'FAIL'
+  | 'PARTIAL'
+  | 'UNKNOWN'
+  | 'COUNTERFEIT'
+  | 'EXTRACTED'
+  | 'NEED_BOTTOM_SCAN'
+  | 'MATCH_FOUND'
+  | 'PIN_MISMATCH'
+  | 'NOT_IN_DATABASE'
 
 export type ActionRequired = 'NONE' | 'SCAN_BOTTOM'
 

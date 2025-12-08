@@ -419,9 +419,9 @@ export default function ScrapingPage() {
   const CurrentStageIcon = stageConfig[syncStage].icon
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-slate-50/50 p-4 animate-in fade-in duration-500 flex flex-col">
+    <div className="animate-in fade-in flex h-screen w-full flex-col overflow-hidden bg-slate-50/50 p-4 duration-500">
       {/* Header */}
-      <div className="shrink-0 mb-4">
+      <div className="mb-4 shrink-0">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <h1 className="text-2xl font-black tracking-tight text-slate-900">
@@ -431,16 +431,16 @@ export default function ScrapingPage() {
               Manage scraping queue and manually add components.
             </p>
           </div>
-          <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white shadow-sm border border-slate-200">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
             <Globe className="h-5 w-5 text-blue-600" />
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden min-h-0">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 h-full">
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="grid h-full grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Left Column - Queue Table & Sync */}
-          <div className="flex flex-col gap-4 lg:col-span-2 min-h-0 h-full min-w-0">
+          <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 lg:col-span-2">
             {/* Sync Control */}
             <div className="shrink-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
@@ -450,7 +450,7 @@ export default function ScrapingPage() {
                   <button
                     onClick={() => setAutoPollEnabled(!autoPollEnabled)}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm',
+                      'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-bold tracking-wider uppercase shadow-sm transition-all',
                       autoPollEnabled
                         ? 'border-blue-200 bg-blue-50 text-blue-700'
                         : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700',
@@ -460,10 +460,12 @@ export default function ScrapingPage() {
                     {autoPollEnabled ? 'Auto ON' : 'Auto-refresh'}
                   </button>
                   <div className="flex gap-1.5">
-                    <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 shadow-none px-2 py-0.5 text-[10px]">
+                    <Badge className="border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] text-amber-700 shadow-none hover:bg-amber-100">
                       {pendingCount} Pending
                     </Badge>
-                    <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 shadow-none px-2 py-0.5 text-[10px]">{failedCount} Failed</Badge>
+                    <Badge className="border-red-200 bg-red-50 px-2 py-0.5 text-[10px] text-red-700 shadow-none hover:bg-red-100">
+                      {failedCount} Failed
+                    </Badge>
                   </div>
                 </div>
               </div>
@@ -471,7 +473,7 @@ export default function ScrapingPage() {
               <div className="space-y-4">
                 {/* Transfer Fakes to Queue - Compact */}
                 {fakeCount > 0 && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 flex items-center justify-between">
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 p-3">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-slate-500" />
                       <span className="text-xs font-bold text-slate-700">
@@ -483,7 +485,7 @@ export default function ScrapingPage() {
                       disabled={transferLoading || syncStage === 'processing'}
                       variant="outline"
                       size="sm"
-                      className="h-7 border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs"
+                      className="h-7 border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100"
                     >
                       {transferLoading ? 'Transferring...' : 'Transfer to Queue'}
                     </Button>
@@ -494,20 +496,22 @@ export default function ScrapingPage() {
                 <div className="flex items-end gap-3">
                   {/* Limit Input */}
                   <div className="w-24">
-                    <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Max Items</Label>
+                    <Label className="mb-1.5 block text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                      Max Items
+                    </Label>
                     <Input
                       type="number"
                       value={syncLimit}
                       onChange={(e) => setSyncLimit(e.target.value)}
                       placeholder="All"
                       min="1"
-                      className="h-9 rounded-lg border-slate-200 text-xs focus:border-blue-500 focus:ring-blue-500/20 font-bold"
+                      className="h-9 rounded-lg border-slate-200 text-xs font-bold focus:border-blue-500 focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* Status Filter Pills */}
                   <div className="flex-1">
-                    <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <Label className="mb-1.5 block text-[10px] font-bold tracking-wider text-slate-500 uppercase">
                       Filter by Status
                     </Label>
                     <div className="flex flex-wrap gap-1.5">
@@ -516,9 +520,9 @@ export default function ScrapingPage() {
                           key={option.value}
                           onClick={() => toggleStatus(option.value)}
                           className={cn(
-                            'rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm',
+                            'rounded-md border px-2.5 py-1.5 text-[10px] font-bold tracking-wider uppercase shadow-sm transition-all',
                             selectedStatuses.includes(option.value)
-                              ? 'bg-blue-50 border-blue-200 text-blue-700'
+                              ? 'border-blue-200 bg-blue-50 text-blue-700'
                               : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900',
                           )}
                         >
@@ -528,7 +532,7 @@ export default function ScrapingPage() {
                       {selectedStatuses.length > 0 && (
                         <button
                           onClick={clearFilters}
-                          className="rounded-md px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 transition-colors uppercase tracking-wider"
+                          className="rounded-md px-2 py-1 text-[10px] font-bold tracking-wider text-red-600 uppercase transition-colors hover:bg-red-50"
                         >
                           Clear
                         </button>
@@ -538,13 +542,13 @@ export default function ScrapingPage() {
 
                   <Button
                     onClick={handleStartSync}
-                    disabled={syncStage === 'processing' || (pendingCount === 0 && failedCount === 0)}
-                    className="h-9 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm text-xs px-4"
+                    disabled={
+                      syncStage === 'processing' || (pendingCount === 0 && failedCount === 0)
+                    }
+                    className="h-9 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-blue-700"
                   >
                     <Globe className="mr-2 h-3.5 w-3.5" />
-                    {selectedStatuses.length > 0
-                      ? `Sync Selected`
-                      : 'Start Sync'}
+                    {selectedStatuses.length > 0 ? `Sync Selected` : 'Start Sync'}
                   </Button>
                 </div>
 
@@ -552,7 +556,7 @@ export default function ScrapingPage() {
                   <Button
                     variant="outline"
                     onClick={handleCancelSync}
-                    className="h-9 w-full border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200 font-bold rounded-lg text-xs"
+                    className="h-9 w-full rounded-lg border-slate-200 text-xs font-bold text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
                   >
                     Cancel Sync
                   </Button>
@@ -564,24 +568,34 @@ export default function ScrapingPage() {
                     {/* Progress Bar */}
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className="h-full bg-blue-600 transition-all duration-500 rounded-full"
+                        className="h-full rounded-full bg-blue-600 transition-all duration-500"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
 
                     {/* Current Status */}
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 flex items-center justify-between">
+                    <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-3">
                       <div className="flex items-center gap-2">
-                        <div className={cn("h-6 w-6 rounded-md flex items-center justify-center",
-                          syncStage === 'completed' ? 'bg-emerald-100 text-emerald-600' :
-                            syncStage === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
-                        )}>
+                        <div
+                          className={cn(
+                            'flex h-6 w-6 items-center justify-center rounded-md',
+                            syncStage === 'completed'
+                              ? 'bg-emerald-100 text-emerald-600'
+                              : syncStage === 'error'
+                                ? 'bg-red-100 text-red-600'
+                                : 'bg-blue-100 text-blue-600',
+                          )}
+                        >
                           <CurrentStageIcon className="h-3.5 w-3.5" />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-900">{stageConfig[syncStage].label}</p>
+                          <p className="text-xs font-bold text-slate-900">
+                            {stageConfig[syncStage].label}
+                          </p>
                           {currentIC && (
-                            <p className="text-[10px] font-medium text-slate-500">Processing: {currentIC}</p>
+                            <p className="text-[10px] font-medium text-slate-500">
+                              Processing: {currentIC}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -592,13 +606,13 @@ export default function ScrapingPage() {
             </div>
 
             {/* Queue Table */}
-            <div className="flex-1 flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-0">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
                 <h2 className="text-base font-bold text-slate-900">Scraping Queue</h2>
                 {selectedStatuses.length > 0 && (
                   <div className="flex items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1">
                     <Filter className="h-3 w-3 text-slate-400" />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
                       Filtered
                     </span>
                   </div>
@@ -612,47 +626,51 @@ export default function ScrapingPage() {
               )}
 
               {queueLoading ? (
-                <div className="flex-1 flex items-center justify-center p-8">
+                <div className="flex flex-1 items-center justify-center p-8">
                   <div className="flex flex-col items-center gap-3">
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"></div>
                     <p className="text-xs font-medium text-slate-500">Loading...</p>
                   </div>
                 </div>
               ) : queueItems.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 mb-3">
+                <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50">
                     <Clock className="h-6 w-6 text-slate-300" />
                   </div>
                   <p className="text-sm font-bold text-slate-900">Queue is empty</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Add parts manually or via scan
-                  </p>
+                  <p className="mt-1 text-xs text-slate-500">Add parts manually or via scan</p>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="overflow-auto custom-scrollbar">
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <div className="custom-scrollbar overflow-auto">
                     <table className="w-full text-left">
-                      <thead className="bg-slate-50/80 backdrop-blur sticky top-0 z-10">
+                      <thead className="sticky top-0 z-10 bg-slate-50/80 backdrop-blur">
                         <tr>
-                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                          <th className="border-b border-slate-200 px-4 py-2.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
                             Part
                           </th>
-                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                          <th className="border-b border-slate-200 px-4 py-2.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
                             Date
                           </th>
-                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">Status</th>
-                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 text-center">Retries</th>
-                          <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200"></th>
+                          <th className="border-b border-slate-200 px-4 py-2.5 text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                            Status
+                          </th>
+                          <th className="border-b border-slate-200 px-4 py-2.5 text-center text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                            Retries
+                          </th>
+                          <th className="border-b border-slate-200 px-4 py-2.5 text-right text-[10px] font-bold tracking-wider text-slate-500 uppercase"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {queueItems.map((item) => (
                           <tr
                             key={item.part_number}
-                            className="bg-white hover:bg-slate-50 transition-colors group"
+                            className="group bg-white transition-colors hover:bg-slate-50"
                           >
                             <td className="px-4 py-2.5">
-                              <span className="font-bold text-sm text-slate-900 font-mono">{item.part_number}</span>
+                              <span className="font-mono text-sm font-bold text-slate-900">
+                                {item.part_number}
+                              </span>
                             </td>
                             <td className="px-4 py-2.5 text-[10px] font-medium text-slate-500">
                               {item.first_seen_at
@@ -662,17 +680,20 @@ export default function ScrapingPage() {
                             <td className="px-4 py-2.5">
                               <Badge
                                 className={cn(
-                                  'border font-bold shadow-none px-2 py-0 text-[10px]',
-                                  item.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                    item.status === 'PROCESSING' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                      item.status === 'FAILED' ? 'bg-red-50 text-red-700 border-red-200' :
-                                        'bg-slate-100 text-slate-700 border-slate-200'
+                                  'border px-2 py-0 text-[10px] font-bold shadow-none',
+                                  item.status === 'PENDING'
+                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                    : item.status === 'PROCESSING'
+                                      ? 'border-blue-200 bg-blue-50 text-blue-700'
+                                      : item.status === 'FAILED'
+                                        ? 'border-red-200 bg-red-50 text-red-700'
+                                        : 'border-slate-200 bg-slate-100 text-slate-700',
                                 )}
                               >
                                 {item.status || 'Pending'}
                               </Badge>
                             </td>
-                            <td className="px-4 py-2.5 text-xs font-bold text-slate-400 text-center">
+                            <td className="px-4 py-2.5 text-center text-xs font-bold text-slate-400">
                               {item.retry_count || 0}
                             </td>
                             <td className="px-4 py-2.5 text-right">
@@ -680,7 +701,7 @@ export default function ScrapingPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeFromQueue(item.part_number)}
-                                className="h-6 w-6 p-0 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-full"
+                                className="h-6 w-6 rounded-full p-0 text-slate-300 hover:bg-red-50 hover:text-red-600"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
@@ -692,11 +713,11 @@ export default function ScrapingPage() {
                   </div>
 
                   {/* Pagination Footer */}
-                  <div className="flex shrink-0 items-center justify-between border-t border-slate-100 bg-white px-4 py-2 mt-auto">
+                  <div className="mt-auto flex shrink-0 items-center justify-between border-t border-slate-100 bg-white px-4 py-2">
                     <button
                       onClick={() => setQueuePage((p) => Math.max(0, p - 1))}
                       disabled={queuePage === 0}
-                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
+                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
                     >
                       <ChevronLeft size={12} />
                       Prev
@@ -709,7 +730,7 @@ export default function ScrapingPage() {
                     <button
                       onClick={() => setQueuePage((p) => p + 1)}
                       disabled={queuePage >= totalPages - 1}
-                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
+                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold tracking-wider text-slate-500 uppercase transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
                     >
                       Next
                       <ChevronRight size={12} />
@@ -721,25 +742,28 @@ export default function ScrapingPage() {
           </div>
 
           {/* Right Column - Forms */}
-          <div className="flex flex-col gap-4 lg:h-full min-w-0">
+          <div className="flex min-w-0 flex-col gap-4 lg:h-full">
             {/* Manual IC Entry Form */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm h-full flex flex-col">
+            <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600">
                   <Plus className="h-4 w-4" />
                 </div>
                 <h2 className="text-base font-bold text-slate-900">Add Manually</h2>
               </div>
 
-              <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 mb-4">
-                <p className="text-xs font-medium text-slate-500 leading-relaxed text-justify break-words">
-                  Manually queue a part number. The system will attempt to fetch datasheets and details from online sources.
+              <div className="mb-4 rounded-lg border border-slate-100 bg-slate-50 p-3">
+                <p className="text-justify text-xs leading-relaxed font-medium break-words text-slate-500">
+                  Manually queue a part number. The system will attempt to fetch datasheets and
+                  details from online sources.
                 </p>
               </div>
 
-              <div className="space-y-4 flex-1">
+              <div className="flex-1 space-y-4">
                 <div>
-                  <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Part Number *</Label>
+                  <Label className="mb-1.5 block text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                    Part Number *
+                  </Label>
                   <Input
                     value={manualPart}
                     onChange={(e) => setManualPart(e.target.value)}
@@ -749,12 +773,14 @@ export default function ScrapingPage() {
                 </div>
 
                 <div className="flex-1">
-                  <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Note (optional)</Label>
+                  <Label className="mb-1.5 block text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                    Note (optional)
+                  </Label>
                   <Textarea
                     value={manualNote}
                     onChange={(e) => setManualNote(e.target.value)}
                     placeholder="Context for adding"
-                    className="rounded-lg border-slate-200 resize-none focus:border-blue-500 focus:ring-blue-500/20 h-[100px] text-xs"
+                    className="h-[100px] resize-none rounded-lg border-slate-200 text-xs focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
 
@@ -767,7 +793,7 @@ export default function ScrapingPage() {
                 <div className="mt-auto">
                   <Button
                     onClick={addToQueue}
-                    className="h-10 w-full bg-blue-600 font-bold text-white rounded-xl shadow-sm hover:bg-blue-700 transition-all text-xs"
+                    className="h-10 w-full rounded-xl bg-blue-600 text-xs font-bold text-white shadow-sm transition-all hover:bg-blue-700"
                     disabled={!manualPart.trim() || manualLoading}
                   >
                     {manualLoading ? 'Adding...' : 'Add to Queue'}

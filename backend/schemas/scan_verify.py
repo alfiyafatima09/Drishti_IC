@@ -87,6 +87,7 @@ class ScanVerifyResult(BaseModel):
     """Result of verification against database (Phase 2)."""
     scan_id: UUID = Field(..., description="Reference to original scan")
     verification_status: VerificationStatus = Field(..., description="Verification result")
+    status: str = Field(..., description="Unified scan status for frontend compatibility")
     action_required: ActionRequired = Field(..., description="Recommended action")
     part_number: str = Field(..., description="Part number that was verified")
     matched_ic: Optional[Dict[str, Any]] = Field(None, description="IC spec if found")
