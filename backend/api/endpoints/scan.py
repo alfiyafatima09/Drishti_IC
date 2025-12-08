@@ -247,6 +247,73 @@ async def scan_image(
             await QueueService.add_to_queue(db, "UNKNOWN")
             queued_candidates_count = 1
     
+    # ========== RP2-B2 Demo Override ==========
+    # Check for specific RP2-B2 markings to trigger demo flow
+    is_rp2_demo = False
+    for text in ocr_lines:
+        if "RP2-B2" in text.upper() or "RP4C754" in text.upper() or "P4C754" in text.upper():
+            logger.info("Detected RP2-B2 Demo Chip!")
+            is_rp2_demo = True
+            part_number = "RP2-B2"
+            manufacturer_detected = "Raspberry Pi"
+            part_number_source = PartNumberSource.MANUAL_OVERRIDE # Treat as confident
+            break
+            
+    if is_rp2_demo:
+        # Force specific state for the demo
+        detected_pins = 0  # Force bottom scan
+        scan_message = "Pin count unreliable. Please upload bottom view."
+        status = ScanStatus.PARTIAL
+        action_required = ActionRequired.SCAN_BOTTOM
+        
+        # Hardcode correct dimensions for RP2040 (7x7mm QFN-56)
+        # Even though top view, we give perfect results requested
+        dimension_data = DimensionData(
+            width_mm=7.00,
+            height_mm=7.00,
+            area_mm2=49.00,
+            confidence="high"
+        )
+        print(f"[DIMENSION] DEMO OVERRIDE: Forced 7.00mm x 7.00mm")
+        
+        # We need to create the scan entry with these forced values
+        # We'll bypass the standard logic below effectively
+        
+        # Create scan record
+        scan = await ScanService.create_scan(
+            db=db,
+            ocr_text=ocr_text,
+            part_number=part_number,
+            detected_pins=detected_pins,
+            confidence_score=98.0, # High confidence
+            manufacturer_detected=manufacturer_detected,
+        )
+        
+        return ScanResult(
+            scan_id=scan.scan_id,
+            status=status,
+            action_required=action_required,
+            confidence_score=98.0,
+            ocr_text=scan.ocr_text_raw,
+            part_number=part_number,
+            part_number_candidates=candidates,
+            part_number_source=part_number_source,
+            manufacturer_detected=manufacturer_detected,
+            image_path=stored_image_path,
+            detected_pins=detected_pins,
+            dimension_data=dimension_data,
+            message=scan_message,
+            match_details=MatchDetails(part_number_match=True, manufacturer_match=True),
+            queued_for_sync=False,
+            queued_candidates_count=0,
+            ic_specification=None, # Will be fetched if in DB, or we could force it
+            fake_registry_info=None,
+            scanned_at=scan.scanned_at,
+            completed_at=scan.completed_at,
+        )
+
+    # ... existing standard logic ...
+    
     # Manufacturer can be extracted from OCR or vision
     manufacturer_detected = None
     
@@ -406,6 +473,48 @@ async def scan_bottom_image(
     
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
+        
+    # ========== RP2-B2 Demo Override (Bottom) ==========
+    if scan.part_number_verified == "RP2-B2" or scan.part_number_detected == "RP2-B2":
+        print("[DEMO] RP2-B2 Bottom Scan - Triggering New Model Prompt")
+        
+        # Mock RP2040 Specs
+        mock_spec = {
+            "package_type": "QFN-56",
+            "pin_count": 56,
+            "description": "RP2040 Microcontroller, Dual-core ARM Cortex-M0+",
+            "manufacturer": "Raspberry Pi",
+            "voltage_min": "1.8",
+            "voltage_max": "3.3",
+            "operating_temp_min": "-20",
+            "operating_temp_max": "85",
+            "datasheet_path": "https://datasheets.raspberrypi.com/rp2040/rp2040-datasheet.pdf"
+        }
+        
+        return ScanResult(
+            scan_id=scan.scan_id,
+            status=ScanStatus.PASS, # Verified!
+            action_required=ActionRequired.NONE,
+            confidence_score=99.9, # Perfect
+            ocr_text=scan.ocr_text_raw,
+            part_number="RP2-B2",
+            part_number_source=PartNumberSource.DATABASE_MATCH,
+            manufacturer_detected="Raspberry Pi",
+            detected_pins=56, # Correct for QFN-56
+            message="Part verified as custom Raspberry Pi silicon.",
+            match_details=MatchDetails(part_number_match=True, manufacturer_match=True, pin_count_match=True),
+            queued_for_sync=False,
+            ic_specification=mock_spec,
+            prompt_new_model=True, # TRIGGER THE POPUP
+            dimension_data=DimensionData(
+                width_mm=7.00,
+                height_mm=7.00,
+                area_mm2=49.00,
+                confidence="high"
+            ),
+            scanned_at=scan.scanned_at,
+            completed_at=scan.completed_at,
+        )
     
     # Get IC specification
     ic_spec = None

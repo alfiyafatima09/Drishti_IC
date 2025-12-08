@@ -51,6 +51,7 @@ class ScanResult(BaseModel):
     ic_specification: Optional[ICSpecificationResponse] = None
     fake_registry_info: Optional[FakeRegistryInfo] = None
     was_manual_override: bool = False
+    prompt_new_model: bool = False
     scanned_at: datetime
     completed_at: Optional[datetime] = None
 

@@ -74,12 +74,14 @@ Analyze the image and extract the following details into a JSON object:
 
 1. "texts": All visible alphanumeric markings, row by row.
 2. "logo": The manufacturer name if a logo is visible (e.g., TI, ST, Microchip, Atmel). If unknown, use "unknown".
-3. "num_pins": Total number of pins/leads visible.
+3. "num_pins": Total number of pins/leads visible. If no pins are clearly visible (e.g. top view of QFN) or if you are unsure, return 0.
 
 IMPORTANT for pin counting:
 - Detect whether the IC has pins on only two sides (DIP/SOIC style) or on all four sides (QFN/QFP).
 - If the chip has pins ONLY on two opposite long sides, then you MUST count only those two sides and ignore the other two sides entirely.
 - Do NOT count shadows, bevels, or edges of the package as pins.
+- If you are unsure or cannot see pins clearly, strictly return 0.
+- If the detected manufacturer is "TI", you MUST expand it to "Texas Instruments".
 
 Output Format (JSON Only):
 {
@@ -184,7 +186,7 @@ Strictly NO Markdown, NO explanations, ONLY raw JSON.
         Returns:
             Dict with "manufacturer" and "pin_count" keys.
         """
-        result = {"manufacturer": "", "pin_count": ""}
+        result = {"manufacturer": "", "pin_count": "0"}
 
         if not response_text:
             return result
@@ -195,10 +197,12 @@ Strictly NO Markdown, NO explanations, ONLY raw JSON.
             if isinstance(doc, dict):
                 # Local model format: num_pins, logo
                 if "num_pins" in doc:
-                    result["pin_count"] = str(doc.get("num_pins", "")).strip()
+                    val = doc.get("num_pins")
+                    result["pin_count"] = "0" if val is None else str(val).strip()
                 # Legacy format: pin_count
                 elif "pin_count" in doc:
-                    result["pin_count"] = str(doc.get("pin_count", "")).strip()
+                    val = doc.get("pin_count")
+                    result["pin_count"] = "0" if val is None else str(val).strip()
                 
                 # Local model format: logo
                 if "logo" in doc:
@@ -209,7 +213,7 @@ Strictly NO Markdown, NO explanations, ONLY raw JSON.
                 elif "manufacturer" in doc:
                     result["manufacturer"] = str(doc.get("manufacturer", "")).strip()
                 
-                if result["manufacturer"] or result["pin_count"]:
+                if result["manufacturer"] or result["pin_count"] != "0":
                     return result
         except json.JSONDecodeError:
             pass
@@ -222,9 +226,11 @@ Strictly NO Markdown, NO explanations, ONLY raw JSON.
                 if isinstance(doc, dict):
                     # Local model format
                     if "num_pins" in doc:
-                        result["pin_count"] = str(doc.get("num_pins", "")).strip()
+                        val = doc.get("num_pins")
+                        result["pin_count"] = "0" if val is None else str(val).strip()
                     elif "pin_count" in doc:
-                        result["pin_count"] = str(doc.get("pin_count", "")).strip()
+                        val = doc.get("pin_count")
+                        result["pin_count"] = "0" if val is None else str(val).strip()
                     
                     if "logo" in doc:
                         logo_value = str(doc.get("logo", "")).strip()
@@ -233,13 +239,14 @@ Strictly NO Markdown, NO explanations, ONLY raw JSON.
                     elif "manufacturer" in doc:
                         result["manufacturer"] = str(doc.get("manufacturer", "")).strip()
                     
-                    if result["manufacturer"] or result["pin_count"]:
+                    if result["manufacturer"] or result["pin_count"] != "0":
                         return result
         except (json.JSONDecodeError, AttributeError):
             pass
 
         # Strategy 3: Heuristic extraction for pin_count
-        if not result["pin_count"]:
+        # Only try heuristics if we haven't found a valid count yet
+        if result["pin_count"] == "0":
             # Look for "X pins" or "X-pin"
             match = re.search(
                 r'(\d{1,3})\s*(?:pins?|pin)',
@@ -250,9 +257,15 @@ Strictly NO Markdown, NO explanations, ONLY raw JSON.
                 result["pin_count"] = match.group(1)
             else:
                 # Look for any 2-3 digit number
+                # CAUTION: This is risky if there are other numbers. 
+                # Only use if we are reasonably sure it is a pin count (e.g. smallish number)
                 numbers = re.findall(r'\b(\d{1,3})\b', response_text)
                 if numbers:
-                    result["pin_count"] = min(numbers, key=int)
+                    # Prefer numbers that look like pin counts (e.g. even numbers, typical sizes)
+                    # But for now just taking the smallest might be too aggressive if it's "2023" date code
+                    # Let's trust the model's explicit output more often.
+                    # If we really found nothing, stick with 0.
+                    pass
 
         # Strategy 4: Heuristic extraction for manufacturer
         if not result["manufacturer"]:
