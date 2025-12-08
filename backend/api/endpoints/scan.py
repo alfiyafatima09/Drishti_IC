@@ -10,6 +10,7 @@ from typing import Optional
 import uuid
 
 from core.database import get_db
+from core.constants import MANUFACTURER_KEYWORDS
 from services import ScanService, ICService, FakeService, QueueService
 from services.ocr import extract_text_from_image, OCRResponse
 from services.llm import LLM
@@ -175,7 +176,6 @@ async def scan_image(
     # Run OCR on the uploaded image
     logger.debug("Starting OCR extraction...")
     ocr_response = extract_text_from_image(image_data, preprocess=True)
-    print(ocr_response)
     
     if ocr_response.status == "error":
         logger.error(f"OCR failed: {ocr_response.error}")
@@ -248,12 +248,9 @@ async def scan_image(
     manufacturer_detected = None
     
     # Try to extract manufacturer from OCR text (simple heuristic)
-    manufacturer_keywords = ['TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP', 
-                            'INFINEON', 'ATMEL', 'FREESCALE', 'ON SEMI', 'ONSEMI', 'FAIRCHILD',
-                            'NATIONAL', 'LINEAR', 'VISHAY', 'ROHM', 'TOSHIBA', 'RENESAS']
     for text_segment in ocr_response.texts:
         upper_text = text_segment.upper()
-        for keyword in manufacturer_keywords:
+        for keyword in MANUFACTURER_KEYWORDS:
             if keyword in upper_text:
                 manufacturer_detected = text_segment
                 logger.debug(f"Detected manufacturer from OCR: {manufacturer_detected}")
@@ -261,32 +258,19 @@ async def scan_image(
         if manufacturer_detected:
             break
     
-    # ========== Vision Analysis (LLM) ==========
+    # ========== Vision Analysis (LLM) - Always run for pins and logo ==========
     detected_pins = 0
-    if matched_part_number:
-        try:
-            llm_client = LLM()
-            llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
-            logger.info(f"Vision analysis successful: {llm_result}")
-            detected_pins = _parse_pin_count(llm_result.get("pin_count"))
-            if not manufacturer_detected and llm_result.get("manufacturer"):
-                manufacturer_detected = llm_result.get("manufacturer")
-        except Exception as exc:
-            logger.error("LLM vision analysis failed: %s", exc, exc_info=True)
-            return ScanService.build_dummy_result(
-                part_number=part_number,
-                ocr_text=ocr_text,
-                image_path=stored_image_path,
-                candidates=candidates,
-                part_number_source=part_number_source,
-                confidence_score=avg_confidence,
-                manufacturer_detected=manufacturer_detected,
-                message=f"Vision analysis unavailable. Returning fallback result. Error: {exc}",
-                queued_for_sync=False,
-                queued_candidates_count=queued_candidates_count,
-                ic_specification=matched_ic_spec.to_dict() if matched_ic_spec else None,
-                detected_pins=detected_pins,
-            )
+    try:
+        llm_client = LLM()
+        llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
+        logger.info(f"Vision analysis successful: {llm_result}")
+        detected_pins = _parse_pin_count(llm_result.get("pin_count"))
+        if not manufacturer_detected and llm_result.get("manufacturer"):
+            manufacturer_detected = llm_result.get("manufacturer")
+    except Exception as exc:
+        logger.error("LLM vision analysis failed: %s", exc, exc_info=True)
+        # Don't fail the scan if vision analysis fails, just log and continue
+        logger.warning("Continuing scan without vision analysis results")
     
     logger.info(f"Creating scan - part_number: {part_number}, source: {part_number_source.value}, pins: {detected_pins}")
     

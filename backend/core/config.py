@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     DIGIKEY_CLIENT_SECRET: str = os.environ.get("DIGIKEY_CLIENT_SECRET", "")
     DIGIKEY_TOKEN_URL: str = os.environ.get("DIGIKEY_TOKEN_URL", "https://api.digikey.com/v1/oauth2/token")
     DIGIKEY_SEARCH_URL: str = os.environ.get("DIGIKEY_SEARCH_URL", "https://api.digikey.com/products/v4/search/keyword")
+    
+    # Local Model Configuration
+    LOCAL_MODEL_URL: str = os.environ.get("LOCAL_MODEL_URL", "http://localhost:8001")
 
 
 @lru_cache()

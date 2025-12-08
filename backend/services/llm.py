@@ -5,39 +5,63 @@ import base64
 import io
 import json
 import re
+import logging
 from typing import Dict, Optional
 from dotenv import load_dotenv
 import requests
 from PIL import Image
 import os
+from pathlib import Path
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 BASE_URL = os.getenv("LLM_BASE_URL")
+LOCAL_MODEL_URL = os.getenv("LOCAL_MODEL_URL", "http://localhost:8001")
 class LLM:
     """Vision API client for analyzing IC chip images."""
 
     def __init__(
         self,
-        endpoint: str = BASE_URL + "/api/vision",
+        endpoint: Optional[str] = None,
+        use_local_model: bool = True,
         temperature: float = 0.8,
-        max_tokens: int = 4096,
-        target_kb: int = 60,
+        max_tokens: int = 512,  # Reduced for faster inference
+        target_kb: int = 30,  # Reduced from 60KB to 30KB for faster processing
         min_quality: int = 20,
-        timeout: int = 60,
+        timeout: int = 300,  # Increased timeout for CPU processing
     ):
         """
         Initialize the LLM vision API client.
 
         Args:
-            endpoint: Vision API endpoint URL.
+            endpoint: Vision API endpoint URL (optional, overrides use_local_model).
+            use_local_model: If True, use local model endpoint. If False, use BASE_URL.
             temperature: Sampling temperature (0.0-1.0).
             max_tokens: Maximum tokens in response.
             target_kb: Target image size in KB for compression.
             min_quality: Minimum JPEG quality to try.
             timeout: Request timeout in seconds.
         """
-        self.endpoint = endpoint
+        if endpoint:
+            self.endpoint = endpoint
+            self.use_local_model = False
+        elif use_local_model:
+            self.endpoint = f"{LOCAL_MODEL_URL}/api/v1/vision/upload"
+            self.use_local_model = True
+        else:
+            if BASE_URL:
+                self.endpoint = BASE_URL + "/api/vision"
+                self.use_local_model = False
+            else:
+                # Fallback to local model if BASE_URL not set
+                self.endpoint = f"{LOCAL_MODEL_URL}/api/v1/vision/upload"
+                self.use_local_model = True
+        
+        if not self.endpoint:
+            raise ValueError("Either endpoint, BASE_URL, or LOCAL_MODEL_URL must be set")
+        
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.target_kb = target_kb
@@ -45,40 +69,31 @@ class LLM:
         self.timeout = timeout
         
         self.prompt = """
-        You are an expert in all IC package types, especially DIP, SOIC, and TSSOP packages where pins exist only on two opposite long sides.
+You are an expert Integrated Circuit (IC) Inspection Agent.
+Analyze the image and extract the following details into a JSON object:
 
-IMPORTANT:
+1. "texts": All visible alphanumeric markings, row by row.
+2. "logo": The manufacturer name if a logo is visible (e.g., TI, ST, Microchip, Atmel). If unknown, use "unknown".
+3. "num_pins": Total number of pins/leads visible.
+
+IMPORTANT for pin counting:
 - Detect whether the IC has pins on only two sides (DIP/SOIC style) or on all four sides (QFN/QFP).
 - If the chip has pins ONLY on two opposite long sides, then you MUST count only those two sides and ignore the other two sides entirely.
+- Do NOT count shadows, bevels, or edges of the package as pins.
 
-Instructions:
-1. Identify how many sides actually have pins. If only two opposite sides have pins (as in a DIP or SOIC), then:
-   - Count the pins on the left side.
-   - Count the pins on the right side.
-2. Add left-side pins + right-side pins to get the total pin count.
-3. Do NOT assume 4-sided pins if they are not present.
-4. Do NOT count shadows, bevels, or edges of the package as pins.
+Output Format (JSON Only):
+{
+  "texts": ["Part Number", "Date Code", "trace codes"],
+  "logo": "Manufacturer Name",
+  "num_pins": 14
+}
 
-CRITICAL:
-Your final output must be ONLY the total pin count as a single integer.
-No extra words. No explanation. No symbols.
-
-Output format:
-<total_pin_count>
+Strictly NO Markdown, NO explanations, ONLY raw JSON.
         """
-
-        # self.prompt = (
-        #     "You are given an image of an electronic IC chip. "
-        #     "Analyze the image and identify:\n"
-        #     "1. The manufacturer name of the chip from the logo\n"
-        #     "2. The total number of pins\n\n"
-        #     "Respond ONLY in JSON format with no additional text:\n"
-        #     '{"manufacturer": "<manufacturer_name>", "pin_count": <number>}'
-        # )
 
     def compress_image(self, image_path: str) -> bytes:
         """
-        Compress image to target size (<60KB).
+        Compress and resize image to target size for faster CPU processing.
 
         Args:
             image_path: Path to the image file.
@@ -94,25 +109,39 @@ Output format:
         except Exception as e:
             raise ValueError(f"Failed to open image {image_path}: {e}")
 
+        # First, resize to max 800px on longest side for faster processing
+        max_size = 800
+        w, h = img.size
+        if w > max_size or h > max_size:
+            if w > h:
+                new_w = max_size
+                new_h = int(h * (max_size / w))
+            else:
+                new_h = max_size
+                new_w = int(w * (max_size / h))
+            img = img.resize((new_w, new_h), Image.LANCZOS)
+            logger.debug(f"Resized image from {w}x{h} to {new_w}x{new_h}")
+
         last_data = None
 
-        # Try reducing quality first (95 -> min_quality)
-        for quality in range(95, self.min_quality - 1, -5):
+        # Try reducing quality first (85 -> min_quality, step by 10 for speed)
+        for quality in range(85, self.min_quality - 1, -10):
             buf = io.BytesIO()
             img.save(buf, format='JPEG', quality=quality, optimize=True)
             size_kb = buf.tell() / 1024
 
             if size_kb <= self.target_kb:
+                logger.debug(f"Compressed to {size_kb:.1f}KB at quality {quality}")
                 return buf.getvalue()
 
             last_data = buf.getvalue()
 
-        # If quality reduction not enough, progressively downscale
-        scale_factor = 0.9
+        # If quality reduction not enough, downscale more aggressively
+        scale_factor = 0.8
         w, h = img.size
-        min_dimension = 50
+        min_dimension = 200  # Increased from 50 to maintain quality
 
-        for _ in range(8):  # max 8 iterations
+        for _ in range(3):  # Reduced from 8 to 3 iterations
             w = int(w * scale_factor)
             h = int(h * scale_factor)
 
@@ -121,18 +150,20 @@ Output format:
 
             img_scaled = img.resize((w, h), Image.LANCZOS)
 
-            for quality in range(85, self.min_quality - 1, -5):
+            for quality in range(75, self.min_quality - 1, -10):
                 buf = io.BytesIO()
                 img_scaled.save(buf, format='JPEG', quality=quality, optimize=True)
                 size_kb = buf.tell() / 1024
 
                 if size_kb <= self.target_kb:
+                    logger.debug(f"Compressed to {size_kb:.1f}KB at {w}x{h}, quality {quality}")
                     return buf.getvalue()
 
                 last_data = buf.getvalue()
 
         # Fallback: return last attempt (may exceed target)
         if last_data:
+            logger.debug(f"Using fallback compression: {len(last_data)/1024:.1f}KB")
             return last_data
 
         raise ValueError(f"Failed to compress image to target size")
@@ -141,8 +172,9 @@ Output format:
         """
         Parse manufacturer and pin_count from API response.
 
+        Supports both local model format (num_pins, logo) and legacy format (pin_count, manufacturer).
         Tries multiple strategies:
-        1. Strict JSON parsing
+        1. Strict JSON parsing (handles both formats)
         2. Regex-based JSON extraction
         3. Heuristics for fallback
 
@@ -157,12 +189,26 @@ Output format:
         if not response_text:
             return result
 
-        # Strategy 1: Strict JSON parse
+        # Strategy 1: Strict JSON parse (handles both local model and legacy formats)
         try:
             doc = json.loads(response_text)
             if isinstance(doc, dict):
-                result["manufacturer"] = str(doc.get("manufacturer", "")).strip()
-                result["pin_count"] = str(doc.get("pin_count", "")).strip()
+                # Local model format: num_pins, logo
+                if "num_pins" in doc:
+                    result["pin_count"] = str(doc.get("num_pins", "")).strip()
+                # Legacy format: pin_count
+                elif "pin_count" in doc:
+                    result["pin_count"] = str(doc.get("pin_count", "")).strip()
+                
+                # Local model format: logo
+                if "logo" in doc:
+                    logo_value = str(doc.get("logo", "")).strip()
+                    if logo_value and logo_value.lower() != "unknown":
+                        result["manufacturer"] = logo_value
+                # Legacy format: manufacturer
+                elif "manufacturer" in doc:
+                    result["manufacturer"] = str(doc.get("manufacturer", "")).strip()
+                
                 if result["manufacturer"] or result["pin_count"]:
                     return result
         except json.JSONDecodeError:
@@ -174,8 +220,19 @@ Output format:
             if match:
                 doc = json.loads(match.group(0))
                 if isinstance(doc, dict):
-                    result["manufacturer"] = str(doc.get("manufacturer", "")).strip()
-                    result["pin_count"] = str(doc.get("pin_count", "")).strip()
+                    # Local model format
+                    if "num_pins" in doc:
+                        result["pin_count"] = str(doc.get("num_pins", "")).strip()
+                    elif "pin_count" in doc:
+                        result["pin_count"] = str(doc.get("pin_count", "")).strip()
+                    
+                    if "logo" in doc:
+                        logo_value = str(doc.get("logo", "")).strip()
+                        if logo_value and logo_value.lower() != "unknown":
+                            result["manufacturer"] = logo_value
+                    elif "manufacturer" in doc:
+                        result["manufacturer"] = str(doc.get("manufacturer", "")).strip()
+                    
                     if result["manufacturer"] or result["pin_count"]:
                         return result
         except (json.JSONDecodeError, AttributeError):
@@ -226,29 +283,50 @@ Output format:
         # Compress image
         compressed_data = self.compress_image(image_path)
 
-        # Encode to base64
-        image_base64 = base64.b64encode(compressed_data).decode('ascii')
-
-        # Prepare payload
-        payload = {
-            "prompt": self.prompt,
-            "image_base64": image_base64,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-        }
-
-        # Send request
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(
-            self.endpoint,
-            json=payload,
-            headers=headers,
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+        if self.use_local_model:
+            # Local model endpoint expects form data with file upload
+            image_filename = Path(image_path).name if image_path else "image.jpg"
+            files = {
+                "image": (image_filename, compressed_data, "image/jpeg")
+            }
+            data = {
+                "prompt": self.prompt,
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+            }
+            
+            response = requests.post(
+                self.endpoint,
+                files=files,
+                data=data,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            
+            # Local model returns JSON with "response" and "model" fields
+            response_data = response.json()
+            response_text = response_data.get("response", "")
+        else:
+            # Legacy endpoint expects JSON with base64
+            image_base64 = base64.b64encode(compressed_data).decode('ascii')
+            payload = {
+                "prompt": self.prompt,
+                "image_base64": image_base64,
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+            }
+            
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(
+                self.endpoint,
+                json=payload,
+                headers=headers,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            response_text = response.text
 
         # Parse response
-        response_text = response.text
         result = self._parse_response(response_text)
 
         return result

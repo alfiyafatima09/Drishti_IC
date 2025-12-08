@@ -1,7 +1,6 @@
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -11,23 +10,22 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { LayoutDashboard, ScanLine, Database, History, Settings, Shield, Search } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { LayoutDashboard, ScanLine, Database, History, Shield, Search } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
 
 import * as React from 'react'
-import { UserNav } from './user-nav'
 
 // Menu items.
 const items = [
   {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
     title: 'New Scan',
     url: '/scan',
     icon: ScanLine,
+  },
+  {
+    title: 'Dashboard',
+    url: '/dashboard',
+    icon: LayoutDashboard,
   },
   {
     title: 'IC Database',
@@ -47,6 +45,8 @@ const items = [
 ]
 
 export function AppSidebar() {
+  const location = useLocation()
+  
   return (
     <Sidebar
       collapsible="icon"
@@ -87,55 +87,36 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2 px-3 group-data-[collapsible=icon]:px-0">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    className="h-11 text-white font-semibold transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white rounded-lg"
-                  >
-                    <Link to={item.url}>
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      <span className="font-semibold tracking-wide group-data-[collapsible=icon]:hidden">
-                        {item.title}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isActive = location.pathname === item.url
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.title}
+                      className={`h-11 font-semibold transition-all group-data-[collapsible=icon]:justify-center rounded-lg ${
+                        isActive 
+                          ? 'bg-white text-blue-600 shadow-lg hover:bg-white hover:text-blue-600' 
+                          : 'text-white hover:bg-white/20 hover:text-white'
+                      }`}
+                    >
+                      <Link to={item.url}>
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className="font-semibold tracking-wide group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-auto pb-4">
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-2 px-3 group-data-[collapsible=icon]:px-0">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Settings"
-                  className="h-11 text-white font-semibold transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white rounded-lg"
-                >
-                  <Link to="/settings">
-                    <Settings className="h-5 w-5 shrink-0" />
-                    <span className="font-semibold tracking-wide group-data-[collapsible=icon]:hidden">
-                      Settings
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t-2 border-cyan-400 p-4 group-data-[collapsible=icon]:p-2 bg-white/10 backdrop-blur-sm">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <UserNav />
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
