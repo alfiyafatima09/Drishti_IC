@@ -11,19 +11,14 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { LayoutDashboard, ScanLine, Database, History, Shield, Search } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { ScanLine, Database, History, Shield, Search } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
 
 import * as React from 'react'
 // import { UserNav } from './user-nav'
 
 // Menu items.
 const items = [
-  {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: LayoutDashboard,
-  },
   {
     title: 'New Scan',
     url: '/scan',
@@ -47,6 +42,8 @@ const items = [
 ]
 
 export function AppSidebar() {
+  const location = useLocation()
+
   return (
     <Sidebar
       collapsible="icon"
@@ -85,22 +82,29 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-2 px-3 group-data-[collapsible=icon]:px-0">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    className="h-11 rounded-lg font-semibold text-white transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white"
-                  >
-                    <Link to={item.url}>
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      <span className="font-semibold tracking-wide group-data-[collapsible=icon]:hidden">
-                        {item.title}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isActive = location.pathname === item.url
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.title}
+                      className={`h-11 rounded-lg font-semibold transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white ${
+                        isActive
+                          ? 'border-l-4 border-cyan-300 bg-white/30 text-white shadow-lg'
+                          : 'text-white'
+                      }`}
+                    >
+                      <Link to={item.url}>
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className="font-semibold tracking-wide group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

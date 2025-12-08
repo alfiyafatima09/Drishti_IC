@@ -78,8 +78,8 @@ export interface ScanResult {
   fake_registry_info?: FakeRegistryInfo | null
   scanned_at: string
   completed_at?: string | null
-  part_number?: string;
-  part_number_detected?: string;
+  part_number?: string
+  part_number_detected?: string
 }
 
 // ============================================================
