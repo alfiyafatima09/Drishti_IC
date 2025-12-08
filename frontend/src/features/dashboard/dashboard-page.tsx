@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+
 import { VideoFeed } from './components/video-feed'
 import { ImageUpload } from './components/image-upload'
 import { AnalysisPanel } from './components/analysis-panel'

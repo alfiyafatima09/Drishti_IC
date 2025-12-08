@@ -8,7 +8,7 @@ BASE_DIR="$(dirname "$SCRIPT_DIR")"
 # Settings - Optimized for RTX 4050 with vision model
 HOST="0.0.0.0"
 PORT="8080"
-CONTEXT_SIZE="1024"  # Reduced further for memory
+CONTEXT_SIZE="8192"  # Increased for image processing
 GPU_LAYERS="22"     # Reduced to leave memory for vision model
 THREADS="4"         # Reduced CPU threads
 

@@ -361,7 +361,7 @@ export function AnalysisPanel({
                   <span className="text-xs font-medium text-blue-900">Part Number</span>
                 </div>
                 <p className="font-mono text-xl font-bold break-all text-blue-900">
-                  {scanResult.part_number || 'N/A'}
+                  {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
                 </p>
               </div>
 

@@ -276,6 +276,12 @@ async def scan_image(
         if llm_manufacturer:
             manufacturer_detected = llm_manufacturer
             logger.info(f"Using LLM-detected manufacturer: {manufacturer_detected}")
+
+        # Use LLM part number if available (likely more accurate than OCR heuristic for messy text)
+        llm_part_number = llm_result.get("part_number", "").strip()
+        if llm_part_number and llm_part_number.lower() != "unknown":
+            best_part_number = llm_part_number
+            logger.info(f"Using LLM-detected part number: {best_part_number}")
     except Exception as e:
         is_vision_fallback = True
         logger.warning(f"Vision analysis failed: {e}, using fallback (0 pins)")
