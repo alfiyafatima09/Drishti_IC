@@ -186,15 +186,34 @@ class LLM:
             # Try strict JSON first
             data = json.loads(response_text)
         except json.JSONDecodeError:
-            # Try to extract JSON from text
-            try:
+            data = {}
+
+        # Handle nested JSON structure (e.g., {"response": "{...}", "model": "..."})
+        if isinstance(data, dict):
+            # Check for "response" or "content" keys that might contain the actual JSON string
+            if "response" in data and isinstance(data["response"], str):
+                try:
+                    inner_data = json.loads(data["response"])
+                    if isinstance(inner_data, dict):
+                        data = inner_data
+                except json.JSONDecodeError:
+                    pass
+            elif "content" in data and isinstance(data["content"], str):
+                try:
+                    inner_data = json.loads(data["content"])
+                    if isinstance(inner_data, dict):
+                        data = inner_data
+                except json.JSONDecodeError:
+                    pass
+
+        # If data is empty (JSON decode failed or no nested JSON found), try regex fallback
+        if not data:
+             try:
                 match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
                 if match:
                     data = json.loads(match.group(0))
-                else:
-                    data = {}
-            except (json.JSONDecodeError, AttributeError):
-                data = {}
+             except (json.JSONDecodeError, AttributeError):
+                 data = {}
 
         if isinstance(data, dict):
             # Map new keys (logo, num_pins) to backend keys (manufacturer, pin_count)
@@ -206,10 +225,11 @@ class LLM:
             if manufacturer.lower() == "unknown":
                 result["manufacturer"] = "Unknown"
             else:
-                # Apply normalization here
+            # Apply normalization here
                 result["manufacturer"] = self._normalize_manufacturer(manufacturer)
             
             result["pin_count"] = str(data.get("num_pins") or data.get("pin_count") or "0").strip()
+            result["part_number"] = str(data.get("part_number", "")).strip()
 
         return result
 
@@ -264,6 +284,7 @@ class LLM:
 
             # Parse response
             response_text = response.text
+            print(f"DEBUG: Raw LLM Response: {response_text}")
             result = self._parse_response(response_text)
 
             return result
