@@ -233,6 +233,27 @@ async def scan_image(
         if manufacturer_detected:
             break
     
+    # Normalize OCR-detected manufacturer to full name
+    if manufacturer_detected:
+        manufacturer_map = {
+            'TI': 'Texas Instruments', 'TEXAS': 'Texas Instruments',
+            'STM': 'STMicroelectronics',
+            'ATMEL': 'Microchip Technology', 'MICROCHIP': 'Microchip Technology',
+            'INTEL': 'Intel Corporation',
+            'ANALOG': 'Analog Devices',
+            'MAXIM': 'Maxim Integrated',
+            'NXP': 'NXP Semiconductors', 'FREESCALE': 'NXP Semiconductors',
+            'ON SEMI': 'ON Semiconductor', 'ONSEMI': 'ON Semiconductor', 'FAIRCHILD': 'ON Semiconductor',
+            'NATIONAL': 'Texas Instruments',
+            'LINEAR': 'Analog Devices',
+            'INFINEON': 'Infineon Technologies',
+            'VISHAY': 'Vishay Intertechnology',
+            'ROHM': 'ROHM Semiconductor',
+            'TOSHIBA': 'Toshiba Electronic Devices & Storage Corporation',
+            'RENESAS': 'Renesas Electronics'
+        }
+        manufacturer_detected = manufacturer_map.get(manufacturer_detected.upper(), manufacturer_detected)
+    
     # ========== Vision Analysis (LLM) ==========
     detected_pins = 0
     is_vision_fallback = False
@@ -249,6 +270,12 @@ async def scan_image(
             logger.info(f"Vision analysis successful: {llm_result}")
         
         detected_pins = _parse_pin_count(llm_result.get("pin_count", 0))
+        
+        # Use LLM manufacturer if available (takes precedence over OCR)
+        llm_manufacturer = llm_result.get("manufacturer", "").strip()
+        if llm_manufacturer:
+            manufacturer_detected = llm_manufacturer
+            logger.info(f"Using LLM-detected manufacturer: {manufacturer_detected}")
     except Exception as e:
         is_vision_fallback = True
         logger.warning(f"Vision analysis failed: {e}, using fallback (0 pins)")
