@@ -19,7 +19,7 @@ import * as React from 'react'
 const items = [
   {
     title: 'New Scan',
-    url: '/scan',
+    url: '/',
     icon: ScanLine,
   },
   {
