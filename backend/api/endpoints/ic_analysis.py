@@ -16,11 +16,13 @@ from schemas.ic_analysis import (
     ICAnalysisResult,
     OCRTextData,
     PinDetectionData,
+    DimensionData,
     ErrorResponse
 )
 from services.storage import save_image_file
 from services.ocr import extract_text_from_image
 from services.llm import LLM
+from services.dimension_service import DimensionService
 
 logger = logging.getLogger(__name__)
 
@@ -237,6 +239,44 @@ async def scan_ic_image(
             detection_method="Local Vision Model (Qwen3-VL)"
         )
         
+        # ========== Dimension Measurement ==========
+        dimension_data = None
+        try:
+            logger.debug(f"[{analysis_id}] Starting dimension measurement...")
+            dim_result = await asyncio.to_thread(
+                DimensionService.measure_from_bytes, 
+                image_bytes
+            )
+            
+            if dim_result:
+                # Save visualization image
+                vis_filename = f"measured_{image_id}.png"
+                vis_path = os.path.join(os.path.dirname(image_path), vis_filename)
+                
+                await asyncio.to_thread(
+                    DimensionService.save_visualization,
+                    dim_result['visualization'],
+                    vis_path
+                )
+                
+                dimension_data = DimensionData(
+                    width_mm=dim_result['width_mm'],
+                    height_mm=dim_result['height_mm'],
+                    width_px=dim_result['width_px'],
+                    height_px=dim_result['height_px'],
+                    area_mm2=dim_result['area_mm2'],
+                    angle=dim_result['angle'],
+                    confidence=dim_result['confidence'],
+                    visualization_path=vis_path
+                )
+                logger.info(f"[{analysis_id}] Dimension measurement: {dim_result['width_mm']:.2f}mm x {dim_result['height_mm']:.2f}mm")
+            else:
+                logger.warning(f"[{analysis_id}] Dimension measurement failed - could not detect IC boundaries")
+                
+        except Exception as e:
+            logger.error(f"[{analysis_id}] Dimension measurement error: {e}", exc_info=True)
+            # Don't fail the entire request, just continue without dimensions
+        
         logger.info(f"[{analysis_id}] Analysis complete - Part: {ocr_data.part_number}, Pins: {pin_data.pin_count}")
         
         # Calculate processing time
@@ -248,6 +288,7 @@ async def scan_ic_image(
             image_path=str(image_path),
             ocr_data=ocr_data,
             pin_data=pin_data,
+            dimension_data=dimension_data,
             analyzed_at=datetime.utcnow(),
             processing_time_ms=round(processing_time_ms, 2)
         )

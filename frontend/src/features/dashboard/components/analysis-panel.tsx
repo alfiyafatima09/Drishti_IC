@@ -16,6 +16,7 @@ import {
   Upload,
   Edit3,
   Scan,
+  Ruler,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -315,6 +316,49 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
                 </div>
                 <p className="text-xl font-semibold text-slate-900 font-mono">{scanResult.confidence_score.toFixed(0)}%</p>
               </div>
+
+              {/* Dimensions */}
+              {scanResult.dimension_data && (
+                <div className="col-span-2 p-4 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Ruler className="w-4 h-4 text-blue-500" />
+                      <span className="text-xs font-semibold text-blue-700">IC Dimensions</span>
+                    </div>
+                    <span className={cn(
+                      'px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase',
+                      scanResult.dimension_data.confidence === 'high' ? 'bg-emerald-100 text-emerald-700' :
+                      scanResult.dimension_data.confidence === 'medium' ? 'bg-amber-100 text-amber-700' :
+                      'bg-slate-100 text-slate-600'
+                    )}>
+                      {scanResult.dimension_data.confidence}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center">
+                      <p className="text-[10px] text-blue-600 uppercase font-medium mb-1">Width</p>
+                      <p className="text-lg font-bold text-slate-900 font-mono">
+                        {scanResult.dimension_data.width_mm.toFixed(1)}
+                        <span className="text-xs text-slate-500 ml-0.5">mm</span>
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-blue-600 uppercase font-medium mb-1">Height</p>
+                      <p className="text-lg font-bold text-slate-900 font-mono">
+                        {scanResult.dimension_data.height_mm.toFixed(1)}
+                        <span className="text-xs text-slate-500 ml-0.5">mm</span>
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-blue-600 uppercase font-medium mb-1">Area</p>
+                      <p className="text-lg font-bold text-slate-900 font-mono">
+                        {scanResult.dimension_data.area_mm2.toFixed(0)}
+                        <span className="text-xs text-slate-500 ml-0.5">mm²</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* IC Specifications */}
