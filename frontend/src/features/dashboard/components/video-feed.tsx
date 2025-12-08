@@ -1,37 +1,24 @@
 import { useEffect } from 'react';
 import { Camera, CameraOff, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useCameraFeed, type CameraStatus } from '@/hooks/use-camera-feed';
 
-// ============================================================
-// TYPES
-// ============================================================
-
 interface VideoFeedProps {
-  /** Called when an image is captured */
   onCapture?: (imageUrl: string) => void;
 }
-
-// ============================================================
-// CONSTANTS
-// ============================================================
 
 const STATUS_CONFIG: Record<CameraStatus, { 
   label: string; 
   color: string; 
+  dotColor: string;
   icon: typeof Wifi 
 }> = {
-  disconnected: { label: 'Disconnected', color: 'bg-zinc-500', icon: WifiOff },
-  connecting: { label: 'Connecting...', color: 'bg-amber-500', icon: Wifi },
-  connected: { label: 'Connected', color: 'bg-emerald-500', icon: Wifi },
-  error: { label: 'Error', color: 'bg-red-500', icon: WifiOff },
+  disconnected: { label: 'Disconnected', color: 'text-slate-500', dotColor: 'bg-slate-400', icon: WifiOff },
+  connecting: { label: 'Connecting', color: 'text-amber-600', dotColor: 'bg-amber-500', icon: Wifi },
+  connected: { label: 'Connected', color: 'text-emerald-600', dotColor: 'bg-emerald-500', icon: Wifi },
+  error: { label: 'Error', color: 'text-red-600', dotColor: 'bg-red-500', icon: WifiOff },
 };
-
-// ============================================================
-// COMPONENT
-// ============================================================
 
 export function VideoFeed({ onCapture }: VideoFeedProps) {
   const {
@@ -43,15 +30,11 @@ export function VideoFeed({ onCapture }: VideoFeedProps) {
     disconnect,
   } = useCameraFeed();
 
-  // Auto-connect to WebSocket on mount
   useEffect(() => {
     connect();
     return () => disconnect();
   }, [connect, disconnect]);
 
-  /**
-   * Capture from live camera feed - just capture the image
-   */
   const handleCaptureFromCamera = async () => {
     if (currentFrame && onCapture) {
       try {
@@ -65,137 +48,124 @@ export function VideoFeed({ onCapture }: VideoFeedProps) {
     }
   };
 
-  const StatusIcon = STATUS_CONFIG[status].icon;
   const canCapture = isPhoneConnected && currentFrame;
+  const statusInfo = STATUS_CONFIG[status];
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 shrink-0">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-600 shadow-lg">
-            <Camera className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+            <Camera className="w-5 h-5 text-slate-600" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900">Live Camera Feed</h2>
-            <p className="text-sm text-blue-600 font-medium">Phone AOI Simulator</p>
+            <h2 className="text-sm font-semibold text-slate-900">Live Camera</h2>
+            <p className="text-xs text-slate-500">Phone AOI Feed</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Connection Status */}
-          <Badge
-            className={cn(
-              'gap-1.5 px-3 py-1.5 border-2 font-semibold',
-              status === 'connected' && isPhoneConnected 
-                ? 'bg-emerald-500 border-emerald-600 text-white' 
-                : 'bg-slate-100 border-slate-300 text-slate-700'
-            )}
-          >
-            <span
-              className={cn(
-                'w-2 h-2 rounded-full',
-                status === 'connected' && isPhoneConnected ? 'bg-white' : 'bg-slate-400',
-                status === 'connecting' && 'animate-pulse'
-              )}
-            />
-            <span className="text-xs font-bold">
-              {isPhoneConnected ? 'Connected' : STATUS_CONFIG[status].label}
+        <div className="flex items-center gap-3">
+          {/* Status Indicator */}
+          <div className="flex items-center gap-2">
+            <span className={cn('w-2 h-2 rounded-full', statusInfo.dotColor, status === 'connecting' && 'animate-pulse')} />
+            <span className={cn('text-xs font-medium', statusInfo.color)}>
+              {isPhoneConnected ? 'Phone Connected' : statusInfo.label}
             </span>
-          </Badge>
+          </div>
 
           {/* Frame Counter */}
           {isPhoneConnected && (
-            <Badge className="px-3 py-1.5 bg-blue-500 border-2 border-blue-600 text-white font-mono font-bold shadow-md">
+            <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded">
               {frameCount.toLocaleString()} frames
-            </Badge>
+            </span>
           )}
         </div>
       </div>
 
-      {/* Video Container - Fixed 16:9 aspect ratio */}
-      <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-900 border-4 border-blue-400 shrink-0 shadow-2xl">
+      {/* Video Container */}
+      <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-900 border border-slate-200">
         {currentFrame ? (
-          <img
-            src={currentFrame}
-            alt="Camera feed"
-            className="absolute inset-0 w-full h-full object-contain"
-          />
+          <>
+            <img
+              src={currentFrame}
+              alt="Camera feed"
+              className="absolute inset-0 w-full h-full object-contain"
+            />
+            {/* Subtle scan overlay */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-3 left-3 w-8 h-8 border-l-2 border-t-2 border-cyan-400/60 rounded-tl" />
+              <div className="absolute top-3 right-3 w-8 h-8 border-r-2 border-t-2 border-cyan-400/60 rounded-tr" />
+              <div className="absolute bottom-3 left-3 w-8 h-8 border-l-2 border-b-2 border-cyan-400/60 rounded-bl" />
+              <div className="absolute bottom-3 right-3 w-8 h-8 border-r-2 border-b-2 border-cyan-400/60 rounded-br" />
+            </div>
+          </>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-slate-800 to-slate-900">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900">
             {status === 'connecting' ? (
               <>
-                <Loader2 className="w-16 h-16 text-blue-400 animate-spin" />
-                <p className="text-base font-semibold text-white">Connecting to server...</p>
+                <Loader2 className="w-10 h-10 text-slate-400 animate-spin mb-3" />
+                <p className="text-sm text-slate-400">Connecting to server...</p>
               </>
             ) : status === 'connected' && !isPhoneConnected ? (
               <>
-                <CameraOff className="w-16 h-16 text-cyan-400" />
-                <div className="text-center">
-                  <p className="text-base font-semibold text-white">Waiting for phone camera</p>
-                  <p className="text-sm text-cyan-300 mt-2 font-medium">
-                    Open <code className="px-2 py-1 rounded bg-cyan-900 text-cyan-200 font-bold">/camera</code> on your phone
-                  </p>
-                </div>
+                <CameraOff className="w-10 h-10 text-slate-500 mb-3" />
+                <p className="text-sm text-slate-300 mb-1">Waiting for phone camera</p>
+                <p className="text-xs text-slate-500">
+                  Open <code className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400">/camera</code> on your phone
+                </p>
               </>
             ) : (
               <>
-                <WifiOff className="w-16 h-16 text-slate-400" />
-                <div className="text-center">
-                  <p className="text-base font-semibold text-white">Not connected to server</p>
-                  <Button variant="outline" size="sm" onClick={connect} className="mt-3 bg-blue-600 text-white border-blue-500 hover:bg-blue-700 font-bold">
-                    Connect
-                  </Button>
-                </div>
+                <WifiOff className="w-10 h-10 text-slate-500 mb-3" />
+                <p className="text-sm text-slate-300 mb-3">Not connected</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={connect}
+                  className="text-white border-slate-600 hover:bg-slate-800"
+                >
+                  Connect
+                </Button>
               </>
             )}
           </div>
         )}
-
-        {/* Scanning Overlay */}
-        {currentFrame && (
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Corner brackets */}
-            <div className="absolute top-4 left-4 w-16 h-16 border-l-4 border-t-4 border-cyan-400 rounded-tl-lg" />
-            <div className="absolute top-4 right-4 w-16 h-16 border-r-4 border-t-4 border-cyan-400 rounded-tr-lg" />
-            <div className="absolute bottom-4 left-4 w-16 h-16 border-l-4 border-b-4 border-cyan-400 rounded-bl-lg" />
-            <div className="absolute bottom-4 right-4 w-16 h-16 border-r-4 border-b-4 border-cyan-400 rounded-br-lg" />
-
-            {/* Center crosshair */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="w-20 h-20 border-2 border-cyan-400 rounded-lg shadow-lg shadow-cyan-500/50" />
-              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-cyan-400/40" />
-              <div className="absolute top-0 left-1/2 w-0.5 h-full bg-cyan-400/40" />
-            </div>
-          </div>
-        )}
-
       </div>
 
       {/* Capture Controls */}
-      <div className="flex items-center gap-3 mt-4 shrink-0">
+      <div className="flex items-center gap-3 mt-4">
         <Button
           size="lg"
           className={cn(
-            "flex-1 h-14 text-white font-bold shadow-xl text-base",
+            "flex-1 h-12 font-semibold transition-all",
             canCapture 
-              ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600" 
-              : "bg-slate-400 cursor-not-allowed"
+              ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm" 
+              : "bg-slate-100 text-slate-400 cursor-not-allowed"
           )}
           disabled={!canCapture}
           onClick={handleCaptureFromCamera}
         >
-          <Camera className="w-6 h-6 mr-2" />
-          {canCapture ? 'Capture from Camera' : 'Camera Not Connected'}
+          <Camera className="w-5 h-5 mr-2" />
+          {canCapture ? 'Capture Image' : 'Camera Not Connected'}
         </Button>
 
         <Button
           size="lg"
-          className="h-14 px-5 border-2 border-blue-500 hover:bg-blue-50 shadow-lg bg-white"
+          className={cn(
+            "h-12 px-4 border-2 shadow-md",
+            status === 'connected' 
+              ? "bg-emerald-100 border-emerald-400 hover:bg-emerald-200" 
+              : "bg-slate-200 border-slate-500 hover:bg-slate-300"
+          )}
           onClick={status === 'connected' ? disconnect : connect}
           title={status === 'connected' ? 'Disconnect' : 'Connect'}
         >
-          <StatusIcon className={cn("w-6 h-6", status === 'connected' ? 'text-blue-600' : 'text-slate-500')} />
+          {status === 'connected' ? (
+            <Wifi className="w-5 h-5 text-emerald-700" />
+          ) : (
+            <WifiOff className="w-5 h-5 text-slate-700" />
+          )}
         </Button>
       </div>
     </div>
