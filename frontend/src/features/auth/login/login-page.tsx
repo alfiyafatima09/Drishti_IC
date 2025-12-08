@@ -11,7 +11,7 @@ export function LoginPage() {
       <div className="flex flex-1 items-center justify-center p-8 sm:p-12 lg:p-24">
         <div className="w-full max-w-[380px] space-y-10">
           <div className="space-y-3">
-            <h2 className="text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <h2 className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-3xl font-black text-transparent">
               Welcome back
             </h2>
             <p className="text-base font-semibold text-blue-600">

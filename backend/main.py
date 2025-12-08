@@ -25,7 +25,6 @@ from api.endpoints import (
 )
 from api.endpoints import images, datasheets, ic_analysis
 
-# Static files directory
 STATIC_DIR = Path(__file__).parent / "static"
 
 logging.basicConfig(
@@ -74,7 +73,7 @@ app.include_router(system_router)
 app.include_router(camera_router)
 app.include_router(images.router)
 app.include_router(datasheets.router)
-app.include_router(ic_analysis.router)
+# app.include_router(ic_analysis.router)
 app.include_router(digikey_router.router)
 
 
@@ -85,8 +84,6 @@ async def root():
         "version": settings.APP_VERSION,
         "status": "running",
         "docs": "/docs",
-        "redoc": "/redoc",
-        "camera": "/camera",
     }
 
 

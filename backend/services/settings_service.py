@@ -5,13 +5,14 @@ from typing import Optional, Any
 import logging
 import json
 
+from core.config import settings
 from models import AppSettings
 
 logger = logging.getLogger(__name__)
 
 # Default settings
 DEFAULT_SETTINGS = {
-    "datasheet_folder_path": ("/data/datasheets", "STRING"),
+    "datasheet_folder_path": (settings.DATASHEET_FOLDER, "STRING"),
     "auto_queue_unknown": ("true", "BOOLEAN"),
     "ocr_confidence_threshold": ("70.0", "FLOAT"),
     "scan_history_retention_days": ("365", "INTEGER"),
@@ -141,7 +142,7 @@ class SettingsService:
     async def get_datasheet_folder(db: AsyncSession) -> str:
         """Convenience method to get datasheet folder path."""
         value = await SettingsService.get(db, "datasheet_folder_path")
-        return value or "/data/datasheets"
+        return value or settings.DATASHEET_FOLDER
 
     @staticmethod
     async def should_auto_queue(db: AsyncSession) -> bool:

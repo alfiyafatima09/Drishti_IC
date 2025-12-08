@@ -85,21 +85,29 @@ def parse_pdf(path: Path, manufacturer: Optional[str] = None) -> Dict[str, Any]:
 def _normalize_manufacturer(manufacturer: str) -> Optional[str]:
     """
     Normalize manufacturer name to standard code.
-    
+
     Maps common manufacturer names to standard codes:
     - STMicroelectronics -> STM
     - Texas Instruments -> TI
     - onsemi -> ONSEMI
+    - Infineon Technologies -> INFINEON
     - etc.
-    
+
     Returns:
         Normalized manufacturer code, or None if unknown
     """
     if not manufacturer:
         return None
-    
+
+    # Use centralized mapping from constants
+    from core.constants import get_manufacturer_code_from_name
+    code = get_manufacturer_code_from_name(manufacturer)
+    if code:
+        return code
+
+    # Fallback to legacy logic for backwards compatibility
     mfr_lower = manufacturer.lower()
-    
+
     # Map to standard manufacturer codes
     if "stmicro" in mfr_lower or "st.com" in mfr_lower:
         return "STM"
@@ -111,6 +119,10 @@ def _normalize_manufacturer(manufacturer: str) -> Optional[str]:
         return "NXP"
     elif "analog" in mfr_lower:
         return "ANALOG_DEVICES"
+    elif "microchip" in mfr_lower or "atmel" in mfr_lower:
+        return "MICROCHIP"
+    elif "infineon" in mfr_lower:
+        return "INFINEON"
     else:
         # Return as-is if already a code
         return manufacturer.upper()
@@ -119,17 +131,17 @@ def _normalize_manufacturer(manufacturer: str) -> Optional[str]:
 def _detect_manufacturer(path: Path) -> Optional[str]:
     """
     Attempt to detect manufacturer from PDF filename or path.
-    
+
     Common patterns:
     - STM: st.com, stmicroelectronics
     - TI: ti.com, texas instruments
     - ONSEMI: onsemi.com, on semiconductor
     - NXP: nxp.com
     - Analog Devices: analog.com, analogdevices
+    - Infineon: infineon.com, infineon
     """
     path_str = str(path).lower()
-    filename = path.name.lower()
-    
+
     # Check for manufacturer keywords in path/filename
     # Order matters - check most specific patterns first
     if any(keyword in path_str for keyword in ['st.com', 'stmicroelectronics', 'stmicro']):
@@ -147,6 +159,15 @@ def _detect_manufacturer(path: Path) -> Optional[str]:
     elif any(keyword in path_str for keyword in ['analog.com', 'analogdevices']):
         logger.info(f"Detected ANALOG_DEVICES manufacturer from path: {path}")
         return 'ANALOG_DEVICES'
-    
+    elif any(keyword in path_str for keyword in ['microchip.com', 'microchip', 'atmel']):
+        logger.info(f"Detected MICROCHIP manufacturer from path: {path}")
+        return 'MICROCHIP'
+    elif any(keyword in path_str for keyword in ['infineon.com', 'infineon']):
+        logger.info(f"Detected INFINEON manufacturer from path: {path}")
+        return 'INFINEON'
+    elif any(keyword in path_str for keyword in ['analog.com', 'analog_devices', 'analogdevices', 'adi']):
+        logger.info(f"Detected ANALOG_DEVICES manufacturer from path: {path}")
+        return 'ANALOG_DEVICES'
+
     logger.warning(f"Could not auto-detect manufacturer from path: {path}")
     return None

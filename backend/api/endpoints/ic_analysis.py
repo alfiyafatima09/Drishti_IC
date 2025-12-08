@@ -13,7 +13,7 @@ from schemas.ic_analysis import (
     ErrorResponse
 )
 from services.storage import save_image_file
-from services.gemini_service import gemini_service, GeminiServiceException
+# from services.gemini_service import gemini_service, GeminiServiceException
 
 logger = logging.getLogger(__name__)
 

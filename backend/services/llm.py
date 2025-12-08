@@ -20,7 +20,7 @@ class LLM:
     def __init__(
         self,
         endpoint: str = BASE_URL + "/api/vision",
-        temperature: float = 0.7,
+        temperature: float = 0.8,
         max_tokens: int = 4096,
         target_kb: int = 60,
         min_quality: int = 20,
@@ -43,25 +43,15 @@ class LLM:
         self.target_kb = target_kb
         self.min_quality = min_quality
         self.timeout = timeout
-        self.prompt = '''Count the total number of pins on this IC chip.
 
-INSTRUCTIONS:
-Look at the IC package in the image
-Count ONLY the metallic pins/contacts (shiny silver/grey metal)
-Do NOT count: plastic edges, shadows, text, reflections, or mold marks
-Count each pin once at the point where it connects to the IC body
-Do NOT assume symmetry - only count what you can see
-Do NOT use part numbers or labels to guess the count
-
-Answer with ONLY a number. If uncertain, answer "uncertain".
-
-Examples of correct answers:
-8
-16
-28
-uncertain
-
-Your answer:'''
+        self.prompt = (
+            "You are given an image of an electronic IC chip. "
+            "Analyze the image and identify:\n"
+            "1. The manufacturer name of the chip from the logo\n"
+            "2. The total number of pins\n\n"
+            "Respond ONLY in JSON format with no additional text:\n"
+            '{"manufacturer": "<manufacturer_name>", "pin_count": <number>}'
+        )
 
     def compress_image(self, image_path: str) -> bytes:
         """

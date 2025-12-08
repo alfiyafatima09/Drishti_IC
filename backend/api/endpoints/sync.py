@@ -1,9 +1,9 @@
 """Sync endpoints - Weekly sync job management."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
-from core.database import get_db
+from core.database import get_db, get_db_for_background
 from services import SyncService, QueueService
 from schemas import (
     SyncStartRequest,
@@ -20,8 +20,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sync", tags=["Sync Operations"])
 
 
+async def run_sync_background(job_id):
+    """Background task wrapper for sync processing."""
+    # Get a fresh database session for background task
+    async for db in get_db_for_background():
+        try:
+            await SyncService.run_sync_job(db, job_id)
+        except Exception as e:
+            logger.exception(f"Background sync failed: {e}")
+        finally:
+            await db.close()
+
+
 @router.post("/start", response_model=SyncJobInfo, status_code=202)
 async def start_sync(
+    background_tasks: BackgroundTasks,
     request: SyncStartRequest = SyncStartRequest(),
     db: AsyncSession = Depends(get_db),
 ):
@@ -30,6 +43,13 @@ async def start_sync(
     
     Triggers background scraping for all queued ICs.
     Requires internet connection.
+    
+    Flow:
+    1. Downloads datasheet PDF for each queued IC
+    2. Parses PDF and extracts IC specifications
+    3. Stores specs in ic_specifications table
+    4. Removes successfully processed items from queue
+    5. After 3 failed attempts, moves item to fake registry
     """
     try:
         job = await SyncService.start_sync(
@@ -38,8 +58,14 @@ async def start_sync(
             retry_failed=request.retry_failed,
         )
         
-        # Estimate time (roughly 2 minutes per item)
-        estimated_minutes = job.total_items * 2 if job.total_items else 0
+        # Commit the job creation
+        await db.commit()
+        
+        # Start background processing
+        background_tasks.add_task(run_sync_background, job.job_id)
+        
+        # Estimate time (roughly 5 seconds per item for download + parse)
+        estimated_minutes = max(1, (job.total_items * 5) // 60)
         
         return SyncJobInfo(
             job_id=job.job_id,
@@ -95,6 +121,8 @@ async def cancel_sync(
 ):
     """
     Cancel running sync job.
+    
+    The job will stop after completing the current item.
     """
     job = await SyncService.cancel_sync(db)
     
@@ -109,7 +137,7 @@ async def cancel_sync(
     
     return SuccessResponse(
         success=True,
-        message=f"Sync job cancelled. {job.processed_items} of {job.total_items} items were processed.",
+        message=f"Cancellation requested. Job will stop after current item. {job.processed_items} of {job.total_items} items processed so far.",
     )
 
 
@@ -139,4 +167,3 @@ async def get_sync_history(
         ],
         total_count=total_count,
     )
-

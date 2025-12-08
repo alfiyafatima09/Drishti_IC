@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "part_number": "PIC18F46K22",
+      "manufacturer": "Microchip",
+      "manufacturer_name": "Microchip Technology",
+      "pin_count": 40,
+      "package_type": "QFN",
+      "description": "8-bit MCU with XLP, nanoWatt",
+      "has_datasheet": true
+    },
+    {
+      "part_number": "PIC16F15323",
+      "manufacturer": "Microchip",
+      "manufacturer_name": "Microchip Technology",
+      "pin_count": 20,
+      "package_type": "QFN",
+      "description": "8-bit MCU, 28KB Flash",
+      "has_datasheet": true
+    }
+  ],
+  "total_count": 128,
+  "limit": 20,
+  "offset": 0
+}
