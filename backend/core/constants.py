@@ -19,7 +19,7 @@ class Manufacturer(str, Enum):
     TI = "TI"
     NXP = "NXP"
     ANALOG_DEVICES = "ANALOG_DEVICES"
-    ONSEMI = "ONSEMI"
+    # ONSEMI = "ONSEMI"
     INFINEON = "INFINEON"
 
     # MICROCHIP = "MICROCHIP"
@@ -31,7 +31,7 @@ MANUFACTURER_NAMES: Dict[str, str] = {
     Manufacturer.TI: "Texas Instruments",
     Manufacturer.NXP: "NXP Semiconductors",
     Manufacturer.ANALOG_DEVICES: "Analog Devices",
-    Manufacturer.ONSEMI: "onsemi",
+    # Manufacturer.ONSEMI: "onsemi",
     Manufacturer.INFINEON: "Infineon Technologies",
     # Manufacturer.MICROCHIP: "Microchip Technology",
 }
@@ -42,7 +42,7 @@ MANUFACTURER_URL_PATTERNS: Dict[str, str] = {
     Manufacturer.TI: "https://www.ti.com/lit/ds/symlink/{ic_id}.pdf",
     Manufacturer.NXP: "https://www.nxp.com/docs/en/data-sheet/{ic_id}.pdf",
     Manufacturer.ANALOG_DEVICES: "https://www.analog.com/media/en/technical-documentation/{ic_id}.pdf",
-    Manufacturer.ONSEMI: "https://www.onsemi.com/pdf/datasheet/{ic_id}.pdf",
+    # Manufacturer.ONSEMI: "https://www.onsemi.com/pdf/datasheet/{ic_id}.pdf",
     Manufacturer.INFINEON: "https://www.infineon.com/dgdl/{ic_id}.pdf",
     # Manufacturer.MICROCHIP: "https://ww1.microchip.com/downloads/en/DeviceDoc/{ic_id}.pdf",
 }
@@ -123,10 +123,10 @@ MANUFACTURER_NAME_TO_CODE: Dict[str, str] = {
     "ANALOG DEVICES": Manufacturer.ANALOG_DEVICES.value,
     "ANALOG_DEVICES": Manufacturer.ANALOG_DEVICES.value,
     "ADI": Manufacturer.ANALOG_DEVICES.value,
-    # onsemi
-    "ONSEMI": Manufacturer.ONSEMI.value,
-    "ON SEMICONDUCTOR": Manufacturer.ONSEMI.value,
-    "ON SEMI": Manufacturer.ONSEMI.value,
+    # # onsemi
+    # "ONSEMI": Manufacturer.ONSEMI.value,
+    # "ON SEMICONDUCTOR": Manufacturer.ONSEMI.value,
+    # "ON SEMI": Manufacturer.ONSEMI.value,
     # Infineon
     "INFINEON": Manufacturer.INFINEON.value,
     "INFINEON TECHNOLOGIES": Manufacturer.INFINEON.value,

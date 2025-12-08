@@ -39,10 +39,15 @@ async def start_sync(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Start weekly sync job.
+    Start sync job with optional filters.
     
-    Triggers background scraping for all queued ICs.
+    Triggers background scraping for queued ICs matching the filter criteria.
     Requires internet connection.
+    
+    Parameters:
+    - max_items: Limit how many items to process
+    - retry_failed: Whether to retry previously failed items
+    - status_filter: Only sync items with these statuses (e.g., ["PENDING", "FAILED"])
     
     Flow:
     1. Downloads datasheet PDF for each queued IC
@@ -56,6 +61,7 @@ async def start_sync(
             db=db,
             max_items=request.max_items,
             retry_failed=request.retry_failed,
+            status_filter=request.status_filter,
         )
         
         # Commit the job creation
@@ -67,10 +73,14 @@ async def start_sync(
         # Estimate time (roughly 5 seconds per item for download + parse)
         estimated_minutes = max(1, (job.total_items * 5) // 60)
         
+        status_msg = ""
+        if request.status_filter:
+            status_msg = f" (filtering by: {', '.join(request.status_filter)})"
+        
         return SyncJobInfo(
             job_id=job.job_id,
             status=SyncStatus.PROCESSING,
-            message=f"Sync job started successfully. Processing {job.total_items} items.",
+            message=f"Sync job started successfully. Processing {job.total_items} items{status_msg}.",
             queue_size=job.total_items,
             estimated_time_minutes=estimated_minutes,
         )
