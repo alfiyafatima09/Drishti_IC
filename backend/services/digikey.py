@@ -161,18 +161,44 @@ class DigiKeyService:
 
         local_path = target_folder / filename
 
-        # Stream download
-        with requests.get(url, stream=True, timeout=30) as r:
-            if r.status_code != 200:
-                logger.error("Failed to download PDF: %s %s", r.status_code, r.text[:200])
-                raise DigiKeyException(f"Failed to download PDF: {r.status_code}")
+        # Stream download with retries
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Downloading PDF from {url} (attempt {attempt + 1}/{max_retries})")
+                
+                # Add headers to avoid being blocked
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'application/pdf,*/*'
+                }
+                
+                with requests.get(url, stream=True, timeout=60, headers=headers) as r:
+                    if r.status_code != 200:
+                        logger.error("Failed to download PDF: %s %s", r.status_code, r.text[:200])
+                        raise DigiKeyException(f"Failed to download PDF: {r.status_code}")
 
-            with local_path.open("wb") as fh:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        fh.write(chunk)
+                    with local_path.open("wb") as fh:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                fh.write(chunk)
+                
+                logger.info(f"Successfully downloaded PDF to {local_path}")
+                return local_path
+                
+            except requests.exceptions.Timeout as e:
+                if attempt < max_retries - 1:
+                    logger.warning(f"Download timeout, retrying... ({attempt + 1}/{max_retries})")
+                    time.sleep(2)  # Wait before retry
+                    continue
+                else:
+                    logger.error(f"Download failed after {max_retries} attempts: {e}")
+                    raise DigiKeyException(f"Download timeout after {max_retries} attempts: {str(e)}")
+            except Exception as e:
+                logger.error(f"Download error: {e}")
+                raise DigiKeyException(f"Failed to download PDF: {str(e)}")
 
-        return local_path
+        raise DigiKeyException("Failed to download PDF after all retries")
     
     def _normalize_manufacturer_name(self, manufacturer: str) -> str:
         """Normalize manufacturer name for use in filenames.

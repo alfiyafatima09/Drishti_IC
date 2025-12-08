@@ -32,7 +32,7 @@ def get_database_url() -> str:
 engine = create_async_engine(
     get_database_url(),
     echo=False,  # Disable SQL query logging for performance
-    pool_size=5,
+    pool_size=50000,
     max_overflow=10,
     pool_pre_ping=True,  # Verify connections before using
     pool_recycle=3600,  # Recycle connections after 1 hour
@@ -60,6 +60,21 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield session
             await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+async def get_db_for_background() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Get database session for background tasks.
+    Unlike get_db(), this doesn't auto-commit - the task manages its own commits.
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
         except Exception:
             await session.rollback()
             raise

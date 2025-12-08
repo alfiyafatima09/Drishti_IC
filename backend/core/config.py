@@ -11,22 +11,16 @@ class Settings(BaseSettings):
     APP_VERSION: str = "2.0.0"
     DEBUG: bool = os.environ.get("DEBUG", False)
     
-    # Supabase / database settings
     SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
     SUPABASE_KEY: str = os.environ.get("SUPABASE_KEY", "")
     SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", "")
     DATABASE_URL: str = os.environ.get("DATABASE_URL", "")
 
-    # API Keys
-    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
+    # GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
     
-    # Storage settings
-    MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", "data"))
-    DATASHEET_ROOT: Path = Path(os.environ.get("DATASHEET_ROOT", "data/datasheets"))
-    # Backwards compatibility with older code using DATASHEET_FOLDER
-    DATASHEET_FOLDER: Path = DATASHEET_ROOT
+    MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", "../../media"))
+    DATASHEET_FOLDER: Path = Path(os.environ.get("DATASHEET_ROOT", "../../datasheets"))
     
-    # Image processing settings
     MAX_IMAGE_SIZE_BYTES: int = int(os.environ.get("MAX_IMAGE_SIZE_BYTES", 50 * 1024 * 1024))
     ALLOWED_IMAGE_TYPES: list[str] = [
         "image/jpeg",
@@ -38,14 +32,11 @@ class Settings(BaseSettings):
         "image/heic"
     ]
     
-    # OCR settings
     OCR_CONFIDENCE_THRESHOLD: float = 70.0
     OCR_MODEL: str = "paddleocr"
     
-    # Vision settings
     PIN_DETECTION_MODEL: str = "yolov8"
     
-    # Sync settings
     MAX_SCRAPE_RETRIES: int = 3
     SCRAPE_TIMEOUT_SECONDS: int = 5
     AUTO_QUEUE_UNKNOWN: bool = True
@@ -55,13 +46,12 @@ class Settings(BaseSettings):
     ENABLE_AUTO_CLEANUP: bool = True
 
     model_config = SettingsConfigDict(
-        env_file=(".env", "../.env"),  # Check both backend/.env and root/.env
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
-        extra="ignore",  # Ignore extra fields like NEXT_PUBLIC_*
+        extra="ignore",  
     )
 
-    # DigiKey API configuration
     DIGIKEY_CLIENT_ID: str = os.environ.get("DIGIKEY_CLIENT_ID", "")
     DIGIKEY_CLIENT_SECRET: str = os.environ.get("DIGIKEY_CLIENT_SECRET", "")
     DIGIKEY_TOKEN_URL: str = os.environ.get("DIGIKEY_TOKEN_URL", "https://api.digikey.com/v1/oauth2/token")
@@ -76,8 +66,5 @@ def get_settings() -> Settings:
 
 settings = get_settings()
 
-# Ensure directories exist
 settings.MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
-
-# Ensure datasheets directory exists
-settings.DATASHEET_ROOT.mkdir(parents=True, exist_ok=True)
+settings.DATASHEET_FOLDER.mkdir(parents=True, exist_ok=True)

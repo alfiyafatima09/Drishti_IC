@@ -31,7 +31,6 @@ from .storage import (
     store_ic_specification,
     store_multiple_ic_specifications,
 )
-from .downloader import generate_hash
 
 logger = logging.getLogger(__name__)
 
@@ -333,6 +332,7 @@ class DatasheetService:
                     source_map = {
                         Manufacturer.STM: ICSource.SCRAPED_STM,
                         Manufacturer.TI: ICSource.SCRAPED_TI,
+                        Manufacturer.INFINEON: ICSource.SCRAPED_INFINEON,
                     }
                     source = source_map.get(mfr_code, ICSource.MANUAL)
                     

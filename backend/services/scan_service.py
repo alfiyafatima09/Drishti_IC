@@ -3,11 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from typing import Optional
 from datetime import datetime, timedelta
-from uuid import UUID
+from uuid import UUID, uuid4
 import logging
 
 from models import ScanHistory, ICSpecification, FakeRegistry, DatasheetQueue
-from schemas import ScanStatus, ActionRequired, MatchDetails
+from schemas import ScanStatus, ActionRequired, MatchDetails, PartNumberSource, ScanResult
 from services.ic_service import ICService
 from services.queue_service import QueueService
 from services.fake_service import FakeService
@@ -17,6 +17,49 @@ logger = logging.getLogger(__name__)
 
 class ScanService:
     """Service for managing IC scans."""
+
+    @staticmethod
+    def build_dummy_result(
+        *,
+        part_number: str,
+        ocr_text: str,
+        image_path: str,
+        candidates: list[str],
+        part_number_source: PartNumberSource,
+        confidence_score: float,
+        manufacturer_detected: Optional[str],
+        message: str,
+        queued_for_sync: bool,
+        queued_candidates_count: int,
+        ic_specification: Optional[dict] = None,
+        detected_pins: int = 0,
+    ) -> ScanResult:
+        """
+        Build a fallback ScanResult when downstream processing fails.
+        """
+        now = datetime.utcnow()
+        return ScanResult(
+            scan_id=uuid4(),
+            status=ScanStatus.UNKNOWN,
+            action_required=ActionRequired.NONE,
+            confidence_score=confidence_score,
+            ocr_text=ocr_text,
+            image_path=image_path,
+            part_number=part_number,
+            part_number_candidates=candidates or None,
+            part_number_source=part_number_source,
+            manufacturer_detected=manufacturer_detected,
+            detected_pins=detected_pins,
+            message=message,
+            match_details=None,
+            queued_for_sync=queued_for_sync,
+            queued_candidates_count=queued_candidates_count,
+            ic_specification=ic_specification,
+            fake_registry_info=None,
+            was_manual_override=False,
+            scanned_at=now,
+            completed_at=None,
+        )
 
     @staticmethod
     async def create_scan(

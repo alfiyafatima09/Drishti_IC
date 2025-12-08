@@ -4,13 +4,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.llm import LLM
 import os
 from uuid import UUID
+import asyncio
 import logging
 import re
+from pathlib import Path
 from typing import Optional
+import uuid
 
 from core.database import get_db
 from services import ScanService, ICService, FakeService, QueueService
 from services.ocr import extract_text_from_image, OCRResponse
+from services.llm import LLM
 from schemas import (
     ScanResult,
     ManualOverrideRequest,
@@ -23,14 +27,12 @@ from schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Core Inspection"])
-llm_client = LLM()
+
 # Maximum number of adjacent lines to combine when generating candidates
 MAX_ADJACENT_LINES = 4
 
 
 def clean_text_for_part_number(text: str) -> str:
-    """Clean text for use as part number candidate."""
-    # Remove common non-part characters, keep alphanumeric, dashes, slashes
     return re.sub(r'[^\w\-\/]', '', text.strip())
 
 
@@ -53,10 +55,8 @@ def generate_adjacent_combinations(lines: list[str], max_adjacent: int = MAX_ADJ
     candidates = []
     n = len(lines)
     
-    # Generate combinations of 1 to max_adjacent adjacent lines
     for length in range(1, min(max_adjacent + 1, n + 1)):
         for start in range(n - length + 1):
-            # Combine adjacent lines
             combined = "".join(lines[start:start + length])
             cleaned = clean_text_for_part_number(combined)
             if cleaned and cleaned not in candidates:
@@ -79,7 +79,6 @@ def score_ic_pattern(candidate: str) -> float:
     """
     score = 0.0
     
-    # Length penalty - too short or too long is unlikely
     if 4 <= len(candidate) <= 20:
         score += 20
     elif len(candidate) < 4:
@@ -87,17 +86,14 @@ def score_ic_pattern(candidate: str) -> float:
     elif len(candidate) > 20:
         score -= 5
     
-    # Pattern: Letters followed by numbers (common IC naming)
     if re.match(r'^[A-Z]{1,4}\d', candidate, re.IGNORECASE):
         score += 30
     
-    # Contains both letters and numbers
     has_letters = bool(re.search(r'[A-Za-z]', candidate))
     has_numbers = bool(re.search(r'\d', candidate))
     if has_letters and has_numbers:
         score += 25
     
-    # Known manufacturer prefixes (boost score)
     known_prefixes = ['LM', 'NE', 'TL', 'OP', 'AD', 'MAX', 'TPS', 'LT', 'STM', 'PIC', 
                       'AT', 'MC', 'SN', 'CD', 'HEF', 'ICL', 'UC', 'UCC', 'TDA', 'LF']
     for prefix in known_prefixes:
@@ -105,14 +101,12 @@ def score_ic_pattern(candidate: str) -> float:
             score += 15
             break
     
-    # Common suffixes (boost score)
     suffix_patterns = [r'-[A-Z]{1,3}$', r'/[A-Z]+$', r'[A-Z]{1,2}$']
     for pattern in suffix_patterns:
         if re.search(pattern, candidate, re.IGNORECASE):
             score += 5
             break
     
-    # Penalize pure numbers or pure letters
     if candidate.isdigit():
         score -= 30
     if candidate.isalpha() and len(candidate) < 6:
@@ -140,6 +134,14 @@ def get_best_guess_part_number(candidates: list[str]) -> tuple[str, float]:
     return best[0], best[1]
 
 
+def _parse_pin_count(raw_pin_count) -> int:
+    """Convert LLM pin count output to int safely."""
+    try:
+        return int(raw_pin_count)
+    except (TypeError, ValueError):
+        return 0
+
+
 @router.post("/scan", response_model=ScanResult)
 async def scan_image(
     file: UploadFile = File(...),
@@ -158,13 +160,19 @@ async def scan_image(
     4. If match found: returns verified part number
     5. If no match: queues ALL candidates and returns best guess
     """
-    # Validate file type
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    # Read image
     image_data = await file.read()
-    
+    backend_root = Path(__file__).resolve().parent.parent.parent
+    image_dir = backend_root / "scanned_images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+
+    suffix = Path(file.filename).suffix if file.filename else ".img"
+    image_path = image_dir / f"{uuid.uuid4()}{suffix}"
+    await asyncio.to_thread(image_path.write_bytes, image_data)
+    stored_image_path = str(image_path.relative_to(backend_root))
+
     # ========== OCR Processing ==========
     logger.info(f"Processing scan for file: {file.filename}, size: {len(image_data)} bytes")
     
@@ -241,11 +249,8 @@ async def scan_image(
     
     # ========== Placeholders for Vision Analysis ==========
     # TODO: Integrate with pin detection service (Gemini Vision or local model)
-    
-    
-    llm_result = llm_client.analyze_image(file.path)
-    detected_pins = int(llm_result.get("pin_count", 0)) if llm_result.get("pin_count") else 0
-    manufacturer_detected = llm_result.get("manufacturer", None)
+    detected_pins = 0  # Placeholder - would come from vision analysis
+    manufacturer_detected = None  # Placeholder - could be extracted from OCR or vision
     
     # Try to extract manufacturer from OCR text (simple heuristic)
     manufacturer_keywords = ['TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP', 
@@ -260,6 +265,33 @@ async def scan_image(
                 break
         if manufacturer_detected:
             break
+    
+    # ========== Vision Analysis (LLM) ==========
+    detected_pins = 0
+    if matched_part_number:
+        try:
+            llm_client = LLM()
+            llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
+            logger.info(f"Vision analysis successful: {llm_result}")
+            detected_pins = _parse_pin_count(llm_result.get("pin_count"))
+            if not manufacturer_detected and llm_result.get("manufacturer"):
+                manufacturer_detected = llm_result.get("manufacturer")
+        except Exception as exc:
+            logger.error("LLM vision analysis failed: %s", exc, exc_info=True)
+            return ScanService.build_dummy_result(
+                part_number=part_number,
+                ocr_text=ocr_text,
+                image_path=stored_image_path,
+                candidates=candidates,
+                part_number_source=part_number_source,
+                confidence_score=avg_confidence,
+                manufacturer_detected=manufacturer_detected,
+                message=f"Vision analysis unavailable. Returning fallback result. Error: {exc}",
+                queued_for_sync=False,
+                queued_candidates_count=queued_candidates_count,
+                ic_specification=matched_ic_spec.to_dict() if matched_ic_spec else None,
+                detected_pins=detected_pins,
+            )
     
     logger.info(f"Creating scan - part_number: {part_number}, source: {part_number_source.value}, pins: {detected_pins}")
     
@@ -299,6 +331,7 @@ async def scan_image(
         part_number_candidates=candidates if candidates else None,
         part_number_source=part_number_source,
         manufacturer_detected=scan.manufacturer_detected,
+        image_path=stored_image_path,
         detected_pins=scan.detected_pins,
         message=scan.message,
         match_details=scan.match_details,

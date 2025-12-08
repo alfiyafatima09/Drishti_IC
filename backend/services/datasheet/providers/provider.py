@@ -7,7 +7,8 @@ from core.constants import (
     MANUFACTURER_URL_PATTERNS,
     is_valid_manufacturer,
 )
-from ..downloader import generate_hash, get_local_path, download_pdf
+from ..downloader import generate_hash, download_pdf
+from core.config import settings
 
 def construct_datasheet_url(manufacturer_code: str, part_number: str) -> str:
     manufacturer_code = manufacturer_code.upper().strip()
@@ -15,14 +16,11 @@ def construct_datasheet_url(manufacturer_code: str, part_number: str) -> str:
     if not is_valid_manufacturer(manufacturer_code):
         raise ValueError(f"Unsupported manufacturer: {manufacturer_code}")
     
-    try:
-        manufacturer = Manufacturer(manufacturer_code)
-    except ValueError:
-        raise ValueError(f"Unsupported manufacturer: {manufacturer_code}")
+    try: manufacturer = Manufacturer(manufacturer_code)
+    except ValueError: raise ValueError(f"Unsupported manufacturer: {manufacturer_code}")
     
     url_pattern = MANUFACTURER_URL_PATTERNS.get(manufacturer)
-    if not url_pattern:
-        raise ValueError(f"No URL pattern defined for manufacturer: {manufacturer_code}")
+    if not url_pattern: raise ValueError(f"No URL pattern defined for manufacturer: {manufacturer_code}")
     
     part_number_clean = part_number.lower().strip()
     url = url_pattern.format(ic_id=part_number_clean)
@@ -31,14 +29,13 @@ def construct_datasheet_url(manufacturer_code: str, part_number: str) -> str:
 
 
 class DatasheetProvider:
-    def __init__(self, datasheet_root: Path, manufacturer_code: str):
+    def __init__(self, datasheet_root: Optional[Path] = None, manufacturer_code: str = ""):
         manufacturer_code = manufacturer_code.upper().strip()
         
         if not is_valid_manufacturer(manufacturer_code):
             raise ValueError(f"Unsupported manufacturer: {manufacturer_code}")
         
-        self.datasheet_root = datasheet_root
-        self.datasheet_root.mkdir(parents=True, exist_ok=True)
+        self.datasheet_root = datasheet_root or settings.DATASHEET_FOLDER
         self.manufacturer_code = manufacturer_code
         self.manufacturer_name = get_manufacturer_name(manufacturer_code)
     
@@ -49,7 +46,7 @@ class DatasheetProvider:
         if hash_value is None:
             hash_value = generate_hash(part_number, self.manufacturer_code)
         
-        return get_local_path(self.datasheet_root, self.manufacturer_code, hash_value)
+        return settings.DATASHEET_FOLDER / f"{hash_value}.pdf"
     
     async def download(self, part_number: str) -> Tuple[Path, int, str, str]:
         url = self.construct_url(part_number)

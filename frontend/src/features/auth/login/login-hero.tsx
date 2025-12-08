@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 
 export function LoginHero() {
   return (
-    <div className="bg-noise relative hidden flex-col justify-between overflow-hidden border-r-2 border-cyan-400 bg-gradient-to-br from-blue-600 via-cyan-600 to-blue-700 p-8 lg:flex lg:w-1/2 lg:p-16 shadow-2xl">
+    <div className="bg-noise relative hidden flex-col justify-between overflow-hidden border-r-2 border-cyan-400 bg-gradient-to-br from-blue-600 via-cyan-600 to-blue-700 p-8 shadow-2xl lg:flex lg:w-1/2 lg:p-16">
       {/* Abstract Background - Geometric/Architectural */}
       <div className="absolute inset-0 overflow-hidden opacity-20">
         <div className="absolute top-0 left-0 h-full w-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-cyan-500 via-blue-600 to-blue-700" />
@@ -26,7 +26,7 @@ export function LoginHero() {
         <div className="space-y-8">
           <Badge
             variant="outline"
-            className="border-2 border-cyan-300 bg-white/20 backdrop-blur-sm px-4 py-2 text-xs font-bold tracking-wider text-white uppercase"
+            className="border-2 border-cyan-300 bg-white/20 px-4 py-2 text-xs font-bold tracking-wider text-white uppercase backdrop-blur-sm"
           >
             SIH 2025 • Bharat Electronics Limited
           </Badge>
@@ -56,7 +56,9 @@ export function LoginHero() {
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-6">
-          <p className="text-xs tracking-widest text-cyan-300 uppercase font-bold">Smart India Hackathon</p>
+          <p className="text-xs font-bold tracking-widest text-cyan-300 uppercase">
+            Smart India Hackathon
+          </p>
         </div>
       </div>
     </div>
