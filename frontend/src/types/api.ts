@@ -19,12 +19,12 @@ export type SyncStatus = 'IDLE' | 'PROCESSING' | 'COMPLETED' | 'ERROR' | 'CANCEL
 
 export type FakeSource = 'SYNC_NOT_FOUND' | 'MANUAL_REPORT';
 
-export type DataSource = 
-  | 'MANUAL' 
-  | 'SCRAPED_STM' 
-  | 'SCRAPED_TI' 
-  | 'SCRAPED_MOUSER' 
-  | 'SCRAPED_DIGIKEY' 
+export type DataSource =
+  | 'MANUAL'
+  | 'SCRAPED_STM'
+  | 'SCRAPED_TI'
+  | 'SCRAPED_MOUSER'
+  | 'SCRAPED_DIGIKEY'
   | 'SCRAPED_ALLDATASHEET';
 
 // ============================================================
@@ -77,6 +77,7 @@ export interface ScanResult {
   confidence_score: number;
   ocr_text: string;
   part_number: string;
+  part_number_source?: string;
   manufacturer_detected?: string | null;
   detected_pins: number;
   dimension_data?: DimensionData | null;
@@ -87,6 +88,7 @@ export interface ScanResult {
   fake_registry_info?: FakeRegistryInfo | null;
   scanned_at: string;
   completed_at?: string | null;
+  prompt_new_model?: boolean;
 }
 
 // ============================================================

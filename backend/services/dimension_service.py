@@ -130,7 +130,6 @@ class DimensionService:
             median_pin_distance_px = np.median(pin_distances)
             
             # Assume DIP package with 2.54mm pitch (most common for through-hole ICs)
-            # For SMD ICs, this would need to be adjusted based on package type
             pin_pitch_mm = PIN_PITCH_MM['DIP']
             
             mm_per_pixel = pin_pitch_mm / median_pin_distance_px
@@ -140,11 +139,51 @@ class DimensionService:
             print(f"[AUTO-CAL] Using pin pitch: {pin_pitch_mm}mm (DIP)")
             print(f"[AUTO-CAL] Calculated mm_per_pixel: {mm_per_pixel:.6f}")
             
-            return mm_per_pixel
+            # Calculate rotated bounding box of all pins to estimate true width/height (ignoring shadow)
+            all_points = []
+            for cx, cy, cnt in pin_contours:
+                x_p, y_p, w_p, h_p = cv2.boundingRect(cnt)
+                # Add all 4 corners of pin rect
+                all_points.append([x_p, y_p])
+                all_points.append([x_p + w_p, y_p])
+                all_points.append([x_p + w_p, y_p + h_p])
+                all_points.append([x_p, y_p + h_p])
+            
+            pin_rotated_rect = cv2.minAreaRect(np.array(all_points))
+            
+            return mm_per_pixel, pin_rotated_rect
             
         except Exception as e:
             print(f"[AUTO-CAL] Pin detection failed: {e}")
-            return None
+            return None, None
+    
+    @staticmethod
+    def _auto_calibrate_from_image(image: np.ndarray, ic_contour: np.ndarray, 
+                                    rotated_rect: Tuple) -> float:
+        """
+        Automatically calibrate mm_per_pixel using IC size heuristics.
+        """
+        # ... existing ...
+        (center_x, center_y), (width_px, height_px), angle = rotated_rect
+        # ... logic ...
+        # (I assume I don't need to replace _auto_calibrate_from_image, just using the context)
+        # Wait, the ReplacementContent must match TargetContent?
+        # I only provided replacement for _detect_pins... and some context.
+        # But I need to update _measure_image too.
+        # I should probably do two edits or one large edit.
+        # StartLine is 138 (inside _detect_pins).
+        # I will just update _detect_pins logic first.
+        
+        # ...
+        
+        # Wait, I need to know where I am editing.
+        # Lines 138-154 covers return statement of _detect_pins.
+        # Let me replace that block.
+        pass
+
+    # I will construct the ReplacementContent properly for _detect_pins.
+    # And then a second edit for _measure_image.
+
     
     @staticmethod
     def _auto_calibrate_from_image(image: np.ndarray, ic_contour: np.ndarray, 
@@ -364,17 +403,59 @@ class DimensionService:
             width_px, height_px = height_px, width_px
         
         # Step 4: Compute or use mm_per_pixel
+        pin_bounds = None
+        
         if mm_per_pixel is None or mm_per_pixel <= 0:
-            # Try auto-calibration from pin spacing
-            print("[DIMENSION] Attempting auto-calibration...")
-            mm_per_pixel = DimensionService._auto_calibrate_from_image(
-                image, ic_contour, rotated_rect
-            )
-            print(f"[DIMENSION] Auto-calibrated mm_per_pixel: {mm_per_pixel:.6f}")
+            # Try accurate calibration from pin pitch first
+            print("[DIMENSION] Attempting pin-based calibration...")
+            mm_per_pixel, pin_bounds = DimensionService._detect_pins_and_calculate_pitch(image, ic_contour)
+            
+            if mm_per_pixel:
+                print(f"[DIMENSION] Pin-based mm_per_pixel: {mm_per_pixel:.6f}")
+            else:
+                # Fallback to heuristic auto-calibration
+                print("[DIMENSION] Pin detection failed, falling back to heuristics...")
+                mm_per_pixel = DimensionService._auto_calibrate_from_image(
+                    image, ic_contour, rotated_rect
+                )
+                print(f"[DIMENSION] Heuristic mm_per_pixel: {mm_per_pixel:.6f}")
         
         # Step 5: Convert to millimeters
         width_mm = width_px * mm_per_pixel
         height_mm = height_px * mm_per_pixel
+        
+        norm_angle = abs(angle) % 90
+        is_aligned = norm_angle < 15 or norm_angle > 75
+        
+        print(f"[DIMENSION] Check Override: Angle={angle:.2f} (Norm={norm_angle:.2f}), Aligned={is_aligned}")
+        if pin_bounds:
+            pin_w_px = pin_bounds[2]
+            pin_h_px = pin_bounds[3]
+           
+            pin_w_mm = pin_w_px * mm_per_pixel
+            pin_h_mm = pin_h_px * mm_per_pixel
+            print(f"[DIMENSION] Pin Bounds: {pin_w_mm:.2f}mm x {pin_h_mm:.2f}mm")
+            
+            if is_aligned:
+                # Check if pin bounds are substantial (at least 2x pitch in both dims)
+                min_dim_mm = 2.0 * 2.54 # 5mm
+                if pin_w_mm > min_dim_mm and pin_h_mm > min_dim_mm:
+                    print(f"[DIMENSION] Overriding with pin bounds (aligned, reliable pins)")
+                    print(f"  Old: {width_mm:.2f} x {height_mm:.2f} mm")
+                    print(f"  New: {pin_w_mm:.2f} x {pin_h_mm:.2f} mm (from pins)")
+                    
+                    dims = [pin_w_mm, pin_h_mm]
+                    width_mm = max(dims)
+                    height_mm = min(dims)
+                    
+                    # Also update pixels for consistency
+                    width_px = max(pin_w_px, pin_h_px)
+                    height_px = min(pin_w_px, pin_h_px)
+                else:
+                    print(f"[DIMENSION] Skip Override: Pin bounds too small (< {min_dim_mm}mm)")
+        else:
+            print("[DIMENSION] No pin bounds available")
+        
         area_mm2 = width_mm * height_mm
         
         print(f"[DIM_SVC] Dimensions: {width_mm:.2f}mm x {height_mm:.2f}mm, area={area_mm2:.2f}mm²")

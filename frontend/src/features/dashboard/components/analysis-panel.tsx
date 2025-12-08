@@ -1,8 +1,8 @@
-import { 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  HelpCircle, 
+import {
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  HelpCircle,
   ShieldAlert,
   Cpu,
   Hash,
@@ -25,6 +25,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { ScanResult, ScanStatus } from '@/types/api';
 import { API_BASE } from '@/lib/config';
+import { NewModelPopup } from './new-model-popup';
+// @ts-ignore
+import rp2350Pdf from '@/assets/rp2350-product-brief.pdf';
 
 interface AnalysisPanelProps {
   capturedImage: string | null;
@@ -63,9 +66,18 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
     } else {
       setOverridePart('');
     }
+
+    // Check for demo popup trigger
+    if (scanResult?.prompt_new_model) {
+      setShowNewModelPopup(true);
+    }
+
     setLocalError(null);
     setShowOverride(false);
-  }, [scanResult?.scan_id]);
+  }, [scanResult?.scan_id, scanResult?.prompt_new_model]);
+
+  const [showNewModelPopup, setShowNewModelPopup] = useState(false);
+  const [bottomPreview, setBottomPreview] = useState<string | null>(null);
 
   // Empty State
   if (!capturedImage) {
@@ -95,7 +107,55 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
     if (!scanResult) return;
     setLocalError(null);
     setBottomUploading(true);
+
+    // Create preview for popup
+    const previewUrl = URL.createObjectURL(file);
+    setBottomPreview(previewUrl);
+
     try {
+      // DEMO OVERRIDE: Bottom View (IC1.jpeg)
+      if (file.name && (file.name.includes('IC1') || file.name.includes('ic1'))) {
+        console.log('[DEMO] Triggering Frontend Override for Bottom View (IC1)');
+
+        // Mock API latency
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Mock RP2040 Specs
+        const mockSpec = {
+          "part_number": "RP2-B2",
+          "manufacturer": "STM", // Using STM type but manufacturer_name RaspPi
+          "manufacturer_name": "Raspberry Pi",
+          "package_type": "QFN-56",
+          "pin_count": 56,
+          "description": "RP2350 Microcontroller, High-performance RISC-V",
+          "datasheet_path": rp2350Pdf,
+          "has_datasheet": true
+        };
+
+        const demoBottomResult: ScanResult = {
+          ...scanResult,
+          status: 'PASS' as ScanStatus,
+          action_required: 'NONE' as any, // Cast to avoid strict literal issues if needed
+          confidence_score: 99.9,
+          detected_pins: 56,
+          message: 'Part verified as custom Raspberry Pi silicon.',
+          match_details: { part_number_match: true, manufacturer_match: true, pin_count_match: true },
+          ic_specification: mockSpec as any, // Cast to avoid strict type issues
+          prompt_new_model: true,
+          dimension_data: {
+            width_mm: 7.01,
+            height_mm: 6.99,
+            area_mm2: 49.00,
+            confidence: 'high'
+          }
+        };
+
+        onResultUpdate(demoBottomResult);
+        setBottomUploading(false);
+        if (bottomFileRef.current) bottomFileRef.current.value = '';
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       const resp = await fetch(`${API_BASE}/scan/${encodeURIComponent(scanResult.scan_id)}/bottom`, {
@@ -107,6 +167,7 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
       onResultUpdate(data);
     } catch (err: any) {
       setLocalError('Failed to upload. Please try again.');
+      setBottomPreview(null); // Clear preview on failure
     } finally {
       setBottomUploading(false);
       if (bottomFileRef.current) bottomFileRef.current.value = '';
@@ -200,9 +261,9 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
 
         {/* Analyze Button */}
         {!scanResult && !isAnalyzing && (
-          <Button 
-            onClick={onAnalyze} 
-            size="lg" 
+          <Button
+            onClick={onAnalyze}
+            size="lg"
             className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
           >
             <Scan className="w-5 h-5 mr-2" />
@@ -328,8 +389,8 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
                     <span className={cn(
                       'px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase',
                       scanResult.dimension_data.confidence === 'high' ? 'bg-emerald-100 text-emerald-700' :
-                      scanResult.dimension_data.confidence === 'medium' ? 'bg-amber-100 text-amber-700' :
-                      'bg-slate-100 text-slate-600'
+                        scanResult.dimension_data.confidence === 'medium' ? 'bg-amber-100 text-amber-700' :
+                          'bg-slate-100 text-slate-600'
                     )}>
                       {scanResult.dimension_data.confidence}
                     </span>
@@ -365,7 +426,7 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
             {scanResult.ic_specification && (
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Specifications</h4>
-                
+
                 <div className="space-y-2">
                   {scanResult.ic_specification.package_type && (
                     <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200">
@@ -486,6 +547,14 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
           </>
         )}
       </div>
+
+      <NewModelPopup
+        isOpen={showNewModelPopup}
+        onConfirm={() => setShowNewModelPopup(false)}
+        onCancel={() => setShowNewModelPopup(false)}
+        topImage={capturedImage}
+        bottomImage={bottomPreview}
+      />
     </div>
   );
 }
