@@ -17,8 +17,6 @@ from core.config import settings
 from services.datasheet_storage import (
     download_pdf_sync,
     normalize_manufacturer,
-    get_datasheet_filename,
-    get_storage_folder,
 )
 
 logger = logging.getLogger(__name__)
@@ -126,7 +124,8 @@ class DigiKeyService:
     ) -> str:
         """
         Download a PDF and save it using unified storage.
-        
+        URL resolution (TI webview, redirects) is handled automatically by datasheet_storage.
+
         Args:
             url: URL to download PDF from
             part_number: IC part number (required for consistent hashing)

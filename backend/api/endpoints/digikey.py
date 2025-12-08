@@ -38,6 +38,12 @@ class DigiKeySearchRequest(BaseModel):
     keyword: str = Field(..., description="Keyword to search on Digikey (e.g. 'lm358')")
 
 
+class LocalPDFParseRequest(BaseModel):
+    """Request to parse a local PDF file directly."""
+    pdf_path: str = Field(..., description="Path to local PDF file (e.g. '/path/to/datasheet.pdf')")
+    manufacturer: Optional[str] = Field(None, description="Manufacturer name/code (e.g. 'RASPBERRY_PI', 'STM'). Auto-detected if not provided.")
+
+
 class ICVariant(BaseModel):
     """IC variant specification extracted from datasheet."""
     part_number: str
@@ -99,6 +105,10 @@ async def save_variants_to_db(
                 manufacturer = manufacturer.upper()
 
             # Prepare the data for upsert
+            electrical_specs = variant.get("electrical_specs")
+            if electrical_specs is None:
+                electrical_specs = {}
+            
             ic_data = {
                 "part_number": variant["part_number"],
                 "manufacturer": manufacturer,
@@ -107,7 +117,6 @@ async def save_variants_to_db(
                 "description": variant.get("description"),
                 "datasheet_url": datasheet_url,
                 "datasheet_path": str(datasheet_path),
-                "has_datasheet": True,
                 "voltage_min": variant.get("voltage_min"),
                 "voltage_max": variant.get("voltage_max"),
                 "operating_temp_min": variant.get("operating_temp_min"),
@@ -115,7 +124,7 @@ async def save_variants_to_db(
                 "dimension_length": variant.get("dimension_length"),
                 "dimension_width": variant.get("dimension_width"),
                 "dimension_height": variant.get("dimension_height"),
-                "electrical_specs": variant.get("electrical_specs") or {},
+                "electrical_specs": electrical_specs,
                 "source": "DIGIKEY_API",
             }
 
@@ -129,7 +138,6 @@ async def save_variants_to_db(
                     "description": stmt.excluded.description,
                     "datasheet_url": stmt.excluded.datasheet_url,
                     "datasheet_path": stmt.excluded.datasheet_path,
-                    "has_datasheet": stmt.excluded.has_datasheet,
                     "voltage_min": stmt.excluded.voltage_min,
                     "voltage_max": stmt.excluded.voltage_max,
                     "operating_temp_min": stmt.excluded.operating_temp_min,
@@ -175,6 +183,9 @@ def parse_digikey_parameters(product: Dict[str, Any]) -> Dict[str, Any]:
         "pin_count": None,
         "package_type": None,
         "description": None,
+        "dimension_length": None,
+        "dimension_width": None,
+        "dimension_height": None,
     }
 
     # Get description
@@ -231,11 +242,22 @@ def parse_digikey_parameters(product: Dict[str, Any]) -> Dict[str, Any]:
                 if pkg_match:
                     specs["package_type"] = f"{pkg_match.group(1)}{pkg_match.group(2)}"
 
-        # Supplier Device Package: "20-TSSOP"
+        # Supplier Device Package: "48-LQFP (7x7)" - extract package type and dimensions
         if "supplier device package" in param_text:
             pkg_match = re.search(r'(\d+)[\-]?([A-Z]+)', value_text)
             if pkg_match and not specs["package_type"]:
                 specs["package_type"] = f"{pkg_match.group(2)}{pkg_match.group(1)}"
+
+            # Extract dimensions from patterns like "(7x7)", "(5x5)", "(7x7x0.9)"
+            dim_match = re.search(r'\((\d+\.?\d*)\s*[xX×]\s*(\d+\.?\d*)(?:\s*[xX×]\s*(\d+\.?\d*))?\)', value_text)
+            if dim_match:
+                try:
+                    specs["dimension_length"] = float(dim_match.group(1))
+                    specs["dimension_width"] = float(dim_match.group(2))
+                    if dim_match.group(3):
+                        specs["dimension_height"] = float(dim_match.group(3))
+                except (ValueError, IndexError):
+                    pass
 
     return specs
 
@@ -278,6 +300,14 @@ def merge_variant_with_api_data(variant: Dict[str, Any], api_specs: Dict[str, An
     if (not merged.get("description") or merged["description"].startswith("NXP ") and " - " not in merged["description"]):
         if api_specs.get("description"):
             merged["description"] = api_specs["description"]
+
+    # Fill in missing dimension specs
+    if merged.get("dimension_length") is None and api_specs.get("dimension_length") is not None:
+        merged["dimension_length"] = api_specs["dimension_length"]
+    if merged.get("dimension_width") is None and api_specs.get("dimension_width") is not None:
+        merged["dimension_width"] = api_specs["dimension_width"]
+    if merged.get("dimension_height") is None and api_specs.get("dimension_height") is not None:
+        merged["dimension_height"] = api_specs["dimension_height"]
 
     return merged
 
@@ -471,8 +501,95 @@ async def digikey_search(
             ic_variants=[],
             error=f"PDF parsing failed: {str(e)}"
         )
-        
+
         return JSONResponse(
             content=json.loads(response_data.model_dump_json()),
             media_type="application/json"
+        )
+
+
+@router.post("/parse-local")
+async def parse_local_pdf(
+    request: LocalPDFParseRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Parse a local PDF datasheet and extract IC specifications.
+
+    This endpoint is useful when:
+    - DigiKey doesn't have the product (e.g., Raspberry Pi silicon)
+    - You have a local PDF that needs to be parsed
+    - You want to manually add datasheets to the database
+
+    The extracted data is saved to the database and returned in the same
+    format as the DigiKey search endpoint.
+
+    Args:
+        request: Contains the PDF path and optional manufacturer
+        db: Database session (injected)
+
+    Returns:
+        JSON with extracted IC specifications
+    """
+    pdf_path = Path(request.pdf_path)
+
+    if not pdf_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"PDF file not found: {request.pdf_path}"
+        )
+
+    if not pdf_path.suffix.lower() == '.pdf':
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a PDF"
+        )
+
+    manufacturer = request.manufacturer
+
+    try:
+        # Parse PDF to extract IC specifications
+        parsed = parse_pdf(pdf_path, manufacturer=manufacturer)
+
+        ic_variants = []
+        variants_to_save = []
+
+        for variant_data in parsed.get("ic_variants", []):
+            ic_variants.append(ICVariant(**variant_data))
+            variants_to_save.append(variant_data)
+
+        # Save variants to database
+        saved_count = 0
+        if variants_to_save:
+            try:
+                saved_count = await save_variants_to_db(
+                    db=db,
+                    variants=variants_to_save,
+                    datasheet_url=f"file://{pdf_path}",
+                    datasheet_path=str(pdf_path)
+                )
+                logger.info(f"Saved {saved_count}/{len(variants_to_save)} variants to database")
+            except Exception as db_error:
+                logger.error(f"Database save failed: {db_error}")
+
+        response_data = DigiKeySearchResponse(
+            datasheet_path=str(pdf_path),
+            manufacturer=parsed.get("manufacturer") or manufacturer,
+            parse_status=parsed.get("status", "unknown"),
+            total_variants=len(ic_variants),
+            ic_variants=ic_variants,
+            saved_to_db=saved_count,
+            error=parsed.get("error")
+        )
+
+        return JSONResponse(
+            content=json.loads(response_data.model_dump_json()),
+            media_type="application/json"
+        )
+
+    except Exception as e:
+        logger.exception(f"PDF parsing failed for {pdf_path}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"PDF parsing failed: {str(e)}"
         )
