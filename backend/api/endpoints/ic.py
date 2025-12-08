@@ -1,14 +1,13 @@
 """IC Database endpoints - Golden Record operations."""
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
-from pathlib import Path
 import logging
 
 from core.database import get_db
-from core.config import settings
 from services import ICService
+from services.datasheet_storage import get_datasheet_path
 from schemas import ICSpecificationResponse, ICSearchResult
 
 logger = logging.getLogger(__name__)
@@ -21,9 +20,7 @@ async def get_ic_details(
     part_number: str = Query(..., description="IC part number (e.g., LM334SM/NOPB)"),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Get IC specification from Golden Record.
-    """
+    """Get IC specification from Golden Record."""
     ic = await ICService.get_by_part_number(db, part_number)
 
     if not ic:
@@ -86,20 +83,34 @@ async def get_ic_datasheet(
             }
         )
 
-    # Build full path
-    datasheet_path = Path(ic.datasheet_path)
-    if not datasheet_path.is_absolute():
-        datasheet_path = settings.DATASHEET_FOLDER / datasheet_path.name
+    logger.info(f"Looking up datasheet for {part_number}, DB path: {ic.datasheet_path}")
 
-    if not datasheet_path.exists():
+    # Use unified storage to resolve the path
+    try:
+        datasheet_path = get_datasheet_path(ic.datasheet_path)
+        logger.info(f"Resolved datasheet path: {datasheet_path}")
+    except ValueError as e:
+        logger.error(f"Invalid datasheet path for {part_number}: {e}")
         raise HTTPException(
             status_code=404,
             detail={
                 "error": "DATASHEET_NOT_FOUND",
-                "message": f"Datasheet file not found at '{datasheet_path}'.",
+                "message": f"Invalid datasheet path for '{part_number}'.",
             }
         )
 
+    if not datasheet_path.exists():
+        logger.warning(f"Datasheet file NOT FOUND at {datasheet_path} for {part_number} (DB value: {ic.datasheet_path})")
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "DATASHEET_NOT_FOUND",
+                "message": f"Datasheet file not found for '{part_number}'. DB path: {ic.datasheet_path}, Resolved: {datasheet_path}",
+            }
+        )
+
+    logger.info(f"Serving datasheet for {part_number} from {datasheet_path}")
+    
     return FileResponse(
         path=datasheet_path,
         media_type="application/pdf",
@@ -112,17 +123,15 @@ async def search_ics(
     q: str = Query(..., min_length=1, description="Search query"),
     manufacturer: Optional[str] = Query(None, description="Filter by manufacturer"),
     package_type: Optional[str] = Query(None, description="Filter by package type"),
-    min_pins: Optional[int] = Query(None, ge=1, description="Minimum pin count"),
+    min_pins: Optional[int] = Query(2, ge=1, description="Minimum pin count (default 2 to filter invalid entries)"),
     max_pins: Optional[int] = Query(None, ge=1, description="Maximum pin count"),
-    sort_by: str = Query("part_number", description="Sort field"),
+    sort_by: str = Query("part_number", description="Sort field: part_number, manufacturer, pin_count, package_type, updated_at, created_at"),
     sort_dir: str = Query("asc", description="Sort direction: asc|desc"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Search IC database.
-    """
+    """Search IC database."""
     try:
         ics, total_count = await ICService.find(
             db=db,
@@ -162,17 +171,15 @@ async def search_ics(
 async def list_ics(
     manufacturer: Optional[str] = Query(None, description="Filter by manufacturer"),
     package_type: Optional[str] = Query(None, description="Filter by package type"),
-    min_pins: Optional[int] = Query(None, ge=1, description="Minimum pin count"),
+    min_pins: Optional[int] = Query(2, ge=1, description="Minimum pin count (default 2 to filter invalid entries)"),
     max_pins: Optional[int] = Query(None, ge=1, description="Maximum pin count"),
-    sort_by: str = Query("part_number", description="Sort field"),
+    sort_by: str = Query("part_number", description="Sort field: part_number, manufacturer, pin_count, package_type, updated_at, created_at"),
     sort_dir: str = Query("asc", description="Sort direction: asc|desc"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    List ICs with pagination, filters, and sorting (no text query required).
-    """
+    """List ICs with pagination, filters, and sorting (no text query required)."""
     try:
         ics, total_count = await ICService.find(
             db=db,

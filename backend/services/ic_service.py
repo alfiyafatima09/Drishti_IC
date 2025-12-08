@@ -51,7 +51,7 @@ class ICService:
             query=query,
             manufacturer=manufacturer,
             package_type=None,
-            min_pins=None,
+            min_pins=1,
             max_pins=None,
             sort_by="part_number",
             sort_dir="asc",
@@ -65,7 +65,7 @@ class ICService:
         query: Optional[str] = None,
         manufacturer: Optional[str] = None,
         package_type: Optional[str] = None,
-        min_pins: Optional[int] = None,
+        min_pins: Optional[int] = 1,
         max_pins: Optional[int] = None,
         sort_by: str = "part_number",
         sort_dir: str = "asc",
@@ -81,7 +81,9 @@ class ICService:
             "part_number": ICSpecification.part_number,
             "manufacturer": ICSpecification.manufacturer,
             "pin_count": ICSpecification.pin_count,
+            "package_type": ICSpecification.package_type,
             "updated_at": ICSpecification.updated_at,
+            "created_at": ICSpecification.created_at,
         }
         sort_column = sort_fields.get(sort_by)
         if not sort_column:
@@ -116,9 +118,9 @@ class ICService:
             base_query = base_query.where(ICSpecification.package_type.ilike(f"%{package_type}%"))
             count_query = count_query.where(ICSpecification.package_type.ilike(f"%{package_type}%"))
 
-        if min_pins is not None:
-            base_query = base_query.where(ICSpecification.pin_count >= min_pins)
-            count_query = count_query.where(ICSpecification.pin_count >= min_pins)
+        if min_pins:
+            base_query = base_query.where(ICSpecification.pin_count >= max(min_pins, 1))
+            count_query = count_query.where(ICSpecification.pin_count >= max(min_pins, 1))
 
         if max_pins is not None:
             base_query = base_query.where(ICSpecification.pin_count <= max_pins)

@@ -360,8 +360,9 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Minimum pin count filter
-          example: 8
+            default: 2
+          description: Minimum pin count filter (default 2 to filter invalid entries)
+          example: 2
         - name: max_pins
           in: query
           schema:
@@ -373,7 +374,7 @@ paths:
           in: query
           schema:
             $ref: '#/components/schemas/ICSortBy'
-          description: Field to sort by
+          description: "Field to sort by: part_number, manufacturer, pin_count, package_type, updated_at, created_at"
           example: "part_number"
         - name: sort_dir
           in: query
@@ -426,8 +427,9 @@ paths:
           schema:
             type: integer
             minimum: 1
-          description: Minimum pin count filter
-          example: 16
+            default: 2
+          description: Minimum pin count filter (default 2 to filter invalid entries)
+          example: 2
         - name: max_pins
           in: query
           schema:
@@ -439,8 +441,8 @@ paths:
           in: query
           schema:
             $ref: '#/components/schemas/ICSortBy'
-          description: Field to sort by
-          example: "updated_at"
+          description: "Field to sort by: part_number, manufacturer, pin_count, package_type, updated_at, created_at"
+          example: "part_number"
         - name: sort_dir
           in: query
           schema:
@@ -761,7 +763,33 @@ paths:
       tags: [Datasheet Queue]
       summary: List Pending ICs
       operationId: listQueue
-      description: List all ICs waiting to be scraped during next sync.
+      description: |
+        List ICs in the scraping queue with optional status filtering and pagination.
+        
+        Status options: PENDING, PROCESSING, FAILED
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [PENDING, PROCESSING, FAILED]
+          description: Filter by status(es). Can specify multiple values.
+          example: ["PENDING", "FAILED"]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+          description: Maximum items to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of items to skip (for pagination)
       responses:
         '200':
           description: Queue list
@@ -908,6 +936,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /api/v1/fakes/transfer-to-queue:
+    post:
+      tags: [Fake Registry]
+      summary: Transfer Fakes to Queue
+      operationId: transferFakesToQueue
+      description: |
+        Transfer all fake registry items to the scraping queue for retry.
+        
+        This will:
+        1. Add all fake ICs to the datasheet_queue with status PENDING
+        2. Remove them from the fake_registry
+        
+        Use this to retry scraping ICs that were previously marked as fake.
+      responses:
+        '200':
+          description: Transfer completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferToQueueResponse'
 
   # ================================================================
   # SYNC OPERATION ENDPOINTS
@@ -1315,7 +1364,7 @@ components:
 
     ICSortBy:
       type: string
-      enum: [part_number, manufacturer, pin_count, updated_at]
+      enum: [part_number, manufacturer, pin_count, package_type, updated_at, created_at]
       description: Allowed sort fields for IC list/search endpoints.
 
     SortDirection:
@@ -1627,10 +1676,19 @@ components:
             $ref: '#/components/schemas/QueueItem'
         total_count:
           type: integer
+          description: Total count matching the filter
         pending_count:
           type: integer
+          description: Total PENDING items in queue (regardless of filter)
         failed_count:
           type: integer
+          description: Total FAILED items in queue (regardless of filter)
+        limit:
+          type: integer
+          default: 100
+        offset:
+          type: integer
+          default: 0
 
     QueueItem:
       type: object
@@ -1750,6 +1808,20 @@ components:
         reported_by:
           type: string
 
+    TransferToQueueResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        transferred_count:
+          type: integer
+          description: Number of items transferred from fake registry to queue
+        already_in_queue_count:
+          type: integer
+          description: Number of items that were already in queue
+        message:
+          type: string
+
     # --------------------------------------------------
     # SYNC SCHEMAS
     # --------------------------------------------------
@@ -1763,6 +1835,13 @@ components:
           type: boolean
           default: true
           description: Retry previously failed items
+        status_filter:
+          type: array
+          items:
+            type: string
+            enum: [PENDING, FAILED]
+          description: Only sync items with these statuses
+          example: ["PENDING"]
 
     SyncJobInfo:
       type: object

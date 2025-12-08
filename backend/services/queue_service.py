@@ -1,7 +1,7 @@
 """Service for datasheet queue operations."""
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import logging
 
@@ -57,19 +57,62 @@ class QueueService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def list_queue(db: AsyncSession) -> tuple[list[DatasheetQueue], int, int]:
-        """List all queue items with counts."""
-        # Get all items
-        result = await db.execute(
-            select(DatasheetQueue).order_by(DatasheetQueue.scan_count.desc())
+    async def list_queue(
+        db: AsyncSession,
+        status_filter: Optional[List[str]] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[DatasheetQueue], int, int, int]:
+        """
+        List queue items with optional status filtering and pagination.
+        
+        Args:
+            db: Database session
+            status_filter: Optional list of statuses to filter by (e.g., ["PENDING", "FAILED"])
+            limit: Maximum items to return
+            offset: Number of items to skip
+            
+        Returns:
+            Tuple of (items, total_count, pending_count, failed_count)
+        """
+        # Build base query
+        query = select(DatasheetQueue)
+        count_query = select(func.count()).select_from(DatasheetQueue)
+        
+        # Apply status filter if provided
+        if status_filter:
+            # Normalize status values to uppercase
+            normalized_statuses = [s.upper() for s in status_filter]
+            query = query.where(DatasheetQueue.status.in_(normalized_statuses))
+            count_query = count_query.where(DatasheetQueue.status.in_(normalized_statuses))
+        
+        # Get total count for filtered results
+        total_result = await db.execute(count_query)
+        total_count = total_result.scalar() or 0
+        
+        # Apply ordering and pagination
+        query = query.order_by(DatasheetQueue.scan_count.desc())
+        query = query.limit(limit).offset(offset)
+        
+        result = await db.execute(query)
+        items = list(result.scalars().all())
+        
+        # Get counts by status (for the full queue, not filtered)
+        pending_result = await db.execute(
+            select(func.count()).select_from(DatasheetQueue).where(
+                DatasheetQueue.status == "PENDING"
+            )
         )
-        items = result.scalars().all()
+        pending_count = pending_result.scalar() or 0
         
-        # Count by status
-        pending_count = sum(1 for item in items if item.status == "PENDING")
-        failed_count = sum(1 for item in items if item.status == "FAILED")
+        failed_result = await db.execute(
+            select(func.count()).select_from(DatasheetQueue).where(
+                DatasheetQueue.status == "FAILED"
+            )
+        )
+        failed_count = failed_result.scalar() or 0
         
-        return list(items), pending_count, failed_count
+        return items, total_count, pending_count, failed_count
 
     @staticmethod
     async def remove_from_queue(db: AsyncSession, part_number: str) -> bool:
@@ -103,13 +146,37 @@ class QueueService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_failed_items(db: AsyncSession) -> list[DatasheetQueue]:
+    async def get_failed_items(
+        db: AsyncSession, limit: Optional[int] = None
+    ) -> list[DatasheetQueue]:
         """Get failed items for retry."""
-        result = await db.execute(
-            select(DatasheetQueue).where(
-                DatasheetQueue.status == "FAILED"
-            ).order_by(DatasheetQueue.retry_count)  # Prioritize fewer retries
-        )
+        query = select(DatasheetQueue).where(
+            DatasheetQueue.status == "FAILED"
+        ).order_by(DatasheetQueue.retry_count)  # Prioritize fewer retries
+        
+        if limit:
+            query = query.limit(limit)
+        
+        result = await db.execute(query)
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def get_items_by_status(
+        db: AsyncSession,
+        statuses: List[str],
+        limit: Optional[int] = None
+    ) -> list[DatasheetQueue]:
+        """Get items matching any of the given statuses."""
+        normalized_statuses = [s.upper() for s in statuses]
+        
+        query = select(DatasheetQueue).where(
+            DatasheetQueue.status.in_(normalized_statuses)
+        ).order_by(DatasheetQueue.scan_count.desc())
+        
+        if limit:
+            query = query.limit(limit)
+        
+        result = await db.execute(query)
         return list(result.scalars().all())
 
     @staticmethod
@@ -141,4 +208,3 @@ class QueueService:
             select(func.count()).select_from(DatasheetQueue)
         )
         return result.scalar() or 0
-

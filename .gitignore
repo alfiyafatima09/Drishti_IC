@@ -118,3 +118,4 @@ backend/scanned_images
 #makefile
 Makefile
 *test*
+datasheets/

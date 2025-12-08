@@ -33,24 +33,41 @@ class SyncService:
         )
         return result.scalar_one_or_none()
 
+    # Class-level storage for job parameters (used by background task)
+    _job_params: dict = {}
+
     @staticmethod
     async def start_sync(
         db: AsyncSession,
         max_items: Optional[int] = None,
         retry_failed: bool = True,
+        status_filter: Optional[List[str]] = None,
     ) -> SyncJob:
-        """Start a new sync job (creates job record, actual processing is separate)."""
+        """
+        Start a new sync job (creates job record, actual processing is separate).
+        
+        Args:
+            db: Database session
+            max_items: Maximum number of items to process
+            retry_failed: Whether to retry previously failed items
+            status_filter: Only sync items with these statuses (e.g., ["PENDING", "FAILED"])
+        """
         active = await SyncService.get_active_job(db)
         if active:
             raise ValueError("A sync job is already running")
 
-        pending_items = await QueueService.get_pending_items(db, limit=max_items)
-        
-        if retry_failed:
-            failed_items = await QueueService.get_failed_items(db)
-            all_items = pending_items + [f for f in failed_items if f not in pending_items]
+        # If status_filter is provided, use it; otherwise use default behavior
+        if status_filter:
+            all_items = await QueueService.get_items_by_status(db, status_filter, limit=max_items)
         else:
-            all_items = pending_items
+            # Default behavior: get pending items and optionally retry failed
+            pending_items = await QueueService.get_pending_items(db, limit=max_items)
+            
+            if retry_failed:
+                failed_items = await QueueService.get_failed_items(db)
+                all_items = pending_items + [f for f in failed_items if f not in pending_items]
+            else:
+                all_items = pending_items
 
         if max_items:
             all_items = all_items[:max_items]
@@ -69,9 +86,16 @@ class SyncService:
         await db.flush()
         await db.refresh(job)
 
+        # Store job parameters for background task
+        SyncService._job_params[str(job.job_id)] = {
+            "max_items": max_items,
+            "retry_failed": retry_failed,
+            "status_filter": status_filter,
+        }
+
         SyncService._active_job_id = job.job_id
         SyncService._cancel_requested = False
-        logger.info(f"Started sync job {job.job_id} with {len(all_items)} items")
+        logger.info(f"Started sync job {job.job_id} with {len(all_items)} items (status_filter={status_filter})")
 
         return job
 
@@ -92,9 +116,22 @@ class SyncService:
                 logger.error(f"Sync job {job_id} not found")
                 return
             
-            pending_items = await QueueService.get_pending_items(db)
-            failed_items = await QueueService.get_failed_items(db)
-            all_items = pending_items + [f for f in failed_items if f not in pending_items]
+            # Get job parameters stored during start_sync
+            job_params = SyncService._job_params.get(str(job_id), {})
+            status_filter = job_params.get("status_filter")
+            max_items = job_params.get("max_items")
+            retry_failed = job_params.get("retry_failed", True)
+            
+            # Get items based on status filter
+            if status_filter:
+                all_items = await QueueService.get_items_by_status(db, status_filter, limit=max_items)
+            else:
+                pending_items = await QueueService.get_pending_items(db)
+                if retry_failed:
+                    failed_items = await QueueService.get_failed_items(db)
+                    all_items = pending_items + [f for f in failed_items if f not in pending_items]
+                else:
+                    all_items = pending_items
             
             if job.total_items > 0 and len(all_items) > job.total_items:
                 all_items = all_items[:job.total_items]
@@ -127,8 +164,18 @@ class SyncService:
                         db=db
                     )
                     
-                    if result["success"]:
-                        logger.info(f"SUCCESS: {part_number} found on {result['manufacturers_found']}")
+                    # Check if download was successful AND data was extracted
+                    # We need both for a full success
+                    download_success = result["success"]
+                    data_extracted = any(
+                        r.get("data_extracted", False) 
+                        for r in result.get("results", [])
+                        if r.get("status") == "SUCCESS"
+                    )
+                    
+                    if download_success and data_extracted:
+                        # Full success: PDF downloaded AND data extracted
+                        logger.info(f"SUCCESS: {part_number} found on {result['manufacturers_found']} with data extraction")
                         
                         await QueueService.remove_from_queue(db, part_number)
                         success += 1
@@ -139,7 +186,25 @@ class SyncService:
                             "manufacturers": result["manufacturers_found"],
                             "timestamp": datetime.utcnow().isoformat()
                         }]
+                    elif download_success and not data_extracted:
+                        # Partial success: PDF downloaded but extraction failed
+                        # Mark as FAILED but don't remove from queue
+                        queue_item.retry_count += 1
+                        queue_item.status = "FAILED"
+                        queue_item.error_message = "PDF downloaded but data extraction failed"
+                        failed += 1
+                        
+                        logger.warning(f"EXTRACTION_FAILED: {part_number} - PDF downloaded but extraction failed (retry {queue_item.retry_count}/{MAX_RETRY_COUNT})")
+                        
+                        job.log = job.log + [{
+                            "part_number": part_number,
+                            "result": "EXTRACTION_FAILED",
+                            "manufacturers": result["manufacturers_found"],
+                            "retry_count": queue_item.retry_count,
+                            "timestamp": datetime.utcnow().isoformat()
+                        }]
                     else:
+                        # Download failed completely
                         queue_item.retry_count += 1
                         queue_item.error_message = result.get("message", "Not found on any manufacturer")
                         
@@ -158,7 +223,6 @@ class SyncService:
                             except ValueError:  # Already in fake registry
                                 pass
                             
-                          
                             await QueueService.remove_from_queue(db, part_number)
                             fake += 1
                             
@@ -169,7 +233,6 @@ class SyncService:
                                 "timestamp": datetime.utcnow().isoformat()
                             }]
                         else:
-                           
                             logger.info(f"FAILED: {part_number} (retry {queue_item.retry_count}/{MAX_RETRY_COUNT})")
                             queue_item.status = "FAILED"
                             failed += 1
