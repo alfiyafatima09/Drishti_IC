@@ -43,15 +43,25 @@ class LLM:
         self.target_kb = target_kb
         self.min_quality = min_quality
         self.timeout = timeout
+        self.prompt = '''Count the total number of pins on this IC chip.
 
-        self.prompt = (
-            "You are given an image of an electronic IC chip. "
-            "Analyze the image and identify:\n"
-            "1. The manufacturer name of the chip from the logo\n"
-            "2. The total number of pins\n\n"
-            "Respond ONLY in JSON format with no additional text:\n"
-            '{"manufacturer": "<manufacturer_name>", "pin_count": <number>}'
-        )
+INSTRUCTIONS:
+Look at the IC package in the image
+Count ONLY the metallic pins/contacts (shiny silver/grey metal)
+Do NOT count: plastic edges, shadows, text, reflections, or mold marks
+Count each pin once at the point where it connects to the IC body
+Do NOT assume symmetry - only count what you can see
+Do NOT use part numbers or labels to guess the count
+
+Answer with ONLY a number. If uncertain, answer "uncertain".
+
+Examples of correct answers:
+8
+16
+28
+uncertain
+
+Your answer:'''
 
     def compress_image(self, image_path: str) -> bytes:
         """
@@ -228,5 +238,19 @@ class LLM:
         response_text = response.text
         result = self._parse_response(response_text)
 
-        return result
+        return response_text["response"]
     
+def main():
+    llm_client = LLM()
+    test_imges=os.listdir("ic_test")
+    test_imges.sort()
+    print("Test images:", test_imges)
+    for test_img in test_imges:
+        if not test_img.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+            continue
+        image_path = os.path.join("ic_test", test_img)  # Replace with your test image path
+        result = llm_client.analyze_image(image_path)
+        print(image_path,"\n","Analysis Result:", result)
+
+if __name__ == "__main__":
+    main()

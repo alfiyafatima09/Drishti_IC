@@ -1,6 +1,8 @@
 """Scan endpoints - Core inspection operations."""
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from services.llm import LLM
+import os
 from uuid import UUID
 import logging
 import re
@@ -21,7 +23,7 @@ from schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Core Inspection"])
-
+llm_client = LLM()
 # Maximum number of adjacent lines to combine when generating candidates
 MAX_ADJACENT_LINES = 4
 
@@ -239,8 +241,11 @@ async def scan_image(
     
     # ========== Placeholders for Vision Analysis ==========
     # TODO: Integrate with pin detection service (Gemini Vision or local model)
-    detected_pins = 0  # Placeholder - would come from vision analysis
-    manufacturer_detected = None  # Placeholder - could be extracted from OCR or vision
+    
+    
+    llm_result = llm_client.analyze_image(file.path)
+    detected_pins = int(llm_result.get("pin_count", 0)) if llm_result.get("pin_count") else 0
+    manufacturer_detected = llm_result.get("manufacturer", None)
     
     # Try to extract manufacturer from OCR text (simple heuristic)
     manufacturer_keywords = ['TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP', 
