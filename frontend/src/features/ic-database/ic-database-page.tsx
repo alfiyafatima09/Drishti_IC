@@ -11,8 +11,6 @@ import {
   Database,
   Loader2,
   Filter,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
   X,
@@ -103,7 +101,7 @@ const DEFAULT_FILTERS: Filters = {
   sort_dir: 'asc',
 }
 
-const ITEMS_PER_PAGE = 20
+const ITEMS_PER_PAGE_OPTIONS = [10, 30, 50]
 
 export default function ICDatabasePage() {
   const [searchResults, setSearchResults] = useState<ICSearchResult | null>(null)
@@ -113,14 +111,13 @@ export default function ICDatabasePage() {
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
-  const [showFilters, setShowFilters] = useState(false)
-  const [currentPage, setCurrentPage] = useState(0)
+  const [itemsPerPage, setItemsPerPage] = useState(30)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const inFlightController = useRef<AbortController | null>(null)
 
   // Build query params from filters
   const buildParams = useCallback(
-    (offset: number, searchQuery?: string): URLSearchParams => {
+    (searchQuery?: string): URLSearchParams => {
       const params = new URLSearchParams()
 
       if (searchQuery) {
@@ -142,17 +139,17 @@ export default function ICDatabasePage() {
 
       params.append('sort_by', filters.sort_by)
       params.append('sort_dir', filters.sort_dir)
-      params.append('limit', ITEMS_PER_PAGE.toString())
-      params.append('offset', offset.toString())
+      params.append('limit', itemsPerPage.toString())
+      params.append('offset', '0')
 
       return params
     },
-    [filters],
+    [filters, itemsPerPage],
   )
 
   // Fetch ICs - uses /list when no query, /search when query provided
   const fetchICs = useCallback(
-    async (searchQuery: string, page: number = 0) => {
+    async (searchQuery: string) => {
       setIsLoading(true)
       setError(null)
 
@@ -163,13 +160,12 @@ export default function ICDatabasePage() {
       const controller = new AbortController()
       inFlightController.current = controller
 
-      const offset = page * ITEMS_PER_PAGE
       const trimmedQuery = searchQuery.trim()
 
       // Use /search if query is provided, otherwise use /list
       const endpoint = trimmedQuery ? `${API_BASE}/ic/search` : `${API_BASE}/ic/list`
 
-      const params = buildParams(offset, trimmedQuery || undefined)
+      const params = buildParams(trimmedQuery || undefined)
 
       try {
         const response = await fetch(`${endpoint}?${params.toString()}`, {
@@ -198,10 +194,8 @@ export default function ICDatabasePage() {
         setError('Failed to load IC catalog. Please try again.')
         console.error('Fetch error:', err)
       } finally {
-        if (inFlightController.current === controller) {
-          inFlightController.current = null
-        }
         setIsLoading(false)
+        inFlightController.current = null
       }
     },
     [buildParams],
@@ -209,30 +203,20 @@ export default function ICDatabasePage() {
 
   // Initial load - fetch all ICs
   useEffect(() => {
-    fetchICs('', 0)
+    fetchICs('')
   }, [])
 
   // Debounced search when query or filters change
   useEffect(() => {
     const timer = setTimeout(() => {
-      setCurrentPage(0)
-      fetchICs(query, 0)
+      fetchICs(query)
     }, 400)
 
     return () => {
       clearTimeout(timer)
       if (inFlightController.current) inFlightController.current.abort()
     }
-  }, [query, filters])
-
-  // Handle page changes
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      setCurrentPage(newPage)
-      fetchICs(query, newPage)
-    },
-    [fetchICs, query],
-  )
+  }, [query, filters, itemsPerPage])
 
   // Handle IC click to load details
   const handleICClick = useCallback(async (partNumber: string) => {
@@ -284,9 +268,6 @@ export default function ICDatabasePage() {
     filters.sort_by !== 'part_number' ||
     filters.sort_dir !== 'asc'
 
-  // Calculate pagination
-  const totalPages = searchResults ? Math.ceil(searchResults.total_count / ITEMS_PER_PAGE) : 0
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 p-6">
       <div className="mx-auto max-w-7xl">
@@ -324,29 +305,10 @@ export default function ICDatabasePage() {
           </div>
         </div>
 
-        {/* Filter Toggle & Filters */}
+        {/* Filters */}
         <div className="mb-6">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-all ${
-              showFilters || hasActiveFilters
-                ? 'bg-blue-600 text-white'
-                : 'border-2 border-blue-300 bg-white text-blue-700 hover:bg-blue-50'
-            }`}
-          >
-            <Filter size={18} />
-            Filters
-            {hasActiveFilters && (
-              <span className="ml-1 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-blue-600">
-                Active
-              </span>
-            )}
-            {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-
-          {showFilters && (
-            <div className="mt-3 rounded-xl border-2 border-blue-200 bg-white p-4 shadow-md">
-              <div className="flex flex-wrap items-end gap-3">
+          <div className="rounded-xl border-2 border-blue-200 bg-white p-4 shadow-md">
+            <div className="flex flex-wrap items-end gap-3">
                 {/* Manufacturer */}
                 <div className="min-w-[140px] flex-1">
                   <label className="mb-1 block text-xs font-semibold text-gray-600">
@@ -440,8 +402,7 @@ export default function ICDatabasePage() {
                 )}
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
         {/* Error Message */}
         {error && !isLoading && (
@@ -472,6 +433,22 @@ export default function ICDatabasePage() {
                     {query.trim() ? 'Search Results' : 'IC Catalog'}
                   </h2>
                   <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-gray-600">Show:</span>
+                      {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                        <button
+                          key={option}
+                          onClick={() => setItemsPerPage(option)}
+                          className={`rounded px-2 py-1 text-sm font-medium transition-colors ${
+                            itemsPerPage === option
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
                     {isLoading && (
                       <div className="flex items-center gap-2 text-sm text-blue-600">
                         <Loader2 className="animate-spin" size={16} />
@@ -533,36 +510,6 @@ export default function ICDatabasePage() {
                     </div>
                   ))}
                 </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-200 pt-4">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 0 || isLoading}
-                      className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <ChevronLeft size={18} />
-                      Previous
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">
-                        Page <span className="font-bold">{currentPage + 1}</span> of{' '}
-                        <span className="font-bold">{totalPages}</span>
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= totalPages - 1 || isLoading}
-                      className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Next
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                )}
               </div>
             )}
 
