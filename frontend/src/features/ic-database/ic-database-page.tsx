@@ -267,11 +267,12 @@ export default function ICDatabasePage() {
                     <div
                       key={`${ic.part_number}-${ic.manufacturer}-${index}`}
                       onClick={() => handleICClick(ic.part_number)}
-                      className={`cursor-pointer rounded-xl border-2 p-4 transition-all hover:shadow-lg ${selectedIC?.part_number === ic.part_number &&
+                      className={`cursor-pointer rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
+                        selectedIC?.part_number === ic.part_number &&
                         selectedIC?.manufacturer === ic.manufacturer
-                        ? 'border-green-500 bg-green-50 shadow-md'
-                        : 'border-blue-200 bg-blue-50 hover:border-blue-400'
-                        }`}
+                          ? 'border-green-500 bg-green-50 shadow-md'
+                          : 'border-blue-200 bg-blue-50 hover:border-blue-400'
+                      }`}
                     >
                       <div className="mb-2 flex items-start justify-between">
                         <div className="flex items-center gap-2">
@@ -364,38 +365,38 @@ export default function ICDatabasePage() {
                 {/* Voltage & Temperature */}
                 {(selectedIC.voltage_min !== undefined ||
                   selectedIC.operating_temp_min !== undefined) && (
-                    <div className="space-y-4">
-                      <h3 className="flex items-center gap-2 text-xl font-bold text-gray-800">
-                        <Zap className="text-yellow-600" size={24} />
-                        Operating Conditions
-                      </h3>
+                  <div className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-xl font-bold text-gray-800">
+                      <Zap className="text-yellow-600" size={24} />
+                      Operating Conditions
+                    </h3>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        {selectedIC.voltage_min !== undefined && (
-                          <div className="rounded-xl border-2 border-yellow-400 bg-gradient-to-br from-yellow-100 to-orange-100 p-4">
-                            <p className="mb-1 text-sm font-semibold text-yellow-900">
-                              Voltage Range
-                            </p>
-                            <p className="text-xl font-bold text-yellow-800">
-                              {selectedIC.voltage_min}V - {selectedIC.voltage_max}V
-                            </p>
-                          </div>
-                        )}
+                    <div className="grid grid-cols-2 gap-4">
+                      {selectedIC.voltage_min !== undefined && (
+                        <div className="rounded-xl border-2 border-yellow-400 bg-gradient-to-br from-yellow-100 to-orange-100 p-4">
+                          <p className="mb-1 text-sm font-semibold text-yellow-900">
+                            Voltage Range
+                          </p>
+                          <p className="text-xl font-bold text-yellow-800">
+                            {selectedIC.voltage_min}V - {selectedIC.voltage_max}V
+                          </p>
+                        </div>
+                      )}
 
-                        {selectedIC.operating_temp_min !== undefined && (
-                          <div className="rounded-xl border-2 border-cyan-400 bg-gradient-to-br from-cyan-100 to-blue-100 p-4">
-                            <div className="mb-1 flex items-center gap-2">
-                              <Thermometer className="text-cyan-600" size={18} />
-                              <p className="text-sm font-semibold text-cyan-900">Temperature Range</p>
-                            </div>
-                            <p className="text-xl font-bold text-cyan-800">
-                              {selectedIC.operating_temp_min}°C - {selectedIC.operating_temp_max}°C
-                            </p>
+                      {selectedIC.operating_temp_min !== undefined && (
+                        <div className="rounded-xl border-2 border-cyan-400 bg-gradient-to-br from-cyan-100 to-blue-100 p-4">
+                          <div className="mb-1 flex items-center gap-2">
+                            <Thermometer className="text-cyan-600" size={18} />
+                            <p className="text-sm font-semibold text-cyan-900">Temperature Range</p>
                           </div>
-                        )}
-                      </div>
+                          <p className="text-xl font-bold text-cyan-800">
+                            {selectedIC.operating_temp_min}°C - {selectedIC.operating_temp_max}°C
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {/* Electrical Specifications */}
                 {selectedIC.electrical_specs &&
