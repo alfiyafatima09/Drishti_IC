@@ -1,10 +1,11 @@
 """Service for scan operations."""
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 import logging
+import json
 
 from models import ScanHistory, ICSpecification, FakeRegistry, DatasheetQueue
 from schemas import ScanStatus, ActionRequired, MatchDetails, PartNumberSource, ScanResult
@@ -62,7 +63,64 @@ class ScanService:
         )
 
     @staticmethod
-    async def create_scan(
+    async def create_extraction_scan(
+        db: AsyncSession,
+        ocr_text: str,
+        part_number_detected: str,
+        part_number_candidates: List[str],
+        detected_pins: int,
+        confidence_score: float,
+        manufacturer_detected: Optional[str] = None,
+        status: str = "EXTRACTED",
+    ) -> ScanHistory:
+        """
+        Create a new extraction-phase scan record.
+        This stores the raw extracted data without verification.
+        """
+        scan = ScanHistory(
+            ocr_text_raw=ocr_text,
+            part_number_detected=part_number_detected,
+            part_number_candidates=json.dumps(part_number_candidates) if part_number_candidates else None,
+            detected_pins=detected_pins,
+            confidence_score=confidence_score,
+            manufacturer_detected=manufacturer_detected,
+            status=status,
+            action_required=ActionRequired.VERIFY.value if status == "EXTRACTED" else ActionRequired.SCAN_BOTTOM.value,
+            scanned_at=datetime.utcnow(),
+        )
+        db.add(scan)
+        await db.flush()
+        await db.refresh(scan)
+        logger.info(f"Created extraction scan: {scan.scan_id}")
+        return scan
+
+    @staticmethod
+    async def update_bottom_scan(
+        db: AsyncSession,
+        scan_id: UUID,
+        detected_pins: int,
+    ) -> Optional[ScanHistory]:
+        """Update a scan with bottom scan results."""
+        scan = await ScanService.get_by_scan_id(db, scan_id)
+        if not scan:
+            return None
+        
+        if scan.status != "NEED_BOTTOM_SCAN":
+            logger.warning(f"Scan {scan_id} does not have NEED_BOTTOM_SCAN status")
+            return None
+        
+        # Update with bottom scan pins
+        scan.detected_pins = detected_pins
+        scan.status = "EXTRACTED"
+        scan.action_required = ActionRequired.VERIFY.value
+        
+        await db.flush()
+        await db.refresh(scan)
+        logger.info(f"Updated bottom scan: {scan_id}, detected_pins: {detected_pins}")
+        return scan
+
+    @staticmethod
+    async def create_and_verify_scan(
         db: AsyncSession,
         ocr_text: str,
         part_number: str,

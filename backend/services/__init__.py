@@ -5,6 +5,7 @@ from services.fake_service import FakeService
 from services.sync_service import SyncService
 from services.settings_service import SettingsService
 from services.dashboard_service import DashboardService
+from services.verification_service import VerificationService
 
 __all__ = [
     "ICService",
@@ -14,4 +15,6 @@ __all__ = [
     "SyncService",
     "SettingsService",
     "DashboardService",
+    "VerificationService",
 ]
+

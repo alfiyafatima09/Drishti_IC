@@ -19,6 +19,7 @@ class ScanHistory(Base):
     # OCR Results
     ocr_text_raw = Column(Text)  # Raw OCR output
     part_number_detected = Column(String(100), index=True)  # Parsed part number
+    part_number_candidates = Column(JSONB)  # List of candidate part numbers from OCR
     part_number_verified = Column(String(100), index=True)  # Final verified (may differ if override)
     
     # Verification Results
@@ -34,6 +35,7 @@ class ScanHistory(Base):
     
     # Match Details
     match_details = Column(JSONB)  # {part_number_match, pin_count_match, manufacturer_match}
+    verification_checks = Column(JSONB)  # Detailed verification checks with reasons
     failure_reasons = Column(JSONB)  # Array of failure reasons
     message = Column(Text)  # Human-readable result
     
@@ -54,6 +56,7 @@ class ScanHistory(Base):
             "scan_id": str(self.scan_id),
             "ocr_text_raw": self.ocr_text_raw,
             "part_number_detected": self.part_number_detected,
+            "part_number_candidates": self.part_number_candidates,
             "part_number_verified": self.part_number_verified,
             "status": self.status,
             "confidence_score": self.confidence_score,
@@ -63,6 +66,7 @@ class ScanHistory(Base):
             "action_required": self.action_required,
             "has_bottom_scan": self.has_bottom_scan,
             "match_details": self.match_details,
+            "verification_checks": self.verification_checks,
             "failure_reasons": self.failure_reasons,
             "message": self.message,
             "was_manual_override": self.was_manual_override,

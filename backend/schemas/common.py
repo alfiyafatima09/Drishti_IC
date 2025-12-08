@@ -11,12 +11,16 @@ class ScanStatus(str, Enum):
     PARTIAL = "PARTIAL"
     UNKNOWN = "UNKNOWN"
     COUNTERFEIT = "COUNTERFEIT"
+    EXTRACTED = "EXTRACTED"
+    NEED_BOTTOM_SCAN = "NEED_BOTTOM_SCAN"
 
 
 class ActionRequired(str, Enum):
     """Actions that may be required after a scan."""
     NONE = "NONE"
     SCAN_BOTTOM = "SCAN_BOTTOM"
+    VERIFY = "VERIFY"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
 
 
 class QueueStatus(str, Enum):
@@ -49,9 +53,9 @@ class CaptureType(str, Enum):
 
 class PartNumberSource(str, Enum):
     """Source/confidence level of part number identification."""
-    DATABASE_MATCH = "database_match"      # Verified - found in database
-    OCR_BEST_GUESS = "ocr_best_guess"      # Not found - using heuristic best guess
-    MANUAL_OVERRIDE = "manual_override"    # Operator corrected it
+    DATABASE_MATCH = "database_match"     
+    OCR_BEST_GUESS = "ocr_best_guess"      
+    MANUAL_OVERRIDE = "manual_override"  
 
 
 class SuccessResponse(BaseModel):

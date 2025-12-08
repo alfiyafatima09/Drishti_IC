@@ -25,6 +25,13 @@ from schemas.scan import (
     ScanListResult,
     ScanDetails,
 )
+from schemas.scan_verify import (
+    VerificationStatus,
+    VerificationCheck,
+    ScanExtractResult,
+    ScanVerifyRequest,
+    ScanVerifyResult,
+)
 from schemas.queue import (
     QueueItem,
     QueueListResult,

@@ -97,5 +97,5 @@ class DatasheetProvider:
         )
         
         local_path = self.datasheet_root / filename
-        
+
         return local_path, file_size, url, hash_value

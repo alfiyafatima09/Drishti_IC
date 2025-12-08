@@ -69,7 +69,9 @@ export interface ScanResult {
   action_required: ActionRequired;
   confidence_score: number;
   ocr_text: string;
-  part_number: string;
+  // Backward compatibility: backend now sends part_number_detected; older responses used part_number
+  part_number?: string;
+  part_number_detected?: string;
   manufacturer_detected?: string | null;
   detected_pins: number;
   message: string;

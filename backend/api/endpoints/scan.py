@@ -1,4 +1,4 @@
-"""Scan endpoints - Core inspection operations."""
+"""Scan endpoints - Core inspection operations (Phase 1 & 2)."""
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
@@ -8,18 +8,19 @@ import re
 from pathlib import Path
 from typing import Optional
 import uuid
+from datetime import datetime
 
 from core.database import get_db
-from services import ScanService, ICService, FakeService, QueueService
-from services.ocr import extract_text_from_image, OCRResponse
+from services import ScanService, ICService
+from services.ocr import extract_text_from_image
+from services.verification_service import VerificationService
 from services.llm import LLM
-from schemas import (
-    ScanResult,
-    ManualOverrideRequest,
+from schemas.scan_verify import (
+    ScanExtractResult,
+    ScanVerifyRequest,
+    ScanVerifyResult,
     ScanStatus,
     ActionRequired,
-    PartNumberSource,
-    ErrorResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -138,27 +139,27 @@ def _parse_pin_count(raw_pin_count) -> int:
         return 0
 
 
-@router.post("/scan", response_model=ScanResult)
+@router.post("/scan", response_model=ScanExtractResult)
 async def scan_image(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Upload image for IC inspection.
+    **Phase 1: Extract & Detect**
     
-    Performs OCR and Vision analysis, then verifies against Golden Record.
-    Returns PASS, FAIL, PARTIAL, UNKNOWN, or COUNTERFEIT.
+    Upload IC image for OCR text extraction and pin detection via Vision.
+    Returns extracted data without database verification.
     
-    The endpoint:
-    1. Extracts text using OCR
-    2. Generates all adjacent line combinations (up to 4 lines)
-    3. Checks each candidate against the database
-    4. If match found: returns verified part number
-    5. If no match: queues ALL candidates and returns best guess
+    **Status**:
+    - EXTRACTED: Data ready for verification
+    - NEED_BOTTOM_SCAN: No pins detected (BTC component - flip and rescan)
+    
+    **Next Step**: Call `/api/v1/scan/verify` with the scan_id for database comparison.
     """
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
+    # Read and save image
     image_data = await file.read()
     backend_root = Path(__file__).resolve().parent.parent.parent
     image_dir = backend_root / "scanned_images"
@@ -167,12 +168,10 @@ async def scan_image(
     suffix = Path(file.filename).suffix if file.filename else ".img"
     image_path = image_dir / f"{uuid.uuid4()}{suffix}"
     await asyncio.to_thread(image_path.write_bytes, image_data)
-    stored_image_path = str(image_path.relative_to(backend_root))
 
-    # ========== OCR Processing ==========
     logger.info(f"Processing scan for file: {file.filename}, size: {len(image_data)} bytes")
     
-    # Run OCR on the uploaded image
+    # ========== OCR Processing ==========
     logger.debug("Starting OCR extraction...")
     ocr_response = extract_text_from_image(image_data, preprocess=True)
     print(ocr_response)
@@ -184,70 +183,36 @@ async def scan_image(
             detail=f"OCR processing failed: {ocr_response.error}"
         )
     
-    # Get full OCR text for logging and storage
+    # Get OCR text and calculate confidence
     ocr_text = ocr_response.full_text
     logger.debug(f"OCR extracted text: {ocr_text}")
     logger.debug(f"OCR results count: {len(ocr_response.results)}")
     for i, result in enumerate(ocr_response.results):
         logger.debug(f"  OCR segment {i+1}: '{result.text}' (confidence: {result.confidence:.2%})")
     
-    # Calculate average OCR confidence
     avg_confidence = 0.0
     if ocr_response.results:
         avg_confidence = sum(r.confidence for r in ocr_response.results) / len(ocr_response.results) * 100
     
     # ========== Generate Part Number Candidates ==========
-    # Get individual text lines from OCR
+    # Normalize OCR lines and keep confidence for fallbacks
     ocr_lines = [r.text.strip() for r in ocr_response.results if r.text.strip()]
+    cleaned_lines = [clean_text_for_part_number(line) for line in ocr_lines if clean_text_for_part_number(line)]
+
+    candidates = generate_adjacent_combinations(cleaned_lines, MAX_ADJACENT_LINES)
+    logger.info(f"Generated {len(candidates)} part number candidates")
     
-    # Generate all adjacent combinations
-    candidates = generate_adjacent_combinations(ocr_lines, MAX_ADJACENT_LINES)
-    logger.info(f"Generated {len(candidates)} part number candidates from {len(ocr_lines)} OCR lines")
-    logger.debug(f"Candidates: {candidates}")
+    # Get best guess from scored candidates
+    best_part_number, _ = get_best_guess_part_number(candidates)
+    # Fallback: if scoring returned UNKNOWN but we do have OCR lines, pick highest-confidence line
+    if (not best_part_number or best_part_number == "UNKNOWN") and ocr_response.results:
+        top_result = max(ocr_response.results, key=lambda r: r.confidence)
+        fallback_text = clean_text_for_part_number(top_result.text)
+        if fallback_text:
+            best_part_number = fallback_text
     
-    # ========== Database Lookup - Try Each Candidate ==========
-    matched_part_number: Optional[str] = None
-    matched_ic_spec = None
-    part_number_source = PartNumberSource.OCR_BEST_GUESS
-    
-    for candidate in candidates:
-        ic_spec = await ICService.get_by_part_number(db, candidate)
-        if ic_spec:
-            matched_part_number = candidate
-            matched_ic_spec = ic_spec
-            part_number_source = PartNumberSource.DATABASE_MATCH
-            logger.info(f"DATABASE MATCH FOUND: '{candidate}' - {ic_spec.manufacturer}, {ic_spec.pin_count} pins")
-            break
-        logger.debug(f"No match for candidate: '{candidate}'")
-    
-    # ========== Determine Final Part Number ==========
-    queued_candidates_count = 0
-    
-    if matched_part_number:
-        # We found a match!
-        part_number = matched_part_number
-        logger.info(f"Using database-matched part number: {part_number}")
-    else:
-        # No match - use best guess and queue ALL candidates
-        part_number, guess_score = get_best_guess_part_number(candidates)
-        logger.info(f"No database match. Best guess: '{part_number}' (score: {guess_score:.1f})")
-        
-        # Queue ALL candidates for sync
-        if candidates:
-            logger.info(f"Queueing {len(candidates)} candidates for sync...")
-            for candidate in candidates:
-                await QueueService.add_to_queue(db, candidate)
-                logger.debug(f"  Queued: '{candidate}'")
-            queued_candidates_count = len(candidates)
-        else:
-            # No candidates at all - queue "UNKNOWN"
-            await QueueService.add_to_queue(db, "UNKNOWN")
-            queued_candidates_count = 1
-    
-    # Manufacturer can be extracted from OCR or vision
+    # ========== Detect Manufacturer ==========
     manufacturer_detected = None
-    
-    # Try to extract manufacturer from OCR text (simple heuristic)
     manufacturer_keywords = ['TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP', 
                             'INFINEON', 'ATMEL', 'FREESCALE', 'ON SEMI', 'ONSEMI', 'FAIRCHILD',
                             'NATIONAL', 'LINEAR', 'VISHAY', 'ROHM', 'TOSHIBA', 'RENESAS']
@@ -255,91 +220,135 @@ async def scan_image(
         upper_text = text_segment.upper()
         for keyword in manufacturer_keywords:
             if keyword in upper_text:
-                manufacturer_detected = text_segment
-                logger.debug(f"Detected manufacturer from OCR: {manufacturer_detected}")
+                manufacturer_detected = keyword
                 break
         if manufacturer_detected:
             break
     
     # ========== Vision Analysis (LLM) ==========
     detected_pins = 0
-    if matched_part_number:
-        try:
-            llm_client = LLM()
-            llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
+    is_vision_fallback = False
+    try:
+        llm_client = LLM()
+        llm_result = llm_client.analyze_image(str(image_path))
+        print(str(image_path))
+        print(llm_result)
+        
+        if llm_result.get("_fallback"):
+            is_vision_fallback = True
+            logger.warning(f"Vision endpoint unavailable: {llm_result.get('_debug_message')}. Using fallback (0 pins).")
+        else:
             logger.info(f"Vision analysis successful: {llm_result}")
-            detected_pins = _parse_pin_count(llm_result.get("pin_count"))
-            if not manufacturer_detected and llm_result.get("manufacturer"):
-                manufacturer_detected = llm_result.get("manufacturer")
-        except Exception as exc:
-            logger.error("LLM vision analysis failed: %s", exc, exc_info=True)
-            return ScanService.build_dummy_result(
-                part_number=part_number,
-                ocr_text=ocr_text,
-                image_path=stored_image_path,
-                candidates=candidates,
-                part_number_source=part_number_source,
-                confidence_score=avg_confidence,
-                manufacturer_detected=manufacturer_detected,
-                message=f"Vision analysis unavailable. Returning fallback result. Error: {exc}",
-                queued_for_sync=False,
-                queued_candidates_count=queued_candidates_count,
-                ic_specification=matched_ic_spec.to_dict() if matched_ic_spec else None,
-                detected_pins=detected_pins,
-            )
+        
+        detected_pins = _parse_pin_count(llm_result.get("pin_count", 0))
+    except Exception as e:
+        is_vision_fallback = True
+        logger.warning(f"Vision analysis failed: {e}, using fallback (0 pins)")
+        detected_pins = 0
     
-    logger.info(f"Creating scan - part_number: {part_number}, source: {part_number_source.value}, pins: {detected_pins}")
+    # ========== Determine Status ==========
+    # Check if BTC component (no pins detected)
+    if detected_pins == 0:
+        status = ScanStatus.NEED_BOTTOM_SCAN
+        action_required = ActionRequired.SCAN_BOTTOM
+        message = "Pins not visible on this side. This may be a bottom-terminated component (QFN, BGA, LGA). Please flip the IC and scan the bottom."
+    else:
+        status = ScanStatus.EXTRACTED
+        action_required = ActionRequired.VERIFY
+        message = "Data extracted successfully. Ready for database verification."
     
-    # Create scan and perform verification
-    scan = await ScanService.create_scan(
+    # ========== Create Scan Record ==========
+    scan = await ScanService.create_extraction_scan(
         db=db,
         ocr_text=ocr_text,
-        part_number=part_number,
+        part_number_detected=best_part_number,
+        part_number_candidates=candidates,
         detected_pins=detected_pins,
         confidence_score=avg_confidence,
         manufacturer_detected=manufacturer_detected,
+        status=status.value,
     )
     
-    # Get IC specification if available
-    ic_spec_response = None
-    if matched_ic_spec:
-        ic_spec_response = matched_ic_spec.to_dict()
-    elif scan.status in [ScanStatus.PASS.value, ScanStatus.FAIL.value, ScanStatus.PARTIAL.value]:
-        ic_spec_model = await ICService.get_by_part_number(db, part_number)
-        if ic_spec_model:
-            ic_spec_response = ic_spec_model.to_dict()
+    logger.info(
+        f"Extraction complete - scan_id: {scan.scan_id}, "
+        f"part_number: {best_part_number}, pins: {detected_pins}, status: {status}"
+    )
     
-    # Get fake registry info if counterfeit
-    fake_info = None
-    if scan.status == ScanStatus.COUNTERFEIT.value:
-        fake_entry = await FakeService.get_by_part_number(db, part_number)
-        if fake_entry:
-            fake_info = fake_entry.to_info()
-    
-    return ScanResult(
+    return ScanExtractResult(
         scan_id=scan.scan_id,
-        status=ScanStatus(scan.status),
-        action_required=ActionRequired(scan.action_required),
-        confidence_score=scan.confidence_score,
-        ocr_text=scan.ocr_text_raw,
-        part_number=scan.part_number_verified or scan.part_number_detected,
-        part_number_candidates=candidates if candidates else None,
-        part_number_source=part_number_source,
-        manufacturer_detected=scan.manufacturer_detected,
-        image_path=stored_image_path,
-        detected_pins=scan.detected_pins,
-        message=scan.message,
-        match_details=scan.match_details,
-        queued_for_sync=(scan.status == ScanStatus.UNKNOWN.value),
-        queued_candidates_count=queued_candidates_count,
-        ic_specification=ic_spec_response,
-        fake_registry_info=fake_info,
+        status=status,
+        action_required=action_required,
+        confidence_score=avg_confidence,
+        ocr_text=ocr_text,
+        part_number_detected=best_part_number,
+        part_number_candidates=candidates,
+        manufacturer_detected=manufacturer_detected,
+        detected_pins=detected_pins,
+        message=message,
         scanned_at=scan.scanned_at,
-        completed_at=scan.completed_at,
     )
 
 
-@router.post("/scan/{scan_id}/bottom", response_model=ScanResult)
+
+@router.post("/scan/verify", response_model=ScanVerifyResult)
+async def verify_ic(
+    request: ScanVerifyRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    **Phase 2: Verify & Compare**
+    
+    Takes extracted data from `/api/v1/scan` and compares against the Golden Record database.
+    
+    **Input**:
+    - `scan_id`: Reference to extraction scan (required)
+    - `part_number`: Override detected part number (optional)
+    - `detected_pins`: Override detected pins (optional)
+    
+    **Returns** one of:
+    - **MATCH_FOUND**: IC found in database, all checks passed
+    - **PIN_MISMATCH**: Part number found but pin count doesn't match
+    - **NOT_IN_DATABASE**: Part number not found, added to sync queue
+    
+    **Reason Field**: Includes detailed failure reason for each failed check.
+    """
+    # Get the extraction scan
+    scan = await ScanService.get_by_scan_id(db, request.scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail=f"Scan {request.scan_id} not found")
+    
+    logger.info(f"Verifying scan {request.scan_id}")
+    
+    # Use overrides or fallback to extracted data
+    part_number = request.part_number or scan.part_number_detected
+    detected_pins = request.detected_pins if request.detected_pins is not None else scan.detected_pins
+    
+    if not part_number:
+        raise HTTPException(status_code=400, detail="No part number available for verification")
+    
+    # Perform verification
+    verify_result, error = await VerificationService.verify_scan(
+        db=db,
+        scan_id=request.scan_id,
+        part_number_override=request.part_number,
+        detected_pins_override=request.detected_pins,
+    )
+    
+    if error:
+        raise HTTPException(status_code=500, detail=error)
+    
+    # Set the scan_id in result
+    verify_result.scan_id = request.scan_id
+    
+    logger.info(
+        f"Verification complete - status: {verify_result.verification_status}, "
+        f"part_number: {part_number}, pins: {detected_pins}"
+    )
+    
+    return verify_result
+
+
+@router.post("/scan/{scan_id}/bottom", response_model=ScanExtractResult)
 async def scan_bottom_image(
     scan_id: UUID,
     file: UploadFile = File(...),
@@ -348,9 +357,9 @@ async def scan_bottom_image(
     """
     Upload bottom-view image for BTC components.
     
-    Used when initial scan returns action_required=SCAN_BOTTOM.
+    Used when initial scan returns status=NEED_BOTTOM_SCAN.
+    Replaces the extracted pins with pins detected from the bottom.
     """
-    # Validate file type
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
@@ -359,21 +368,46 @@ async def scan_bottom_image(
     if not existing_scan:
         raise HTTPException(status_code=404, detail="Scan not found")
 
-    if existing_scan.status != ScanStatus.PARTIAL.value:
+    if existing_scan.status != ScanStatus.NEED_BOTTOM_SCAN.value:
         raise HTTPException(
             status_code=400,
             detail="This scan does not require a bottom scan"
         )
 
-    # Read image
+    # Read and process bottom image
     image_data = await file.read()
+    backend_root = Path(__file__).resolve().parent.parent.parent
+    image_dir = backend_root / "scanned_images"
     
-    # TODO: Integrate with actual Vision service for pin counting
-    # Simulated pin detection from bottom image
-    detected_pins = 32  # Simulated
+    suffix = Path(file.filename).suffix if file.filename else ".img"
+    image_path = image_dir / f"{uuid.uuid4()}{suffix}"
+    await asyncio.to_thread(image_path.write_bytes, image_data)
     
-    # Process bottom scan
-    scan = await ScanService.process_bottom_scan(
+    logger.info(f"Processing bottom scan for scan_id: {scan_id}")
+    
+    # Vision analysis on bottom image
+    detected_pins = 0
+    try:
+        llm_client = LLM()
+        llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
+        
+        # Check if fallback mode
+        if llm_result.get("_fallback"):
+            logger.warning(f"Bottom vision endpoint unavailable: {llm_result.get('_debug_message')}. Using fallback (0 pins).")
+        else:
+            logger.info(f"Bottom image vision: detected pins = {llm_result.get('pin_count')}")
+        
+        detected_pins = _parse_pin_count(llm_result.get("pin_count", 0))
+        logger.info(f"Bottom image vision: detected {detected_pins} pins")
+    except Exception as e:
+        logger.warning(f"Bottom vision analysis failed: {e}, using fallback (0 pins)")
+        detected_pins = 0
+    except Exception as e:
+        logger.warning(f"Bottom vision analysis failed: {e}")
+        detected_pins = 0
+    
+    # Update scan with bottom scan results
+    scan = await ScanService.update_bottom_scan(
         db=db,
         scan_id=scan_id,
         detected_pins=detected_pins,
@@ -382,84 +416,76 @@ async def scan_bottom_image(
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
     
-    # Get IC specification
-    ic_spec = None
-    if scan.part_number_verified:
-        ic_spec_model = await ICService.get_by_part_number(db, scan.part_number_verified)
-        if ic_spec_model:
-            ic_spec = ic_spec_model.to_dict()
+    logger.info(f"Bottom scan processed - detected {detected_pins} pins")
     
-    return ScanResult(
+    return ScanExtractResult(
         scan_id=scan.scan_id,
-        status=ScanStatus(scan.status),
-        action_required=ActionRequired(scan.action_required),
+        status=ScanStatus.EXTRACTED,
+        action_required=ActionRequired.VERIFY,
         confidence_score=scan.confidence_score,
-        ocr_text=scan.ocr_text_raw,
-        part_number=scan.part_number_verified,
-        part_number_source=PartNumberSource.DATABASE_MATCH,  # Bottom scan only happens after initial match
+        ocr_text=scan.ocr_text_raw or "",
+        part_number_detected=scan.part_number_detected or "",
+        part_number_candidates=scan.part_number_candidates or [],
         manufacturer_detected=scan.manufacturer_detected,
-        detected_pins=scan.detected_pins,
-        message=scan.message,
-        match_details=scan.match_details,
-        queued_for_sync=False,
-        ic_specification=ic_spec,
+        detected_pins=detected_pins,
+        message="Bottom scan complete. Ready for verification.",
         scanned_at=scan.scanned_at,
-        completed_at=scan.completed_at,
     )
 
 
-@router.post("/scan/override", response_model=ScanResult)
+@router.post("/scan/override", response_model=ScanExtractResult)
 async def manual_override(
-    request: ManualOverrideRequest,
+    request: dict,
     db: AsyncSession = Depends(get_db),
 ):
     """
     Manual part number correction.
     
-    Used when OCR fails to read the chip correctly.
-    System still uses vision to verify pin count.
+    Allows operator to override the OCR-detected part number.
+    Returns the corrected extraction data.
     """
-    scan = await ScanService.manual_override(
-        db=db,
-        scan_id=request.scan_id,
-        manual_part_number=request.manual_part_number,
-        operator_note=request.operator_note,
-    )
+    scan_id = UUID(request.get("scan_id"))
+    manual_part_number = request.get("manual_part_number")
+    operator_note = request.get("operator_note")
     
+    if not manual_part_number:
+        raise HTTPException(status_code=400, detail="manual_part_number is required")
+    
+    scan = await ScanService.get_by_scan_id(db, scan_id)
     if not scan:
         raise HTTPException(status_code=404, detail="Scan not found")
     
-    # Get IC specification
-    ic_spec = None
-    if scan.part_number_verified:
-        ic_spec_model = await ICService.get_by_part_number(db, scan.part_number_verified)
-        if ic_spec_model:
-            ic_spec = ic_spec_model.to_dict()
+    logger.info(
+        f"Manual override: scan_id={scan_id}, "
+        f"detected='{scan.part_number_detected}' -> manual='{manual_part_number}'"
+    )
     
-    # Get fake registry info if counterfeit
-    fake_info = None
-    if scan.status == ScanStatus.COUNTERFEIT.value:
-        fake_entry = await FakeService.get_by_part_number(db, scan.part_number_verified)
-        if fake_entry:
-            fake_info = fake_entry.to_info()
+    # Update with manual part number
+    scan.part_number_detected = manual_part_number
+    scan.was_manual_override = True
+    scan.operator_note = operator_note
+    await db.flush()
+    await db.refresh(scan)
     
-    return ScanResult(
+    return ScanExtractResult(
         scan_id=scan.scan_id,
-        status=ScanStatus(scan.status),
-        action_required=ActionRequired(scan.action_required),
+        status=ScanStatus.EXTRACTED,
+        action_required=ActionRequired.VERIFY,
         confidence_score=scan.confidence_score,
-        ocr_text=scan.ocr_text_raw,
-        part_number=scan.part_number_verified,
-        part_number_source=PartNumberSource.MANUAL_OVERRIDE,
+        ocr_text=scan.ocr_text_raw or "",
+        part_number_detected=manual_part_number,
+        part_number_candidates=scan.part_number_candidates or [],
         manufacturer_detected=scan.manufacturer_detected,
         detected_pins=scan.detected_pins,
-        message=scan.message,
-        match_details=scan.match_details,
-        queued_for_sync=(scan.status == ScanStatus.UNKNOWN.value),
-        ic_specification=ic_spec,
-        fake_registry_info=fake_info,
-        was_manual_override=True,
+        message="Part number corrected. Ready for verification.",
         scanned_at=scan.scanned_at,
-        completed_at=scan.completed_at,
     )
+
+
+def _parse_pin_count(raw_pin_count) -> int:
+    """Convert LLM pin count output to int safely."""
+    try:
+        return int(raw_pin_count)
+    except (TypeError, ValueError):
+        return 0
 

@@ -278,10 +278,10 @@ export default function ICDatabasePage() {
             />
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500" size={20} />
             {query && (
-              <button
+            <button
                 onClick={() => setQuery('')}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
+            >
                 <X size={18} />
               </button>
             )}
@@ -484,7 +484,7 @@ export default function ICDatabasePage() {
                           </span>
                         </div>
                         {ic.description && (
-                          <p className="text-gray-600 mt-2 line-clamp-2">{ic.description}</p>
+                        <p className="text-gray-600 mt-2 line-clamp-2">{ic.description}</p>
                         )}
                       </div>
                     </div>
@@ -563,9 +563,9 @@ export default function ICDatabasePage() {
 
                 {/* Description */}
                 {selectedIC.description && (
-                  <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4">
-                    <p className="text-gray-700 leading-relaxed">{selectedIC.description}</p>
-                  </div>
+                <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4">
+                  <p className="text-gray-700 leading-relaxed">{selectedIC.description}</p>
+                </div>
                 )}
 
                 {/* Basic Specifications */}
@@ -632,15 +632,15 @@ export default function ICDatabasePage() {
                         .map(([key, value]) => ({ key, formattedValue: formatValue(value) }))
                         .filter(({ formattedValue }) => formattedValue !== null)
                         .map(({ key, formattedValue }) => (
-                          <div key={key} className="flex justify-between items-center py-2 border-b border-indigo-200 last:border-0">
+                        <div key={key} className="flex justify-between items-center py-2 border-b border-indigo-200 last:border-0">
                             <span className="text-gray-700 font-medium capitalize text-sm">
-                              {key.replace(/_/g, ' ')}
-                            </span>
+                            {key.replace(/_/g, ' ')}
+                          </span>
                             <span className="text-gray-900 font-bold text-sm max-w-[60%] text-right break-words">
                               {formattedValue}
                             </span>
-                          </div>
-                        ))}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
