@@ -5,20 +5,21 @@ Responsibilities:
 - Obtain OAuth2 token using client credentials
 - Search products by keyword
 - Extract the datasheet URL for the first manufacturer/first product
-- Download the datasheet PDF to the datasheet folder
-
-This is implemented as a pragmatic service: error handling is conservative and
-callers should handle exceptions appropriately.
+- Download the datasheet PDF using unified storage
 """
-import base64
 import logging
 import time
-from pathlib import Path
 from typing import Optional, Dict, Any
 
 import requests
 
 from core.config import settings
+from services.datasheet_storage import (
+    download_pdf_sync,
+    normalize_manufacturer,
+    get_datasheet_filename,
+    get_storage_folder,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +42,8 @@ class DigiKeyService:
         if self._token and now < self._token_expiry - 30:
             return self._token
 
-        # Request a new token via client credentials
-        payload = {
-            "grant_type": "client_credentials"
-        }
-
-        # Digikey documentation commonly supports basic auth with client id/secret
+        payload = {"grant_type": "client_credentials"}
         auth = (self.client_id, self.client_secret)
-
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
         resp = requests.post(self.token_url, data=payload, auth=auth, headers=headers, timeout=15)
@@ -68,10 +63,7 @@ class DigiKeyService:
         return self._token
 
     def search_keyword(self, keyword: str) -> Dict[str, Any]:
-        """Search Digikey products using keyword search endpoint.
-
-        Returns the parsed JSON response.
-        """
+        """Search Digikey products using keyword search endpoint."""
         token = self._get_token()
 
         headers = {
@@ -91,161 +83,118 @@ class DigiKeyService:
         return resp.json()
 
     def extract_first_datasheet_info(self, search_response: Dict[str, Any]) -> Optional[Dict[str, str]]:
-        """Extract datasheet URL and manufacturer for the first product from DigiKey v4 API response.
-
-        The v4 API returns a 'Products' array where each product has a 'DatasheetUrl' field.
-        We extract the DatasheetUrl and Manufacturer from the first product in the list.
-        
-        Returns:
-            Dict with 'url' and 'manufacturer' keys, or None if not found
-        """
-        # DigiKey v4 API response contains 'Products' array
+        """Extract datasheet URL and manufacturer for the first product from DigiKey v4 API response."""
         products = search_response.get("Products") or search_response.get("products")
         if not products or len(products) == 0:
             logger.warning("No products found in DigiKey search response")
             return None
 
         first_product = products[0]
-        
-        # DigiKey v4 API provides 'DatasheetUrl' directly on the product
         datasheet_url = first_product.get("DatasheetUrl")
         
         if not (datasheet_url and isinstance(datasheet_url, str) and datasheet_url.strip()):
             logger.warning("No DatasheetUrl found in first product: %s", first_product.get("ManufacturerProductNumber", "unknown"))
             return None
         
-        # Extract manufacturer name
         manufacturer_obj = first_product.get("Manufacturer", {})
         manufacturer_name = ""
         if isinstance(manufacturer_obj, dict):
             manufacturer_name = manufacturer_obj.get("Name", "")
         
-        logger.info("Found datasheet URL: %s (Manufacturer: %s)", datasheet_url, manufacturer_name)
+        # Get the part number from the product
+        part_number = first_product.get("ManufacturerProductNumber", "")
+        
+        logger.info("Found datasheet URL: %s (Manufacturer: %s, Part: %s)", 
+                   datasheet_url, manufacturer_name, part_number)
         
         return {
             "url": datasheet_url,
-            "manufacturer": manufacturer_name
+            "manufacturer": manufacturer_name,
+            "part_number": part_number,
         }
     
     def extract_first_datasheet_url(self, search_response: Dict[str, Any]) -> Optional[str]:
-        """Legacy method - extract just the URL. Use extract_first_datasheet_info for more info."""
+        """Legacy method - extract just the URL."""
         info = self.extract_first_datasheet_info(search_response)
         return info["url"] if info else None
 
-    def download_pdf(self, url: str, manufacturer: Optional[str] = None, target_folder: Optional[Path] = None) -> Path:
-        """Download a PDF from `url` and save it under `settings.DATASHEET_FOLDER`.
+    def download_pdf(
+        self, 
+        url: str, 
+        part_number: str,
+        manufacturer: Optional[str] = None
+    ) -> str:
+        """
+        Download a PDF and save it using unified storage.
         
         Args:
             url: URL to download PDF from
-            manufacturer: Manufacturer name to prefix the filename (for better detection)
-            target_folder: Optional target folder (defaults to settings.DATASHEET_FOLDER)
+            part_number: IC part number (required for consistent hashing)
+            manufacturer: Manufacturer name (will be normalized)
 
-        Returns the saved Path.
+        Returns:
+            The filename stored (to be saved in database)
+            
+        Raises:
+            DigiKeyException: If download fails
         """
         if not url or not url.startswith("http"):
             raise DigiKeyException("Invalid URL to download")
-
-        target_folder = Path(settings.DATASHEET_FOLDER)
-        target_folder.mkdir(parents=True, exist_ok=True)
-
-        # Use last segment as filename if possible
-        filename = url.split("/")[-1].split("?")[0]
-        if not filename.lower().endswith(".pdf"):
-            filename = filename + ".pdf"
         
-        # Prefix with manufacturer for easier detection
-        if manufacturer:
-            # Normalize manufacturer name for filename
-            mfr_prefix = self._normalize_manufacturer_name(manufacturer)
-            filename = f"{mfr_prefix}_{filename}"
+        if not part_number:
+            raise DigiKeyException("Part number is required for download")
 
-        local_path = target_folder / filename
-
-        # Stream download with retries
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"Downloading PDF from {url} (attempt {attempt + 1}/{max_retries})")
-                
-                # Add headers to avoid being blocked
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept': 'application/pdf,*/*'
-                }
-                
-                with requests.get(url, stream=True, timeout=60, headers=headers) as r:
-                    if r.status_code != 200:
-                        logger.error("Failed to download PDF: %s %s", r.status_code, r.text[:200])
-                        raise DigiKeyException(f"Failed to download PDF: {r.status_code}")
-
-                    with local_path.open("wb") as fh:
-                        for chunk in r.iter_content(chunk_size=8192):
-                            if chunk:
-                                fh.write(chunk)
-                
-                logger.info(f"Successfully downloaded PDF to {local_path}")
-                return local_path
-                
-            except requests.exceptions.Timeout as e:
-                if attempt < max_retries - 1:
-                    logger.warning(f"Download timeout, retrying... ({attempt + 1}/{max_retries})")
-                    time.sleep(2)  # Wait before retry
-                    continue
-                else:
-                    logger.error(f"Download failed after {max_retries} attempts: {e}")
-                    raise DigiKeyException(f"Download timeout after {max_retries} attempts: {str(e)}")
-            except Exception as e:
-                logger.error(f"Download error: {e}")
-                raise DigiKeyException(f"Failed to download PDF: {str(e)}")
-
-        raise DigiKeyException("Failed to download PDF after all retries")
-    
-    def _normalize_manufacturer_name(self, manufacturer: str) -> str:
-        """Normalize manufacturer name for use in filenames.
+        # Normalize manufacturer code
+        manufacturer_code = normalize_manufacturer(manufacturer or "UNKNOWN")
         
-        Maps common manufacturer names to standard codes:
-        - STMicroelectronics -> STM
-        - Texas Instruments -> TI
-        - onsemi -> ONSEMI
-        - etc.
-        """
-        if not manufacturer:
-            return "UNKNOWN"
-        
-        mfr_lower = manufacturer.lower()
-        
-        # Map to standard manufacturer codes
-        if "stmicro" in mfr_lower or "st.com" in mfr_lower:
-            return "STM"
-        elif "texas" in mfr_lower or "ti.com" in mfr_lower:
-            return "TI"
-        elif "onsemi" in mfr_lower:
-            return "ONSEMI"
-        elif "nxp" in mfr_lower:
-            return "NXP"
-        elif "analog" in mfr_lower:
-            return "ANALOG_DEVICES"
-        else:
-            # Use first word of manufacturer name, sanitized
-            return manufacturer.split()[0].upper().replace(",", "").replace(".", "")
+        try:
+            filename, file_size = download_pdf_sync(
+                url=url,
+                part_number=part_number,
+                manufacturer_code=manufacturer_code,
+                timeout=60,
+                max_retries=3
+            )
+            
+            logger.info(f"DigiKey: Downloaded {file_size} bytes as {filename}")
+            return filename
+            
+        except Exception as e:
+            logger.error(f"DigiKey download error: {e}")
+            raise DigiKeyException(f"Failed to download PDF: {str(e)}")
 
 
 digi_service = DigiKeyService()
 
 
 def search_and_download_datasheet(keyword: str) -> Dict[str, Any]:
-    """Convenience wrapper: search by keyword and download first datasheet PDF.
+    """
+    Convenience wrapper: search by keyword and download first datasheet PDF.
 
-    Returns dict with 'path' (local Path) and 'manufacturer' (str).
+    Returns dict with:
+    - 'filename': The filename stored (e.g., "abc123def456.pdf")
+    - 'manufacturer': The manufacturer name
+    - 'manufacturer_code': Normalized manufacturer code
+    - 'part_number': The part number from DigiKey
     """
     resp = digi_service.search_keyword(keyword)
     info = digi_service.extract_first_datasheet_info(resp)
     if not info:
         raise DigiKeyException("No datasheet URL found in search response")
 
-    path = digi_service.download_pdf(info["url"], manufacturer=info["manufacturer"])
+    part_number = info.get("part_number") or keyword
+    manufacturer = info.get("manufacturer", "Unknown")
+    manufacturer_code = normalize_manufacturer(manufacturer)
+    
+    filename = digi_service.download_pdf(
+        url=info["url"],
+        part_number=part_number,
+        manufacturer=manufacturer
+    )
     
     return {
-        "path": path,
-        "manufacturer": info["manufacturer"]
+        "filename": filename,
+        "manufacturer": manufacturer,
+        "manufacturer_code": manufacturer_code,
+        "part_number": part_number,
     }

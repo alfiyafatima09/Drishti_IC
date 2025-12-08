@@ -4,6 +4,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 
+# Get the backend directory (where this file is located)
+BACKEND_DIR = Path(__file__).parent.parent.resolve()
+# Project root is one level up from backend
+PROJECT_ROOT = BACKEND_DIR.parent
+
+
 class Settings(BaseSettings):
     """Application configuration settings."""
     
@@ -18,8 +24,23 @@ class Settings(BaseSettings):
 
     # GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
     
-    MEDIA_ROOT: Path = Path(os.environ.get("MEDIA_ROOT", "../../media"))
-    DATASHEET_FOLDER: Path = Path(os.environ.get("DATASHEET_ROOT", "../../datasheets"))
+    # Use absolute paths based on project root
+    # Handle both absolute and relative paths in env vars
+    @property
+    def MEDIA_ROOT(self) -> Path:
+        env_path = os.environ.get("MEDIA_ROOT", "")
+        if env_path:
+            p = Path(env_path)
+            return p if p.is_absolute() else PROJECT_ROOT / p
+        return PROJECT_ROOT / "media"
+    
+    @property
+    def DATASHEET_FOLDER(self) -> Path:
+        env_path = os.environ.get("DATASHEET_ROOT", "")
+        if env_path:
+            p = Path(env_path)
+            return p if p.is_absolute() else PROJECT_ROOT / p
+        return PROJECT_ROOT / "datasheets"
     
     MAX_IMAGE_SIZE_BYTES: int = int(os.environ.get("MAX_IMAGE_SIZE_BYTES", 50 * 1024 * 1024))
     ALLOWED_IMAGE_TYPES: list[str] = [
@@ -38,7 +59,7 @@ class Settings(BaseSettings):
     PIN_DETECTION_MODEL: str = "yolov8"
     
     MAX_SCRAPE_RETRIES: int = 3
-    SCRAPE_TIMEOUT_SECONDS: int = 5
+    SCRAPE_TIMEOUT_SECONDS: int = 30  # Increased for PDF downloads
     AUTO_QUEUE_UNKNOWN: bool = True
     
     # Scan history

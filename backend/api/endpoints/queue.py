@@ -1,6 +1,7 @@
 """Queue endpoints - Datasheet queue management."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional, List
 import logging
 
 from core.database import get_db
@@ -14,12 +15,25 @@ router = APIRouter(prefix="/api/v1/queue", tags=["Datasheet Queue"])
 
 @router.get("/list", response_model=QueueListResult)
 async def list_queue(
+    status: Optional[List[str]] = Query(
+        None, 
+        description="Filter by status(es). Can specify multiple: ?status=PENDING&status=FAILED"
+    ),
+    limit: int = Query(100, ge=1, le=500, description="Maximum items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    List all pending ICs in the scraping queue.
+    List ICs in the scraping queue with optional status filtering and pagination.
+    
+    Status options: PENDING, PROCESSING, FAILED
     """
-    items, pending_count, failed_count = await QueueService.list_queue(db)
+    items, total_count, pending_count, failed_count = await QueueService.list_queue(
+        db, 
+        status_filter=status,
+        limit=limit,
+        offset=offset,
+    )
     
     return QueueListResult(
         queue_items=[
@@ -34,9 +48,11 @@ async def list_queue(
             )
             for item in items
         ],
-        total_count=len(items),
+        total_count=total_count,
         pending_count=pending_count,
         failed_count=failed_count,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -102,4 +118,3 @@ async def remove_from_queue(
         success=True,
         message=f"Part number '{part_number}' removed from sync queue.",
     )
-

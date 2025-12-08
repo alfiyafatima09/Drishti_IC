@@ -105,3 +105,34 @@ async def unmark_fake(
         message=f"Part number '{part_number}' removed from fake registry.",
     )
 
+
+@router.post("/transfer-to-queue")
+async def transfer_fakes_to_queue(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transfer all fake registry items to the scraping queue for retry.
+    
+    This will:
+    1. Add all fake ICs to the datasheet_queue with status PENDING
+    2. Remove them from the fake_registry
+    
+    Use this to retry scraping ICs that were previously marked as fake.
+    """
+    transferred, already_queued = await FakeService.transfer_all_to_queue(db)
+    
+    if transferred == 0 and already_queued == 0:
+        return {
+            "success": True,
+            "transferred_count": 0,
+            "already_in_queue_count": 0,
+            "message": "Fake registry is empty. No items to transfer.",
+        }
+    
+    return {
+        "success": True,
+        "transferred_count": transferred,
+        "already_in_queue_count": already_queued,
+        "message": f"Transferred {transferred} items to queue. {already_queued} were already in queue.",
+    }
+
