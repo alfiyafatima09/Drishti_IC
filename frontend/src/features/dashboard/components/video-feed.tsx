@@ -132,7 +132,7 @@ export function VideoFeed({ onCapture }: VideoFeedProps) {
       {/* Capture Action */}
       <Button
         size="lg"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md shadow-blue-600/20"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5"
         disabled={!canCapture}
         onClick={handleCaptureFromCamera}
       >
