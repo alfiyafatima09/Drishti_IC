@@ -1,7 +1,8 @@
 """Scan endpoints - Core inspection operations (Phase 1 & 2)."""
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.llm import LLM
+from services.pipeline import run_pipeline
+# from services.llm import LLM
 import os
 from uuid import UUID
 import asyncio
@@ -16,7 +17,7 @@ from core.database import get_db
 from services import ScanService, ICService
 from services.ocr import extract_text_from_image
 from services.verification_service import VerificationService
-from services.llm import LLM
+# from services.llm import LLM
 from schemas.scan_verify import (
     ScanExtractResult,
     ScanVerifyRequest,
@@ -233,7 +234,6 @@ async def scan_image(
         if manufacturer_detected:
             break
     
-    # Normalize OCR-detected manufacturer to full name
     if manufacturer_detected:
         manufacturer_map = {
             'TI': 'Texas Instruments', 'TEXAS': 'Texas Instruments',
@@ -254,13 +254,10 @@ async def scan_image(
         }
         manufacturer_detected = manufacturer_map.get(manufacturer_detected.upper(), manufacturer_detected)
     
-    # ========== Vision Analysis (LLM) ==========
     detected_pins = 0
     is_vision_fallback = False
     try:
-        llm_client = LLM()
-        llm_result = llm_client.analyze_image(str(image_path))
-        print(str(image_path))
+        llm_result = await run_pipeline(str(image_path))
         print(llm_result)
         
         if llm_result.get("_fallback"):
@@ -271,13 +268,11 @@ async def scan_image(
         
         detected_pins = _parse_pin_count(llm_result.get("pin_count", 0))
         
-        # Use LLM manufacturer if available (takes precedence over OCR)
         llm_manufacturer = llm_result.get("manufacturer", "").strip()
         if llm_manufacturer:
             manufacturer_detected = llm_manufacturer
             logger.info(f"Using LLM-detected manufacturer: {manufacturer_detected}")
 
-        # Use LLM part number if available (likely more accurate than OCR heuristic for messy text)
         llm_part_number = llm_result.get("part_number", "").strip()
         if llm_part_number and llm_part_number.lower() != "unknown":
             best_part_number = llm_part_number
@@ -287,8 +282,6 @@ async def scan_image(
         logger.warning(f"Vision analysis failed: {e}, using fallback (0 pins)")
         detected_pins = 0
     
-    # ========== Determine Status ==========
-    # Check if BTC component (no pins detected)
     if detected_pins == 0:
         status = ScanStatus.NEED_BOTTOM_SCAN
         action_required = ActionRequired.SCAN_BOTTOM
@@ -298,7 +291,6 @@ async def scan_image(
         action_required = ActionRequired.VERIFY
         message = "Data extracted successfully. Ready for database verification."
     
-    # ========== Create Scan Record ==========
     scan = await ScanService.create_extraction_scan(
         db=db,
         ocr_text=ocr_text,
@@ -360,14 +352,12 @@ async def verify_ic(
     
     logger.info(f"Verifying scan {request.scan_id}")
     
-    # Use overrides or fallback to extracted data
     part_number = request.part_number or scan.part_number_detected
     detected_pins = request.detected_pins if request.detected_pins is not None else scan.detected_pins
     
     if not part_number:
         raise HTTPException(status_code=400, detail="No part number available for verification")
     
-    # Perform verification
     verify_result, error = await VerificationService.verify_scan(
         db=db,
         scan_id=request.scan_id,
@@ -378,7 +368,6 @@ async def verify_ic(
     if error:
         raise HTTPException(status_code=500, detail=error)
     
-    # Set the scan_id in result
     verify_result.scan_id = request.scan_id
     
     logger.info(
@@ -404,7 +393,6 @@ async def scan_bottom_image(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    # Check if scan exists
     existing_scan = await ScanService.get_by_scan_id(db, scan_id)
     if not existing_scan:
         raise HTTPException(status_code=404, detail="Scan not found")
@@ -415,7 +403,6 @@ async def scan_bottom_image(
             detail="This scan does not require a bottom scan"
         )
 
-    # Read and process bottom image
     image_data = await file.read()
     backend_root = Path(__file__).resolve().parent.parent.parent
     image_dir = backend_root / "scanned_images"
@@ -426,13 +413,10 @@ async def scan_bottom_image(
     
     logger.info(f"Processing bottom scan for scan_id: {scan_id}")
     
-    # Vision analysis on bottom image
     detected_pins = 0
     try:
-        llm_client = LLM()
-        llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
-        
-        # Check if fallback mode
+        llm_result = await run_pipeline(str(image_path))
+        print(llm_result)
         if llm_result.get("_fallback"):
             logger.warning(f"Bottom vision endpoint unavailable: {llm_result.get('_debug_message')}. Using fallback (0 pins).")
         else:
@@ -447,7 +431,6 @@ async def scan_bottom_image(
         logger.warning(f"Bottom vision analysis failed: {e}")
         detected_pins = 0
     
-    # Update scan with bottom scan results
     scan = await ScanService.update_bottom_scan(
         db=db,
         scan_id=scan_id,
@@ -501,7 +484,6 @@ async def manual_override(
         f"detected='{scan.part_number_detected}' -> manual='{manual_part_number}'"
     )
     
-    # Update with manual part number
     scan.part_number_detected = manual_part_number
     scan.was_manual_override = True
     scan.operator_note = operator_note

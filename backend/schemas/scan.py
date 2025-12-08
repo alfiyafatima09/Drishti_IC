@@ -60,10 +60,19 @@ class ScanListItem(BaseModel):
     """Abbreviated scan info for list responses."""
     scan_id: UUID
     part_number: Optional[str] = None
+    part_number_detected: Optional[str] = None
+    part_number_verified: Optional[str] = None
     status: ScanStatus
+    action_required: ActionRequired = ActionRequired.NONE
     confidence_score: Optional[float] = None
     detected_pins: Optional[int] = None
+    has_bottom_scan: bool = False
+    was_manual_override: bool = False
+    manufacturer_detected: Optional[str] = None
     scanned_at: datetime
+    completed_at: Optional[datetime] = None
+    batch_id: Optional[str] = None
+    batch_vender: Optional[str] = None
 
     class Config:
         from_attributes = True

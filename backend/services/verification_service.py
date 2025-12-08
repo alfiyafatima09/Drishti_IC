@@ -9,6 +9,7 @@ from models import ScanHistory, ICSpecification
 from core.constants import get_manufacturer_name
 from services.ic_service import ICService
 from services.queue_service import QueueService
+from schemas.common import ScanStatus
 from schemas.scan_verify import (
     VerificationStatus,
     VerificationCheck,
@@ -59,6 +60,51 @@ class VerificationService:
             scan_id=scan_id,
         )
 
+        verification_checks = verification_result.verification_checks or {}
+        verification_checks_dict = {
+            key: value.model_dump() if hasattr(value, "model_dump") else None
+            for key, value in verification_checks.items()
+        }
+
+        failure_reasons = [
+            v.reason for v in verification_checks.values() if v and v.reason
+        ]
+
+        status_map = {
+            VerificationStatus.MATCH_FOUND: ScanStatus.PASS.value,
+            VerificationStatus.PIN_MISMATCH: ScanStatus.FAIL.value,
+            VerificationStatus.NOT_IN_DATABASE: ScanStatus.UNKNOWN.value,
+        }
+
+        scan.part_number_verified = verification_result.part_number
+        if detected_pins_override is not None:
+            scan.detected_pins = detected_pins_override
+        scan.expected_pins = (
+            verification_result.matched_ic.get("pin_count")
+            if verification_result.matched_ic
+            else None
+        )
+        scan.match_details = {
+            "part_number_match": verification_checks.get("part_number_match").status
+            if verification_checks.get("part_number_match")
+            else None,
+            "pin_count_match": verification_checks.get("pin_count_match").status
+            if verification_checks.get("pin_count_match")
+            else None,
+            "manufacturer_match": verification_checks.get("manufacturer_match").status
+            if verification_checks.get("manufacturer_match")
+            else None,
+        }
+        scan.failure_reasons = failure_reasons or None
+        scan.verification_checks = verification_checks_dict
+        scan.status = status_map.get(verification_result.verification_status, scan.status)
+        scan.action_required = verification_result.action_required.value
+        scan.message = verification_result.message
+        scan.completed_at = verification_result.completed_at or datetime.utcnow()
+
+        await db.flush()
+        await db.refresh(scan)
+
         return verification_result, None
 
     @staticmethod
@@ -80,14 +126,11 @@ class VerificationService:
         """
         Perform verification checks and return detailed result with reasons.
         """
-        # Try to find IC in database
         ic_spec = await ICService.get_by_part_number(db, part_number)
 
         if not ic_spec:
-            # IC not in database
             logger.info(f"Part number '{part_number}' not found in database")
             
-            # Queue for sync
             await QueueService.add_to_queue(db, part_number)
             queued_candidates = [part_number]
 
@@ -115,10 +158,8 @@ class VerificationService:
 
         logger.info(f"Found IC in database: {ic_spec.part_number} ({ic_spec.manufacturer}), {ic_spec.pin_count} pins")
 
-        # IC found - perform detailed checks
-        part_number_match = True  # We already matched it by looking it up
+        part_number_match = True  
         
-        # Check pin count
         pin_match = detected_pins == ic_spec.pin_count
         pin_reason = None
         
@@ -130,7 +171,6 @@ class VerificationService:
             )
             logger.warning(pin_reason)
 
-        # Determine overall status and action
         if pin_match:
             verification_status = VerificationStatus.MATCH_FOUND
             action_required = ActionRequired.NONE
@@ -145,8 +185,7 @@ class VerificationService:
                 f"detected {detected_pins} pins."
             )
             confidence_score = 60.0
-
-        # Build matched IC data
+    
         matched_ic_data = {
             "part_number": ic_spec.part_number,
             "manufacturer": ic_spec.manufacturer,

@@ -67,7 +67,6 @@ class LLM:
 
         last_data = None
 
-        # Try reducing quality first (95 -> min_quality)
         for quality in range(95, self.min_quality - 1, -5):
             buf = io.BytesIO()
             img.save(buf, format='JPEG', quality=quality, optimize=True)
@@ -78,12 +77,11 @@ class LLM:
 
             last_data = buf.getvalue()
 
-        # If quality reduction not enough, progressively downscale
         scale_factor = 0.9
         w, h = img.size
         min_dimension = 50
 
-        for _ in range(8):  # max 8 iterations
+        for _ in range(8):  
             w = int(w * scale_factor)
             h = int(h * scale_factor)
 
@@ -102,7 +100,6 @@ class LLM:
 
                 last_data = buf.getvalue()
 
-        # Fallback: return last attempt (may exceed target)
         if last_data:
             return last_data
 
@@ -121,10 +118,8 @@ class LLM:
         if not manufacturer:
             return ""
 
-        # Convert to uppercase for matching
         upper_mfg = manufacturer.upper().strip()
 
-        # Manufacturer mapping for common abbreviations
         manufacturer_map = {
             "TI": "Texas Instruments",
             "TEXAS": "Texas Instruments",
@@ -155,21 +150,18 @@ class LLM:
             "RENESAS": "Renesas Electronics"
         }
 
-        # Try exact match first
         if upper_mfg in manufacturer_map:
             return manufacturer_map[upper_mfg]
 
-        # Try partial matches for longer strings
         for abbr, full_name in manufacturer_map.items():
             if abbr in upper_mfg:
                 return full_name
 
-        # Return original if no mapping found
         return manufacturer
 
     def _parse_response(self, response_text: str) -> Dict[str, Optional[str]]:
         """
-        Parse manufacturer and pin_count from API response.
+        Parse manufacturer, pin_count, and part_number from API response.
 
         Args:
             response_text: Raw API response text.
@@ -183,14 +175,11 @@ class LLM:
             return result
 
         try:
-            # Try strict JSON first
             data = json.loads(response_text)
         except json.JSONDecodeError:
             data = {}
 
-        # Handle nested JSON structure (e.g., {"response": "{...}", "model": "..."})
         if isinstance(data, dict):
-            # Check for "response" or "content" keys that might contain the actual JSON string
             if "response" in data and isinstance(data["response"], str):
                 try:
                     inner_data = json.loads(data["response"])
@@ -206,7 +195,6 @@ class LLM:
                 except json.JSONDecodeError:
                     pass
 
-        # If data is empty (JSON decode failed or no nested JSON found), try regex fallback
         if not data:
              try:
                 match = re.search(r'\{[^{}]*\}', response_text, re.DOTALL)
@@ -216,16 +204,12 @@ class LLM:
                  data = {}
 
         if isinstance(data, dict):
-            # Map new keys (logo, num_pins) to backend keys (manufacturer, pin_count)
-            # Support both sets of keys for robustness
             manufacturer = data.get("logo") or data.get("manufacturer") or ""
             manufacturer = str(manufacturer).strip()
             
-            # Handle "unknown" value explicitly
             if manufacturer.lower() == "unknown":
                 result["manufacturer"] = "Unknown"
             else:
-            # Apply normalization here
                 result["manufacturer"] = self._normalize_manufacturer(manufacturer)
             
             result["pin_count"] = str(data.get("num_pins") or data.get("pin_count") or "0").strip()
@@ -251,20 +235,16 @@ class LLM:
         """
         Compress and analyze an IC chip image.
         
-        Falls back to dummy response if endpoint is unavailable.
-
         Args:
             image_path: Path to the image file.
 
         Returns:
-            Dict with keys: "manufacturer" and "pin_count".
-            When in fallback mode, also includes "_fallback" and "_debug_message".
+            Dict with keys: "manufacturer" and "pin_count". "part_number" is also included.
 
         Raises:
             ValueError: If image processing fails.
         """
         try:
-            # Compress image
             compressed_data = self.compress_image(image_path)
 
             files = {
@@ -274,7 +254,6 @@ class LLM:
                 "temperature": (None, str(self.temperature)),
             }
 
-            # Send request
             response = requests.post(
                 self.endpoint,
                 files=files,
@@ -282,7 +261,6 @@ class LLM:
             )
             response.raise_for_status()
 
-            # Parse response
             response_text = response.text
             print(f"DEBUG: Raw LLM Response: {response_text}")
             result = self._parse_response(response_text)
