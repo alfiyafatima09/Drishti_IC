@@ -1,16 +1,20 @@
 """Pydantic schemas for sync operations."""
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
 
-from schemas.common import SyncStatus
+from schemas.common import SyncStatus, QueueStatus
 
 
 class SyncStartRequest(BaseModel):
     """Request to start a sync job."""
-    max_items: Optional[int] = None
-    retry_failed: bool = True
+    max_items: Optional[int] = Field(None, description="Maximum number of items to process")
+    retry_failed: bool = Field(True, description="Whether to retry previously failed items")
+    status_filter: Optional[List[str]] = Field(
+        None, 
+        description="Only sync items with these statuses. Options: PENDING, FAILED"
+    )
 
 
 class SyncJobInfo(BaseModel):
@@ -60,4 +64,3 @@ class SyncHistoryResult(BaseModel):
     """List of past sync jobs."""
     sync_jobs: list[SyncHistoryItem]
     total_count: int
-
