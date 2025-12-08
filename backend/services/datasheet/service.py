@@ -19,6 +19,13 @@ from core.constants import (
     DatasheetDownloadStatus,
     ICSource,
 )
+from services.datasheet_storage import (
+    generate_hash,
+    get_storage_folder,
+    get_datasheet_filename,
+    get_datasheet_path,
+    datasheet_exists,
+)
 from .exceptions import (
     DatasheetDownloadException,
     UnsupportedManufacturerException,
@@ -40,24 +47,12 @@ class DatasheetService:
     
     def __init__(self):
         """Initialize the datasheet service."""
-        self.datasheet_root = settings.DATASHEET_FOLDER
-        self.datasheet_root.mkdir(parents=True, exist_ok=True)
+        self.datasheet_root = get_storage_folder()
         self._provider_instances: Dict[str, DatasheetProvider] = {}
         self._extractor_instances: Dict[str, DatasheetExtractor] = {}
     
     def _get_provider(self, manufacturer_code: str) -> DatasheetProvider:
-        """
-        Get or create a provider instance for the given manufacturer.
-        
-        Args:
-            manufacturer_code: Manufacturer enum code (e.g., 'STM', 'TI')
-            
-        Returns:
-            Provider instance
-            
-        Raises:
-            UnsupportedManufacturerException: If manufacturer is not supported
-        """
+        """Get or create a provider instance for the given manufacturer."""
         manufacturer_code = manufacturer_code.upper().strip()
         
         if not is_valid_manufacturer(manufacturer_code):
@@ -78,15 +73,7 @@ class DatasheetService:
         return self._provider_instances[manufacturer_code]
     
     def _get_extractor(self, manufacturer_code: str) -> DatasheetExtractor:
-        """
-        Get or create an extractor instance for the given manufacturer.
-        
-        Args:
-            manufacturer_code: Manufacturer enum code (e.g., 'STM', 'TI')
-            
-        Returns:
-            Extractor instance
-        """
+        """Get or create an extractor instance for the given manufacturer."""
         manufacturer_code = manufacturer_code.upper().strip()
         
         if manufacturer_code not in self._extractor_instances:
@@ -106,17 +93,7 @@ class DatasheetService:
         manufacturer_code: str,
         db: Optional[AsyncSession] = None
     ) -> Optional[str]:
-        """
-        Get datasheet_path from database if it exists.
-        
-        Args:
-            part_number: IC part number
-            manufacturer_code: Manufacturer enum code
-            db: Database session
-            
-        Returns:
-            datasheet_path from database, or None if not found
-        """
+        """Get datasheet_path from database if it exists."""
         if not db:
             return None
         return await get_datasheet_path_from_db(db, part_number, manufacturer_code)
@@ -127,20 +104,10 @@ class DatasheetService:
         manufacturer_code: str,
         hash_value: Optional[str] = None
     ) -> Path:
-        """
-        Get the local file path for storing the datasheet.
-        Uses hash-based filename: datasheets/{manufacturer}/{hash}.pdf
-        
-        Args:
-            part_number: IC part number (used to generate hash if not provided)
-            manufacturer_code: Manufacturer enum code
-            hash_value: Optional pre-generated hash (if None, generates from part_number)
-            
-        Returns:
-            Path object for the local file
-        """
-        provider = self._get_provider(manufacturer_code)
-        return provider.get_local_path(part_number, hash_value)
+        """Get the local file path for storing the datasheet."""
+        if hash_value is None:
+            hash_value = generate_hash(part_number, manufacturer_code)
+        return self.datasheet_root / f"{hash_value}.pdf"
     
     async def _download_single(
         self,
@@ -148,63 +115,47 @@ class DatasheetService:
         manufacturer_code: str,
         db: Optional[AsyncSession] = None
     ) -> Dict:
-        """
-        Download datasheet from a single manufacturer.
-        Checks database first for existing path, otherwise generates hash.
-        
-        Args:
-            part_number: IC part number
-            manufacturer_code: Manufacturer enum code
-            db: Optional database session to check for existing path
-            
-        Returns:
-            Dictionary with download result including hash and path
-        """
+        """Download datasheet from a single manufacturer."""
         try:
+            # Check if we already have this datasheet
             existing_path = await self.get_local_path_from_db(part_number, manufacturer_code, db)
             
             provider = self._get_provider(manufacturer_code)
             
             if existing_path:
-                if Path(existing_path).is_absolute():
-                    file_path = Path(existing_path)
-                else:
-                    if existing_path.startswith("datasheets/"):
-                        file_path = Path(existing_path)
-                    else:
-                        file_path = self.datasheet_root / existing_path
-                
-                if file_path.exists():
-                    logger.info(
-                        f"Using existing datasheet from database: {existing_path} "
-                        f"for {part_number} from {manufacturer_code}"
-                    )
-                    file_size = file_path.stat().st_size
-                    datasheet_url = provider.construct_url(part_number)
-                    hash_value = file_path.stem
-                    
-                    return {
-                        "manufacturer": manufacturer_code,
-                        "manufacturer_name": get_manufacturer_name(manufacturer_code),
-                        "status": DatasheetDownloadStatus.SUCCESS.value,
-                        "file_path": existing_path,
-                        "file_size_bytes": file_size,
-                        "datasheet_url": datasheet_url,
-                        "hash_value": hash_value,
-                        "data_extracted": False,
-                        "extracted_ics": [],
-                        "error": None,
-                    }
-                else:
-                    logger.warning(
-                        f"Datasheet path in database ({existing_path}) does not exist, "
-                        f"will download new copy for {part_number} from {manufacturer_code}"
-                    )
+                # Resolve the path using unified storage
+                try:
+                    file_path = get_datasheet_path(existing_path)
+                    if file_path.exists():
+                        logger.info(
+                            f"Using existing datasheet: {existing_path} "
+                            f"for {part_number} from {manufacturer_code}"
+                        )
+                        file_size = file_path.stat().st_size
+                        datasheet_url = provider.construct_url(part_number)
+                        
+                        return {
+                            "manufacturer": manufacturer_code,
+                            "manufacturer_name": get_manufacturer_name(manufacturer_code),
+                            "status": DatasheetDownloadStatus.SUCCESS.value,
+                            "file_path": existing_path,  # Keep original DB value
+                            "file_size_bytes": file_size,
+                            "datasheet_url": datasheet_url,
+                            "hash_value": file_path.stem,
+                            "data_extracted": False,
+                            "extracted_ics": [],
+                            "error": None,
+                        }
+                except Exception as e:
+                    logger.warning(f"Could not resolve existing path {existing_path}: {e}")
             
+            # Download new datasheet
             file_path, file_size, datasheet_url, hash_value = await provider.download(part_number)
             
-            relative_path = f"datasheets/{manufacturer_code.lower()}/{hash_value}.pdf"
+            # Store just the filename in DB
+            filename = f"{hash_value}.pdf"
             
+            # Try to extract data from PDF
             data_extracted = False
             extracted_ics = []
             try:
@@ -212,9 +163,7 @@ class DatasheetService:
                 extracted_ics = extractor.extract(file_path)
                 data_extracted = len(extracted_ics) > 0
                 if data_extracted:
-                    logger.info(
-                        f"Extracted {len(extracted_ics)} IC variants from PDF: {file_path}"
-                    )
+                    logger.info(f"Extracted {len(extracted_ics)} IC variants from PDF: {file_path}")
             except Exception as e:
                 logger.warning(f"Failed to extract data from PDF {file_path}: {e}")
             
@@ -222,7 +171,7 @@ class DatasheetService:
                 "manufacturer": manufacturer_code,
                 "manufacturer_name": get_manufacturer_name(manufacturer_code),
                 "status": DatasheetDownloadStatus.SUCCESS.value,
-                "file_path": relative_path,
+                "file_path": filename,  # Store just filename
                 "file_size_bytes": file_size,
                 "datasheet_url": datasheet_url,
                 "hash_value": hash_value,
@@ -235,6 +184,8 @@ class DatasheetService:
             status = DatasheetDownloadStatus.NOT_FOUND if "404" in error_msg or "not found" in error_msg.lower() else (
                 DatasheetDownloadStatus.TIMEOUT if "timeout" in error_msg.lower() else DatasheetDownloadStatus.ERROR
             )
+            # Simple one-line log for expected errors (404, timeout)
+            logger.debug(f"{manufacturer_code}: {error_msg}")
             
             return {
                 "manufacturer": manufacturer_code,
@@ -248,17 +199,29 @@ class DatasheetService:
                 "error": error_msg,
             }
         except Exception as e:
-            logger.exception(f"Unexpected error downloading from {manufacturer_code}: {e}")
+            error_msg = str(e)
+            # Classify common errors and log appropriately (no stack trace for expected errors)
+            if "404" in error_msg or "not found" in error_msg.lower():
+                logger.debug(f"{manufacturer_code}: Not found (404)")
+                status = DatasheetDownloadStatus.NOT_FOUND
+            elif "timeout" in error_msg.lower() or "ReadTimeout" in type(e).__name__:
+                logger.debug(f"{manufacturer_code}: Timeout")
+                status = DatasheetDownloadStatus.TIMEOUT
+            else:
+                # Only log full exception for truly unexpected errors
+                logger.warning(f"{manufacturer_code}: {error_msg}")
+                status = DatasheetDownloadStatus.ERROR
+            
             return {
                 "manufacturer": manufacturer_code,
                 "manufacturer_name": get_manufacturer_name(manufacturer_code),
-                "status": DatasheetDownloadStatus.ERROR.value,
+                "status": status.value,
                 "file_path": None,
                 "file_size_bytes": None,
                 "datasheet_url": get_manufacturer_url_pattern(manufacturer_code).format(ic_id=part_number.lower()),
                 "data_extracted": False,
                 "extracted_ics": [],
-                "error": str(e),
+                "error": error_msg,
             }
     
     async def download_datasheet(
@@ -271,36 +234,34 @@ class DatasheetService:
         Download datasheet from manufacturer(s) and store in database.
         
         If manufacturer_code is provided, downloads only from that manufacturer.
-        If omitted, tries ALL supported manufacturers in parallel.
-        
-        Args:
-            part_number: IC part number
-            manufacturer_code: Optional manufacturer enum code
-            db: Optional database session for storing extracted data
-            
-        Returns:
-            Dictionary matching DatasheetDownloadResponse schema
+        If omitted, tries manufacturers SEQUENTIALLY (one-by-one) and stops on first success.
         """
         part_number = part_number.strip()
         
         if manufacturer_code:
             if not is_valid_manufacturer(manufacturer_code):
-                raise UnsupportedManufacturerException(
-                    f"Invalid manufacturer: {manufacturer_code}"
-                )
+                raise UnsupportedManufacturerException(f"Invalid manufacturer: {manufacturer_code}")
             manufacturers_to_try = [manufacturer_code.upper()]
         else:   
             manufacturers_to_try = get_supported_manufacturers()
         
-        logger.info(
-            f"Downloading datasheet for {part_number} from manufacturers: {manufacturers_to_try}"
-        )
+        logger.info(f"Downloading datasheet for {part_number} from manufacturers (sequential): {manufacturers_to_try}")
         
-        download_tasks = [
-            self._download_single(part_number, mfr, db)
-            for mfr in manufacturers_to_try
-        ]
-        results = await asyncio.gather(*download_tasks)
+        # Try manufacturers one-by-one, stop on first success
+        results = []
+        successful_result = None
+        
+        for mfr in manufacturers_to_try:
+            logger.info(f"Trying {mfr} for {part_number}...")
+            result = await self._download_single(part_number, mfr, db)
+            results.append(result)
+            
+            if result["status"] == DatasheetDownloadStatus.SUCCESS.value:
+                logger.info(f"SUCCESS: Found datasheet for {part_number} on {mfr}")
+                successful_result = result
+                break  # Stop on first success
+            else:
+                logger.info(f"FAILED: {mfr} - {result.get('error', 'Not found')}")
         
         manufacturers_found = [
             r["manufacturer"] for r in results
@@ -311,44 +272,43 @@ class DatasheetService:
             if r["status"] != DatasheetDownloadStatus.SUCCESS.value
         ]
         
+        # Store results in database (only the successful one)
         database_entries_created = 0
-        if db:
-            for result in results:
-                if result["status"] == DatasheetDownloadStatus.SUCCESS.value:
-                    mfr_code = result["manufacturer"]
-                    source_map = {
-                        Manufacturer.STM: ICSource.SCRAPED_STM,
-                        Manufacturer.TI: ICSource.SCRAPED_TI,
-                        Manufacturer.INFINEON: ICSource.SCRAPED_INFINEON,
-                    }
-                    source = source_map.get(mfr_code, ICSource.MANUAL)
-                    
-                    extracted_ics = result.get("extracted_ics", [])
-                    
-                    if extracted_ics:
-                        stored_count = await store_multiple_ic_specifications(
-                            db=db,
-                            ic_specs=extracted_ics,
-                            manufacturer_code=mfr_code,
-                            datasheet_url=result["datasheet_url"],
-                            datasheet_path=result["file_path"],
-                            source=source
-                        )
-                        database_entries_created += stored_count
-                        if stored_count > 0:
-                            logger.debug(f"Stored {stored_count} IC variants from PDF for {part_number} from {mfr_code}")
-                    else:   
-                        success = await store_ic_specification(
-                            db=db,
-                            part_number=part_number,
-                            manufacturer_code=mfr_code,
-                            datasheet_url=result["datasheet_url"],
-                            datasheet_path=result["file_path"],
-                            source=source
-                        )
-                        if success:
-                            database_entries_created += 1
+        if db and successful_result:
+            result = successful_result
+            mfr_code = result["manufacturer"]
+            source_map = {
+                Manufacturer.STM: ICSource.SCRAPED_STM,
+                Manufacturer.TI: ICSource.SCRAPED_TI,
+                Manufacturer.INFINEON: ICSource.SCRAPED_INFINEON,
+            }
+            source = source_map.get(mfr_code, ICSource.MANUAL)
+            
+            extracted_ics = result.get("extracted_ics", [])
+            
+            if extracted_ics:
+                stored_count = await store_multiple_ic_specifications(
+                    db=db,
+                    ic_specs=extracted_ics,
+                    manufacturer_code=mfr_code,
+                    datasheet_url=result["datasheet_url"],
+                    datasheet_path=result["file_path"],
+                    source=source
+                )
+                database_entries_created += stored_count
+            else:   
+                success = await store_ic_specification(
+                    db=db,
+                    part_number=part_number,
+                    manufacturer_code=mfr_code,
+                    datasheet_url=result["datasheet_url"],
+                    datasheet_path=result["file_path"],
+                    source=source
+                )
+                if success:
+                    database_entries_created += 1
         
+        # Try DigiKey fallback if no manufacturer-specific datasheet found
         digikey_result = None
         if not manufacturers_found:
             logger.info(f"No manufacturer found for {part_number}, trying DigiKey fallback...")
@@ -361,7 +321,7 @@ class DatasheetService:
                     "manufacturer": "DIGIKEY",
                     "manufacturer_name": "DigiKey (Fallback)",
                     "status": DatasheetDownloadStatus.SUCCESS.value,
-                    "file_path": digikey_result.get("datasheet_path"),
+                    "file_path": digikey_result.get("filename"),
                     "file_size_bytes": None,
                     "datasheet_url": None,
                     "data_extracted": digikey_result.get("total_variants", 0) > 0,
@@ -369,6 +329,7 @@ class DatasheetService:
                     "error": None,
                 })
         
+        # Build response message
         if manufacturers_found:
             if "DIGIKEY" in manufacturers_found:
                 message = f"Found datasheet via DigiKey fallback for '{part_number}'"
@@ -397,20 +358,11 @@ class DatasheetService:
         part_number: str,
         db: Optional[AsyncSession] = None
     ) -> Optional[Dict]:
-        """
-        Try DigiKey as fallback when no manufacturer-specific datasheet is found.
-        
-        Args:
-            part_number: IC part number to search
-            db: Database session for storing extracted data
-            
-        Returns:
-            Dict with success status, datasheet_path, and extracted variants, or None on failure
-        """
+        """Try DigiKey as fallback when no manufacturer-specific datasheet is found."""
         try:
             from services.digikey import digi_service, DigiKeyException
             from services.pdf_parser import parse_pdf
-            from pathlib import Path
+            from services.datasheet_storage import normalize_manufacturer
             
             logger.info(f"Trying DigiKey fallback for {part_number}")
             
@@ -423,15 +375,20 @@ class DatasheetService:
             
             datasheet_url = datasheet_info["url"]
             manufacturer = datasheet_info.get("manufacturer", "Unknown")
+            digikey_part_number = datasheet_info.get("part_number") or part_number
             
-            local_pdf = digi_service.download_pdf(
-                datasheet_url,
+            # Download using unified storage
+            filename = digi_service.download_pdf(
+                url=datasheet_url,
+                part_number=digikey_part_number,
                 manufacturer=manufacturer
             )
             
-            logger.info(f"DigiKey: Downloaded PDF to {local_pdf}")
+            logger.info(f"DigiKey: Downloaded PDF as {filename}")
             
-            parsed = parse_pdf(Path(local_pdf), manufacturer=manufacturer)
+            # Parse the PDF
+            local_path = get_datasheet_path(filename)
+            parsed = parse_pdf(local_path, manufacturer=manufacturer)
             
             ic_variants = parsed.get("ic_variants", [])
             saved_count = 0
@@ -442,27 +399,18 @@ class DatasheetService:
                     db=db,
                     variants=ic_variants,
                     datasheet_url=datasheet_url,
-                    datasheet_path=str(local_pdf)
+                    datasheet_path=filename
                 )
                 logger.info(f"DigiKey: Saved {saved_count} variants to database")
             elif db and not ic_variants:
-                from core.constants import get_manufacturer_code_from_name
-                mfr_code = get_manufacturer_code_from_name(manufacturer) or manufacturer.upper()
+                manufacturer_code = normalize_manufacturer(manufacturer)
                 
                 basic_variant = {
-                    "part_number": part_number.upper(),
-                    "manufacturer": mfr_code,
+                    "part_number": digikey_part_number.upper(),
+                    "manufacturer": manufacturer_code,
                     "pin_count": 0,
                     "package_type": None,
-                    "description": f"{manufacturer} {part_number}",
-                    "voltage_min": None,
-                    "voltage_max": None,
-                    "operating_temp_min": None,
-                    "operating_temp_max": None,
-                    "dimension_length": None,
-                    "dimension_width": None,
-                    "dimension_height": None,
-                    "electrical_specs": {}
+                    "description": f"{manufacturer} {digikey_part_number}",
                 }
                 
                 from api.endpoints.digikey import save_variants_to_db
@@ -470,12 +418,12 @@ class DatasheetService:
                     db=db,
                     variants=[basic_variant],
                     datasheet_url=datasheet_url,
-                    datasheet_path=str(local_pdf)
+                    datasheet_path=filename
                 )
             
             return {
                 "success": True,
-                "datasheet_path": str(local_pdf),
+                "filename": filename,
                 "manufacturer": manufacturer,
                 "total_variants": len(ic_variants),
                 "ic_variants": ic_variants,
@@ -487,21 +435,8 @@ class DatasheetService:
             return None
     
     def datasheet_exists(self, part_number: str, manufacturer_code: str) -> bool:
-        """
-        Check if datasheet already exists locally.
-        
-        Args:
-            part_number: IC part number
-            manufacturer_code: Manufacturer enum code
-            
-        Returns:
-            True if datasheet exists, False otherwise
-        """
-        try:
-            local_path = self.get_local_path(part_number, manufacturer_code)
-            return local_path.exists()
-        except UnsupportedManufacturerException:
-            return False
+        """Check if datasheet already exists locally."""
+        return datasheet_exists(part_number, manufacturer_code)
     
     @staticmethod
     def get_supported_manufacturers() -> List[str]:
@@ -514,5 +449,5 @@ class DatasheetService:
         from core.constants import get_manufacturer_details
         return get_manufacturer_details()
 
-datasheet_service = DatasheetService()
 
+datasheet_service = DatasheetService()
