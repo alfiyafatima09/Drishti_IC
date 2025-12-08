@@ -24,6 +24,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from services.digikey import digi_service, DigiKeyException
 from services.pdf_parser import parse_pdf
+from services.datasheet_storage import get_datasheet_path
 from core.config import settings
 from core.database import get_db
 from models.ic_specification import ICSpecification
@@ -333,8 +334,10 @@ async def digikey_search(
 
         # Step 2: Download PDF
         manufacturer = datasheet_info["manufacturer"]
+        part_number = datasheet_info.get("part_number") or keyword
         local_pdf = digi_service.download_pdf(
-            datasheet_url,
+            url=datasheet_url,
+            part_number=part_number,
             manufacturer=manufacturer
         )
 
@@ -347,7 +350,8 @@ async def digikey_search(
 
     # Step 3: Parse PDF to extract IC specifications
     try:
-        parsed = parse_pdf(Path(local_pdf), manufacturer=manufacturer)
+        pdf_path = get_datasheet_path(local_pdf)
+        parsed = parse_pdf(pdf_path, manufacturer=manufacturer)
 
         # Step 4: Merge PDF data with API data
         ic_variants = []
