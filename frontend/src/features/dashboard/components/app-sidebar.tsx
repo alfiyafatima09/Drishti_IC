@@ -42,7 +42,7 @@ const items = [
 
 export function AppSidebar() {
   const location = useLocation()
-  
+
   return (
     <Sidebar
       collapsible="icon"
@@ -60,20 +60,14 @@ export function AppSidebar() {
         } as React.CSSProperties
       }
     >
-      <SidebarHeader className="flex h-20 items-center justify-center border-b border-cyan-400/50 px-3 group-data-[collapsible=icon]:px-2 bg-white/5">
+      <SidebarHeader className="flex h-20 items-center justify-center border-b border-cyan-400/50 bg-white/5 px-3 group-data-[collapsible=icon]:px-2">
         <div className="flex w-full items-center gap-3 overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
-          <img 
-            src={logo} 
-            alt="Drishti IC" 
-            className="h-14 w-14 shrink-0 object-contain"
-          />
+          <img src={logo} alt="Drishti IC" className="h-14 w-14 shrink-0 object-contain" />
           <div className="flex flex-col overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
-            <span className="font-bold text-lg tracking-tight whitespace-nowrap text-white">
+            <span className="text-lg font-bold tracking-tight whitespace-nowrap text-white">
               Drishti IC
             </span>
-            <span className="text-xs font-medium text-cyan-200/80">
-              SIH 2025 • BEL
-            </span>
+            <span className="text-xs font-medium text-cyan-200/80">SIH 2025 • BEL</span>
           </div>
         </div>
       </SidebarHeader>
@@ -93,9 +87,9 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
-                      className={`h-11 font-semibold transition-all group-data-[collapsible=icon]:justify-center rounded-lg ${
-                        isActive 
-                          ? 'bg-white text-blue-600 shadow-lg hover:bg-white hover:text-blue-600' 
+                      className={`h-11 rounded-lg font-semibold transition-all group-data-[collapsible=icon]:justify-center ${
+                        isActive
+                          ? 'bg-white text-blue-600 shadow-lg hover:bg-white hover:text-blue-600'
                           : 'text-white hover:bg-white/20 hover:text-white'
                       }`}
                     >
