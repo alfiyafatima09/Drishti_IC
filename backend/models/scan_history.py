@@ -15,31 +15,28 @@ class ScanHistory(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     scan_id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4, index=True)
+
+    ocr_text_raw = Column(Text)  
+    part_number_detected = Column(String(100), index=True)  
+    part_number_candidates = Column(JSONB)  
+    part_number_verified = Column(String(100), index=True)  
     
-    # OCR Results
-    ocr_text_raw = Column(Text)  # Raw OCR output
-    part_number_detected = Column(String(100), index=True)  # Parsed part number
-    part_number_candidates = Column(JSONB)  # List of candidate part numbers from OCR
-    part_number_verified = Column(String(100), index=True)  # Final verified (may differ if override)
-    
-    # Verification Results
-    status = Column(String(20), nullable=False, index=True)  # PASS, FAIL, PARTIAL, UNKNOWN, COUNTERFEIT
-    confidence_score = Column(Float)  # 0-100
+    status = Column(String(20), nullable=False, index=True)  
+    confidence_score = Column(Float)  
     detected_pins = Column(Integer)
-    expected_pins = Column(Integer)  # From IC spec (NULL if unknown)
+    expected_pins = Column(Integer)  
     manufacturer_detected = Column(String(100))
+    batch_id = Column(String(100), index=True)
+    batch_vender = Column(String(100), index=True)
     
-    # Flow Control
     action_required = Column(String(20), default="NONE")  # NONE, SCAN_BOTTOM
     has_bottom_scan = Column(Boolean, default=False)
     
-    # Match Details
     match_details = Column(JSONB)  # {part_number_match, pin_count_match, manufacturer_match}
-    verification_checks = Column(JSONB)  # Detailed verification checks with reasons
-    failure_reasons = Column(JSONB)  # Array of failure reasons
-    message = Column(Text)  # Human-readable result
+    verification_checks = Column(JSONB)  
+    failure_reasons = Column(JSONB)  
+    message = Column(Text)  
     
-    # Override
     was_manual_override = Column(Boolean, default=False)
     operator_note = Column(Text)
     
@@ -63,6 +60,8 @@ class ScanHistory(Base):
             "detected_pins": self.detected_pins,
             "expected_pins": self.expected_pins,
             "manufacturer_detected": self.manufacturer_detected,
+            "batch_id": self.batch_id,
+            "batch_vender": self.batch_vender,
             "action_required": self.action_required,
             "has_bottom_scan": self.has_bottom_scan,
             "match_details": self.match_details,
@@ -80,9 +79,18 @@ class ScanHistory(Base):
         return {
             "scan_id": str(self.scan_id),
             "part_number": self.part_number_verified or self.part_number_detected,
+            "part_number_detected": self.part_number_detected,
+            "part_number_verified": self.part_number_verified,
             "status": self.status,
+            "action_required": self.action_required,
             "confidence_score": self.confidence_score,
             "detected_pins": self.detected_pins,
+            "has_bottom_scan": self.has_bottom_scan,
+            "was_manual_override": self.was_manual_override,
+            "manufacturer_detected": self.manufacturer_detected,
             "scanned_at": self.scanned_at.isoformat() if self.scanned_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "batch_id": self.batch_id,
+            "batch_vender": self.batch_vender,
         }
 

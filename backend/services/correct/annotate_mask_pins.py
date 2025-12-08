@@ -23,7 +23,7 @@ import cv2
 import numpy as np
 
 Point = Tuple[float, float]
-Pin = Tuple[float, float, float]  # (x, y, area)
+Pin = Tuple[float, float, float] 
 
 _DEFAULT_MAX_AREA = 5000.0
 
@@ -38,7 +38,6 @@ def find_pin_centers(img: np.ndarray, min_area: float, max_area: float = 5000.0)
     """Return ordered pins (x, y, area), clockwise starting at top."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Emphasize edges and thin strokes.
     _, binary = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
     kernel = np.ones((3, 3), np.uint8)
     binary = cv2.dilate(binary, kernel, iterations=1)
@@ -48,7 +47,7 @@ def find_pin_centers(img: np.ndarray, min_area: float, max_area: float = 5000.0)
 
     h, w = gray.shape
     cx, cy = w / 2.0, h / 2.0
-    min_radius = 0.35 * min(w, h)  # Exclude the center of the chip.
+    min_radius = 0.35 * min(w, h)  
 
     candidates: List[Pin] = []
     for contour in contours:
@@ -67,14 +66,12 @@ def find_pin_centers(img: np.ndarray, min_area: float, max_area: float = 5000.0)
 
         candidates.append((px, py, float(area)))
 
-    # Order pins clockwise starting from the top (12 o'clock).
     def angle_key(pt: Point) -> float:
         ang = math.degrees(math.atan2(pt[1] - cy, pt[0] - cx))
         return (ang - 90.0) % 360.0
 
     candidates.sort(key=angle_key)
 
-    # De-duplicate nearby detections that come from double edges.
     unique: List[Pin] = []
     for pt in candidates:
         if all(math.hypot(pt[0] - up[0], pt[1] - up[1]) > 8.0 for up in unique):

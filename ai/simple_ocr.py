@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Simple IC Chip OCR - Clean Output
 ==================================

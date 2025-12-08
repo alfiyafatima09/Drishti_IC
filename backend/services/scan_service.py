@@ -1,6 +1,6 @@
 """Service for scan operations."""
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from typing import Optional, List
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
@@ -216,6 +216,22 @@ class ScanService:
             status = ScanStatus.FAIL.value
             message = f"VERIFICATION FAILED: Pin count mismatch. Expected {ic_spec.pin_count} pins, detected {detected_pins}."
 
+        verification_checks = {
+            "part_number_match": {
+                "status": True,
+                "expected": ic_spec.part_number,
+                "actual": part_number,
+                "reason": None,
+            },
+            "pin_count_match": {
+                "status": pin_match,
+                "expected": ic_spec.pin_count,
+                "actual": detected_pins,
+                "reason": None if pin_match else message,
+            },
+        }
+        failure_reasons = [message] if not pin_match else None
+
         scan = ScanHistory(
             ocr_text_raw=ocr_text,
             part_number_detected=part_number,
@@ -227,6 +243,8 @@ class ScanService:
             manufacturer_detected=manufacturer_detected,
             action_required=ActionRequired.NONE.value,
             match_details=match_details,
+            verification_checks=verification_checks,
+            failure_reasons=failure_reasons,
             message=message,
             completed_at=datetime.utcnow(),
         )
@@ -265,6 +283,13 @@ class ScanService:
             "pin_count_match": pin_match,
             "manufacturer_match": scan.match_details.get("manufacturer_match") if scan.match_details else None,
         }
+        scan.expected_pins = ic_spec.pin_count
+
+        pin_reason = None
+        if not pin_match:
+            pin_reason = (
+                f"Pin count mismatch. Expected {ic_spec.pin_count} pins, detected {detected_pins}."
+            )
 
         if pin_match:
             scan.status = ScanStatus.PASS.value
@@ -275,6 +300,21 @@ class ScanService:
 
         scan.action_required = ActionRequired.NONE.value
         scan.completed_at = datetime.utcnow()
+        scan.verification_checks = {
+            "part_number_match": {
+                "status": True,
+                "expected": ic_spec.part_number,
+                "actual": scan.part_number_verified,
+                "reason": None,
+            },
+            "pin_count_match": {
+                "status": pin_match,
+                "expected": ic_spec.pin_count,
+                "actual": detected_pins,
+                "reason": pin_reason,
+            },
+        }
+        scan.failure_reasons = [pin_reason] if pin_reason else None
 
         await db.flush()
         await db.refresh(scan)
@@ -356,6 +396,13 @@ class ScanService:
     async def list_scans(
         db: AsyncSession,
         status: Optional[str] = None,
+        action_required: Optional[str] = None,
+        part_number: Optional[str] = None,
+        manufacturer: Optional[str] = None,
+        has_bottom_scan: Optional[bool] = None,
+        manual_override: Optional[bool] = None,
+        batch_id: Optional[str] = None,
+        batch_vender: Optional[str] = None,
         date_from: Optional[datetime] = None,
         date_to: Optional[datetime] = None,
         limit: int = 50,
@@ -369,6 +416,26 @@ class ScanService:
         filters = []
         if status:
             filters.append(ScanHistory.status == status)
+        if action_required:
+            filters.append(ScanHistory.action_required == action_required)
+        if part_number:
+            like_pattern = f"%{part_number}%"
+            filters.append(
+                or_(
+                    ScanHistory.part_number_verified.ilike(like_pattern),
+                    ScanHistory.part_number_detected.ilike(like_pattern),
+                )
+            )
+        if manufacturer:
+            filters.append(ScanHistory.manufacturer_detected.ilike(f"%{manufacturer}%"))
+        if has_bottom_scan is not None:
+            filters.append(ScanHistory.has_bottom_scan.is_(has_bottom_scan))
+        if manual_override is not None:
+            filters.append(ScanHistory.was_manual_override.is_(manual_override))
+        if batch_id:
+            filters.append(ScanHistory.batch_id == batch_id)
+        if batch_vender:
+            filters.append(ScanHistory.batch_vender == batch_vender)
         if date_from:
             filters.append(ScanHistory.scanned_at >= date_from)
         if date_to:

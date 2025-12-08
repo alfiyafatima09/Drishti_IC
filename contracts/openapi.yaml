@@ -737,7 +737,44 @@ paths:
           in: query
           schema:
             type: string
-            enum: [PASS, FAIL, PARTIAL, UNKNOWN, COUNTERFEIT]
+            enum: [PASS, FAIL, PARTIAL, UNKNOWN, COUNTERFEIT, EXTRACTED, NEED_BOTTOM_SCAN]
+          description: Filter by overall scan status (extraction or verification)
+        - name: action_required
+          in: query
+          schema:
+            type: string
+            enum: [NONE, VERIFY, SCAN_BOTTOM, MANUAL_REVIEW]
+          description: Filter by next action needed from operator
+        - name: part_number
+          in: query
+          schema:
+            type: string
+          description: Partial match against detected or verified part number
+        - name: manufacturer
+          in: query
+          schema:
+            type: string
+          description: Detected manufacturer from OCR/vision
+        - name: has_bottom_scan
+          in: query
+          schema:
+            type: boolean
+          description: Restrict to scans that already captured the bottom side
+        - name: manual_override
+          in: query
+          schema:
+            type: boolean
+          description: Restrict to scans that were manually overridden
+        - name: batch_id
+          in: query
+          schema:
+            type: string
+          description: Filter by production batch identifier
+        - name: batch_vender
+          in: query
+          schema:
+            type: string
+          description: Filter by batch vendor name
         - name: date_from
           in: query
           schema:
@@ -1759,16 +1796,42 @@ components:
                 format: uuid
               part_number:
                 type: string
+                nullable: true
+              part_number_detected:
+                type: string
+                nullable: true
+              part_number_verified:
+                type: string
+                nullable: true
               status:
                 type: string
-                enum: [PASS, FAIL, PARTIAL, UNKNOWN, COUNTERFEIT]
+                enum: [PASS, FAIL, PARTIAL, UNKNOWN, COUNTERFEIT, EXTRACTED, NEED_BOTTOM_SCAN]
+              action_required:
+                type: string
+                enum: [NONE, VERIFY, SCAN_BOTTOM, MANUAL_REVIEW]
               confidence_score:
                 type: number
               detected_pins:
                 type: integer
+              has_bottom_scan:
+                type: boolean
+              was_manual_override:
+                type: boolean
+              manufacturer_detected:
+                type: string
               scanned_at:
                 type: string
                 format: date-time
+              completed_at:
+                type: string
+                format: date-time
+                nullable: true
+              batch_id:
+                type: string
+                nullable: true
+              batch_vender:
+                type: string
+                nullable: true
         total_count:
           type: integer
         limit:

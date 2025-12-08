@@ -8,13 +8,11 @@ from typing import Tuple, List, Dict, Any, Optional
 import os
 import argparse
 
-# Debug image saving helper
 def save_debug_image(image: np.ndarray, stage: str, out_dir: str, base_name: str) -> None:
     """Save debug image for a given stage."""
     os.makedirs(out_dir, exist_ok=True)
     cv2.imwrite(os.path.join(out_dir, f"{base_name}_{stage}.png"), image)
 
-# 1. Load and resize image
 def load_and_resize_image(image_path: str, max_dim: int = 1024) -> np.ndarray:
     """Load image and resize so largest dimension is max_dim."""
     img = cv2.imread(image_path)
@@ -26,7 +24,6 @@ def load_and_resize_image(image_path: str, max_dim: int = 1024) -> np.ndarray:
         img = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
     return img
 
-# 2. Convert to grayscale
 def to_grayscale(img: np.ndarray) -> np.ndarray:
     """Convert image to grayscale."""
     if len(img.shape) == 3:
@@ -34,7 +31,6 @@ def to_grayscale(img: np.ndarray) -> np.ndarray:
     return img
     
 
-# 3. Normalize intensity
 def normalize_intensity(img: np.ndarray) -> np.ndarray:
     """Stretch intensity to full [0,255] range."""
     min_val, max_val = np.min(img), np.max(img)
@@ -44,7 +40,6 @@ def normalize_intensity(img: np.ndarray) -> np.ndarray:
         norm = img
     return norm
 
-# 4. Denoising
 def denoise_image(img: np.ndarray, method: str = "bilateral") -> np.ndarray:
     """Denoise image using bilateral or Gaussian filter."""
     if method == "bilateral":
@@ -52,7 +47,6 @@ def denoise_image(img: np.ndarray, method: str = "bilateral") -> np.ndarray:
     else:
         return cv2.GaussianBlur(img, (5, 5), 0)
 
-# 5. Thresholding
 def threshold_image(img: np.ndarray, method: str = "otsu") -> np.ndarray:
     """Apply Otsu or adaptive thresholding."""
     if method == "otsu":
@@ -62,7 +56,6 @@ def threshold_image(img: np.ndarray, method: str = "otsu") -> np.ndarray:
                                    cv2.THRESH_BINARY, 21, 2)
     return th
 
-# 6. Find IC body using contour detection
 def find_ic_body(img: np.ndarray, threshold: np.ndarray) -> Tuple[Optional[Tuple[int, int, int, int]], np.ndarray]:
     """Find largest rectangle contour (IC body) and create mask."""
     contours, _ = cv2.findContours(threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -87,7 +80,6 @@ def find_ic_body(img: np.ndarray, threshold: np.ndarray) -> Tuple[Optional[Tuple
     
     return best_rect, mask
 
-# 7. Enhance pin edges
 def enhance_edges(img: np.ndarray, method: str = "canny") -> np.ndarray:
     """Enhance pin edges using Canny edge detection."""
     if method == "canny":
@@ -104,7 +96,6 @@ def enhance_edges(img: np.ndarray, method: str = "canny") -> np.ndarray:
         edges = img
     return edges
 
-# 8. Extract and filter pin contours
 def extract_and_filter_pins(edges: np.ndarray, body_rect: Optional[Tuple[int, int, int, int]], 
                              original_shape: Tuple[int, int]) -> Tuple[List[np.ndarray], List[Tuple[int, int, int, int]]]:
     """Find contours and filter to keep only pin-like shapes."""
@@ -159,7 +150,6 @@ def extract_and_filter_pins(edges: np.ndarray, body_rect: Optional[Tuple[int, in
     
     return pins, pin_boxes
 
-# 9. Group pins by orientation
 def group_pins_by_side(pin_boxes: List[Tuple[int, int, int, int]], body_rect: Optional[Tuple[int, int, int, int]]) -> Dict[str, List]:
     """Group pins by which side of the chip they're on."""
     if not body_rect:
@@ -186,7 +176,6 @@ def group_pins_by_side(pin_boxes: List[Tuple[int, int, int, int]], body_rect: Op
     
     return sides
 
-# 10. Full pipeline
 def count_ic_pins_opencv(image_path: str, debug_dir: str = "debug") -> Dict[str, Any]:
     """
     Full pipeline using only OpenCV: preprocess image and count pins.
@@ -195,7 +184,6 @@ def count_ic_pins_opencv(image_path: str, debug_dir: str = "debug") -> Dict[str,
     base_name = os.path.splitext(os.path.basename(image_path))[0]
     os.makedirs(debug_dir, exist_ok=True)
     
-    # Step 1: Load and preprocess
     img = load_and_resize_image(image_path)
     # save_debug_image(img, "01_original", debug_dir, base_name)
     
@@ -208,11 +196,9 @@ def count_ic_pins_opencv(image_path: str, debug_dir: str = "debug") -> Dict[str,
     denoised = denoise_image(norm, "bilateral")
     # save_debug_image(denoised, "04_denoised", debug_dir, base_name)
     
-    # Step 2: Threshold
     thresh = threshold_image(denoised, "otsu")
     # save_debug_image(thresh, "05_threshold", debug_dir, base_name)
     
-    # Step 3: Find IC body
     body_rect, body_mask = find_ic_body(gray, thresh)
     if body_rect:
         body_vis = img.copy()
@@ -220,24 +206,19 @@ def count_ic_pins_opencv(image_path: str, debug_dir: str = "debug") -> Dict[str,
         cv2.rectangle(body_vis, (x, y), (x + w, y + h), (0, 255, 0), 2)
         # save_debug_image(body_vis, "06_body_detected", debug_dir, base_name)
     
-    # Step 4: Edge detection
     edges = enhance_edges(denoised, "canny")
-    # save_debug_image(edges, "07_edges", debug_dir, base_name)
+    save_debug_image(edges, "07_edges", debug_dir, base_name)
     
-    # Step 5: Extract and filter pins
     pins, pin_boxes = extract_and_filter_pins(edges, body_rect, gray.shape)
     
-    # Step 6: Visualize detected pins
     pin_vis = img.copy()
     for box in pin_boxes:
         x, y, w, h = box
         cv2.rectangle(pin_vis, (x, y), (x + w, y + h), (0, 0, 255), 2)
     # save_debug_image(pin_vis, "08_pins_detected", debug_dir, base_name)
     
-    # Step 7: Group by side
     sides = group_pins_by_side(pin_boxes, body_rect)
     
-    # Step 8: Create summary visualization
     summary = img.copy()
     if body_rect:
         x, y, w, h = body_rect
@@ -247,7 +228,6 @@ def count_ic_pins_opencv(image_path: str, debug_dir: str = "debug") -> Dict[str,
         x, y, w, h = box
         cv2.rectangle(summary, (x, y), (x + w, y + h), (0, 0, 255), 2)
     
-    # Add text with pin count
     pin_count = len(pin_boxes)
     cv2.putText(summary, f"Total Pins: {pin_count}", (10, 30), 
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
