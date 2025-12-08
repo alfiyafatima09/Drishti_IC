@@ -43,18 +43,19 @@ paths:
   /api/v1/scan:
     post:
       tags: [Core Inspection]
-      summary: Upload Image for Inspection
+      summary: Upload Image for Extraction
       operationId: scanImage
       description: |
-        Primary endpoint. Uploads an IC image for verification.
-        Performs OCR to read text and Vision to count pins.
+        **Phase 1: Extract & Detect**
+        
+        Uploads an IC image and extracts data using OCR and Vision.
+        Returns EXTRACTED status with raw extracted data and pin detection.
         
         Returns one of:
-        - **PASS**: IC matches golden record
-        - **FAIL**: Pin count mismatch (possible relabeled chip)
-        - **PARTIAL**: Need bottom scan (BTC components)
-        - **UNKNOWN**: IC not in database (added to sync queue)
-        - **COUNTERFEIT**: IC is in fake registry
+        - **EXTRACTED**: Image processed successfully, ready for verification
+        - **NEED_BOTTOM_SCAN**: No pins detected (BTC component - need flip)
+        
+        **Next Step**: Call `/api/v1/scan/verify` to compare against database.
       requestBody:
         required: true
         content:
@@ -69,117 +70,172 @@ paths:
                   description: JPEG/PNG image of the IC
       responses:
         '200':
-          description: Inspection completed
+          description: Image extraction completed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ScanResult'
+                $ref: '#/components/schemas/ScanExtractResult'
               examples:
-                Pass:
-                  summary: IC verified successfully (database match)
+                Extracted:
+                  summary: Data extracted successfully
                   value:
                     scan_id: "550e8400-e29b-41d4-a716-446655440000"
-                    status: "PASS"
-                    action_required: "NONE"
+                    status: "EXTRACTED"
+                    action_required: "VERIFY"
                     confidence_score: 94.5
                     ocr_text: "LM555CN\nTI\n2024"
-                    part_number: "LM555CN"
+                    part_number_detected: "LM555CN"
                     part_number_candidates:
                       - "LM555CN"
-                      - "TI"
-                      - "2024"
+                      - "LM555"
                       - "LM555CNTI"
-                      - "TI2024"
-                      - "LM555CNTI2024"
-                    part_number_source: "database_match"
+                      - "TI"
                     manufacturer_detected: "Texas Instruments"
                     detected_pins: 8
-                    message: "IC verified successfully. All parameters match."
-                    match_details:
-                      part_number_match: true
-                      pin_count_match: true
-                      manufacturer_match: true
-                    queued_for_sync: false
-                    queued_candidates_count: 0
-                    ic_specification:
-                      part_number: "LM555"
-                      manufacturer: "Texas Instruments"
-                      pin_count: 8
-                      package_type: "DIP"
-                      description: "Precision Timer IC"
-                      datasheet_path: "/datasheets/LM555.pdf"
-                      has_datasheet: true
+                    message: "Data extracted successfully. Ready for verification."
                     scanned_at: "2025-12-01T10:30:00Z"
                 NeedBottomScan:
                   summary: Bottom-terminated component needs flip
                   value:
                     scan_id: "550e8400-e29b-41d4-a716-446655440001"
-                    status: "PARTIAL"
+                    status: "NEED_BOTTOM_SCAN"
                     action_required: "SCAN_BOTTOM"
                     confidence_score: 65.0
-                    ocr_text: "ATMEL\nMEGA32U4\n-AU\n1035E KR"
-                    part_number: "ATMEGA32U4-AU"
+                    ocr_text: "ATMEL\nMEGA32U4\n-AU"
+                    part_number_detected: "ATMEGA32U4-AU"
                     part_number_candidates:
-                      - "ATMEL"
-                      - "MEGA32U4"
-                      - "-AU"
-                      - "1035EKR"
-                      - "ATMELMEGA32U4"
-                      - "MEGA32U4-AU"
                       - "ATMEGA32U4-AU"
-                    part_number_source: "database_match"
+                      - "MEGA32U4-AU"
+                      - "ATMEGA32U4"
                     manufacturer_detected: "ATMEL"
                     detected_pins: 0
                     message: "Pins not visible. Please flip and scan the bottom."
-                    queued_for_sync: false
-                    queued_candidates_count: 0
                     scanned_at: "2025-12-01T10:32:00Z"
-                Unknown:
-                  summary: IC not in database (all candidates queued)
-                  value:
-                    scan_id: "550e8400-e29b-41d4-a716-446655440002"
-                    status: "UNKNOWN"
-                    action_required: "NONE"
-                    confidence_score: 88.0
-                    ocr_text: "XYZ9999\nABC\n2024"
-                    part_number: "XYZ9999"
-                    part_number_candidates:
-                      - "XYZ9999"
-                      - "ABC"
-                      - "2024"
-                      - "XYZ9999ABC"
-                      - "ABC2024"
-                      - "XYZ9999ABC2024"
-                    part_number_source: "ocr_best_guess"
-                    detected_pins: 16
-                    message: "IC 'XYZ9999' not found in database. Added to sync queue."
-                    queued_for_sync: true
-                    queued_candidates_count: 6
-                    ic_specification: null
-                    scanned_at: "2025-12-01T10:35:00Z"
-                Counterfeit:
-                  summary: Known fake IC detected
-                  value:
-                    scan_id: "550e8400-e29b-41d4-a716-446655440003"
-                    status: "COUNTERFEIT"
-                    action_required: "NONE"
-                    confidence_score: 100.0
-                    ocr_text: "FAKE123"
-                    part_number: "FAKE123"
-                    part_number_candidates:
-                      - "FAKE123"
-                    part_number_source: "database_match"
-                    detected_pins: 8
-                    message: "ALERT: This IC is in the fake registry."
-                    queued_for_sync: false
-                    queued_candidates_count: 0
-                    fake_registry_info:
-                      added_at: "2025-11-15T08:00:00Z"
-                      source: "SYNC_NOT_FOUND"
-                      reason: "Not found on any manufacturer website"
-                    scanned_at: "2025-12-01T10:40:00Z"
         '400':
           description: Invalid image or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/scan/verify:
+    post:
+      tags: [Core Inspection]
+      summary: Verify IC Against Database
+      operationId: verifyIC
+      description: |
+        **Phase 2: Verify & Compare**
+        
+        Takes extracted data from `/api/v1/scan` and compares against the Golden Record database.
+        
+        **Input** (optional override):
+        - `scan_id`: Reference to extraction (required)
+        - `part_number`: Override detected part number (optional)
+        - `detected_pins`: Override detected pins (optional)
+        
+        **Returns** one of:
+        - **MATCH_FOUND**: IC found in database, all checks passed
+        - **PIN_MISMATCH**: Part number found but pin count doesn't match
+        - **NOT_IN_DATABASE**: Part number not found, added to sync queue
+        
+        **Reason Field**: Includes detailed failure reason for each check that failed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanVerifyRequest'
+      responses:
+        '200':
+          description: Verification completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanVerifyResult'
+              examples:
+                MatchFound:
+                  summary: IC matched and verified
+                  value:
+                    scan_id: "550e8400-e29b-41d4-a716-446655440000"
+                    verification_status: "MATCH_FOUND"
+                    action_required: "NONE"
+                    part_number: "LM555"
+                    matched_ic:
+                      part_number: "LM555"
+                      manufacturer: "TI"
+                      manufacturer_name: "Texas Instruments"
+                      pin_count: 8
+                      package_type: "DIP"
+                      description: "Precision Timer IC"
+                      has_datasheet: true
+                    verification_checks:
+                      part_number_match:
+                        status: true
+                        expected: "LM555"
+                        actual: "LM555CN"
+                        reason: null
+                      pin_count_match:
+                        status: true
+                        expected: 8
+                        actual: 8
+                        reason: null
+                    confidence_score: 98.5
+                    message: "IC verified successfully. All checks passed."
+                    completed_at: "2025-12-01T10:35:00Z"
+                PinMismatch:
+                  summary: Part number found but pins don't match
+                  value:
+                    scan_id: "550e8400-e29b-41d4-a716-446655440001"
+                    verification_status: "PIN_MISMATCH"
+                    action_required: "MANUAL_REVIEW"
+                    part_number: "LM555"
+                    matched_ic:
+                      part_number: "LM555"
+                      manufacturer: "TI"
+                      pin_count: 8
+                    verification_checks:
+                      part_number_match:
+                        status: true
+                        expected: "LM555"
+                        actual: "LM555"
+                        reason: null
+                      pin_count_match:
+                        status: false
+                        expected: 8
+                        actual: 14
+                        reason: "Detected 14 pins but database specifies 8 pins for LM555. Possible relabeled chip or counterfeit."
+                    confidence_score: 75.0
+                    message: "Verification failed: Pin count mismatch. Expected 8, detected 14."
+                    completed_at: "2025-12-01T10:37:00Z"
+                NotInDatabase:
+                  summary: IC not found in database
+                  value:
+                    scan_id: "550e8400-e29b-41d4-a716-446655440002"
+                    verification_status: "NOT_IN_DATABASE"
+                    action_required: "NONE"
+                    part_number: "XYZ9999"
+                    matched_ic: null
+                    verification_checks:
+                      part_number_match:
+                        status: false
+                        expected: null
+                        actual: "XYZ9999"
+                        reason: "Part number 'XYZ9999' not found in database."
+                    queued_for_sync: true
+                    queued_candidates:
+                      - "XYZ9999"
+                      - "XYZ999"
+                      - "XYZ9999A"
+                    message: "IC not found in database. Added 3 candidates to sync queue."
+                    completed_at: "2025-12-01T10:40:00Z"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Scan not found
           content:
             application/json:
               schema:
@@ -1291,6 +1347,162 @@ components:
         operator_note:
           type: string
           description: Optional note explaining the override
+
+    # --------------------------------------------------
+    # SCAN EXTRACT SCHEMA (Phase 1)
+    # --------------------------------------------------
+    ScanExtractResult:
+      type: object
+      description: Result of image extraction (Phase 1 of scan workflow)
+      required: [scan_id, status, action_required, ocr_text, part_number_detected, detected_pins]
+      properties:
+        scan_id:
+          type: string
+          format: uuid
+          description: Unique identifier for this scan
+        status:
+          type: string
+          enum: [EXTRACTED, NEED_BOTTOM_SCAN]
+          description: |
+            - EXTRACTED: Data successfully extracted, ready for verification
+            - NEED_BOTTOM_SCAN: No pins detected, component is BTC (need flip)
+        action_required:
+          type: string
+          enum: [VERIFY, SCAN_BOTTOM, NONE]
+          description: Recommended next action for frontend
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: OCR confidence score (0-100)
+        ocr_text:
+          type: string
+          description: Raw OCR-extracted text from the IC image
+        part_number_detected:
+          type: string
+          description: Best guess part number based on OCR (heuristic-scored)
+        part_number_candidates:
+          type: array
+          items:
+            type: string
+          description: All part number candidates generated from OCR combinations
+        manufacturer_detected:
+          type: string
+          nullable: true
+          description: Manufacturer name if detected in OCR text
+        detected_pins:
+          type: integer
+          minimum: 0
+          description: Number of pins detected by vision (0 means bottom scan needed)
+        message:
+          type: string
+          description: Human-readable status message
+        scanned_at:
+          type: string
+          format: date-time
+          description: Timestamp when image was scanned
+
+    # --------------------------------------------------
+    # SCAN VERIFY SCHEMA (Phase 2)
+    # --------------------------------------------------
+    ScanVerifyRequest:
+      type: object
+      description: Request to verify extracted scan against database
+      required: [scan_id]
+      properties:
+        scan_id:
+          type: string
+          format: uuid
+          description: Reference to the extraction scan
+        part_number:
+          type: string
+          nullable: true
+          description: Override part number (if null, uses detected value from scan)
+          example: "LM555"
+        detected_pins:
+          type: integer
+          nullable: true
+          description: Override detected pins (if null, uses vision result from scan)
+          minimum: 0
+
+    VerificationCheck:
+      type: object
+      description: Individual verification check result with reason
+      properties:
+        status:
+          type: boolean
+          description: Whether this check passed
+        expected:
+          description: Expected value from database
+        actual:
+          description: Actual value detected/provided
+        reason:
+          type: string
+          nullable: true
+          description: Detailed reason if check failed
+
+    ScanVerifyResult:
+      type: object
+      description: Result of verification against database (Phase 2)
+      required: [scan_id, verification_status, action_required, part_number, verification_checks]
+      properties:
+        scan_id:
+          type: string
+          format: uuid
+          description: Reference to the original scan
+        verification_status:
+          type: string
+          enum: [MATCH_FOUND, PIN_MISMATCH, NOT_IN_DATABASE]
+          description: |
+            - MATCH_FOUND: Part number found and all checks passed
+            - PIN_MISMATCH: Part number found but pin count doesn't match
+            - NOT_IN_DATABASE: Part number not found, added to sync queue
+        action_required:
+          type: string
+          enum: [NONE, MANUAL_REVIEW]
+          description: |
+            - NONE: Verification complete, no action needed
+            - MANUAL_REVIEW: Mismatch detected, operator should review
+        part_number:
+          type: string
+          description: The part number that was verified
+        matched_ic:
+          $ref: '#/components/schemas/ICSpecification'
+          nullable: true
+          description: Full IC specification if found in database
+        verification_checks:
+          type: object
+          description: Individual check results with detailed reasons
+          properties:
+            part_number_match:
+              $ref: '#/components/schemas/VerificationCheck'
+            pin_count_match:
+              $ref: '#/components/schemas/VerificationCheck'
+              nullable: true
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Confidence in the verification result
+        queued_for_sync:
+          type: boolean
+          default: false
+          description: True if part number candidates were added to sync queue
+        queued_candidates:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: List of candidates queued for sync (when status is NOT_IN_DATABASE)
+        message:
+          type: string
+          description: Human-readable verification result message
+        completed_at:
+          type: string
+          format: date-time
+          description: When verification completed
 
     # --------------------------------------------------
     # IC DATABASE SCHEMAS

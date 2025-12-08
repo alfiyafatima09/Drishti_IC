@@ -151,8 +151,8 @@ class QueueService:
     ) -> list[DatasheetQueue]:
         """Get failed items for retry."""
         query = select(DatasheetQueue).where(
-            DatasheetQueue.status == "FAILED"
-        ).order_by(DatasheetQueue.retry_count)  # Prioritize fewer retries
+                DatasheetQueue.status == "FAILED"
+            ).order_by(DatasheetQueue.retry_count)  # Prioritize fewer retries
         
         if limit:
             query = query.limit(limit)

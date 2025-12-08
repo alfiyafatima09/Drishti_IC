@@ -58,13 +58,10 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (scanResult?.part_number) {
-      setOverridePart(scanResult.part_number);
-    } else {
-      setOverridePart('');
-    }
+    const pn = scanResult?.part_number_detected || scanResult?.part_number || '';
+    setOverridePart(pn);
     setLocalError(null);
-  }, [scanResult?.scan_id]);
+  }, [scanResult?.scan_id, scanResult?.part_number_detected, scanResult?.part_number]);
 
   if (!capturedImage) {
     return (
@@ -299,7 +296,9 @@ export function AnalysisPanel({ capturedImage, scanResult, isAnalyzing, onAnalyz
                   <Hash className="w-4 h-4 text-blue-600" />
                   <span className="text-xs font-medium text-blue-900">Part Number</span>
                 </div>
-                <p className="text-xl font-bold text-blue-900 font-mono break-all">{scanResult.part_number || 'N/A'}</p>
+                <p className="text-xl font-bold text-blue-900 font-mono break-all">
+                  {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
+                </p>
               </div>
 
               {scanResult.manufacturer_detected && (

@@ -140,7 +140,7 @@ class DigiKeyService:
         """
         if not url or not url.startswith("http"):
             raise DigiKeyException("Invalid URL to download")
-        
+
         if not part_number:
             raise DigiKeyException("Part number is required for download")
 

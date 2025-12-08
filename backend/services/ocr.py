@@ -280,7 +280,24 @@ class ICChipOCR:
             List of OCRResult
         """
         threshold = self.fallback_confidence if use_fallback_threshold else self.min_confidence
-        
+
+        # Prefer PaddleOCR.ocr (newer API); fallback to predict (older API)
+        try:
+            ocr_result = self.ocr.ocr(image, cls=True)
+            results: List[OCRResult] = []
+            if ocr_result and len(ocr_result) > 0:
+                for line in ocr_result[0]:
+                    if not line or len(line) < 2:
+                        continue
+                    text, score = line[1]
+                    if text and text.strip() and score > threshold:
+                        results.append(OCRResult(text=text.strip(), confidence=score))
+            # Sort by confidence (desc) to make best line obvious
+            results.sort(key=lambda r: r.confidence, reverse=True)
+            return results
+        except Exception as e:
+            logger.debug(f"OCR .ocr() call failed, trying .predict(): {e}")
+
         try:
             result = self.ocr.predict(image)
             
@@ -298,6 +315,7 @@ class ICChipOCR:
                     if text and text.strip() and score > threshold:
                         results.append(OCRResult(text=text.strip(), confidence=score))
             
+            results.sort(key=lambda r: r.confidence, reverse=True)
             return results
             
         except Exception as e:
