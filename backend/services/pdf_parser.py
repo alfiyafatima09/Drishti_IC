@@ -119,10 +119,14 @@ def _normalize_manufacturer(manufacturer: str) -> Optional[str]:
         return "NXP"
     elif "analog" in mfr_lower:
         return "ANALOG_DEVICES"
-    elif "microchip" in mfr_lower or "atmel" in mfr_lower:
+    elif "microchip" in mfr_lower:
         return "MICROCHIP"
+    elif "atmel" in mfr_lower:
+        return "ATMEL"
     elif "infineon" in mfr_lower:
         return "INFINEON"
+    elif "raspberry" in mfr_lower or "rp2040" in mfr_lower or "rp2350" in mfr_lower:
+        return "RASPBERRY_PI"
     else:
         # Return as-is if already a code
         return manufacturer.upper()
@@ -168,6 +172,12 @@ def _detect_manufacturer(path: Path) -> Optional[str]:
     elif any(keyword in path_str for keyword in ['analog.com', 'analog_devices', 'analogdevices', 'adi']):
         logger.info(f"Detected ANALOG_DEVICES manufacturer from path: {path}")
         return 'ANALOG_DEVICES'
+    elif any(keyword in path_str for keyword in ['raspberry', 'raspberrypi', 'rp2040', 'rp2350', 'rp235']):
+        logger.info(f"Detected RASPBERRY_PI manufacturer from path: {path}")
+        return 'RASPBERRY_PI'
+    elif any(keyword in path_str for keyword in ['atmel', 'atmega', 'attiny', 'atsam']):
+        logger.info(f"Detected ATMEL manufacturer from path: {path}")
+        return 'ATMEL'
 
     logger.warning(f"Could not auto-detect manufacturer from path: {path}")
     return None

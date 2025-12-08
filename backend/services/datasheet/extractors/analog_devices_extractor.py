@@ -100,17 +100,25 @@ class AnalogDevicesExtractor(DatasheetExtractor):
                 # Also get ordering guide from last few pages
                 ordering_text = self._extract_ordering_guide(pdf)
 
+                # Extract text from last pages for dimensions (outline dimensions usually at end)
+                dimension_text = self._extract_dimension_pages(pdf)
+
                 # Extract voltage specs
                 voltage_specs = self._extract_voltage_from_text(full_text)
 
                 # Extract temperature specs
                 temp_specs = self._extract_temperature_from_text(full_text)
 
+                # Extract dimension specs from dimension pages
+                dimension_specs = self._extract_dimensions_from_text(dimension_text)
+                logger.debug(f"Extracted dimension specs: {dimension_specs}")
+
                 # Extract variants from ordering guide and main text
                 ic_variants = self._extract_variants_from_text(
                     full_text + "\n" + ordering_text,
                     voltage_specs,
-                    temp_specs
+                    temp_specs,
+                    dimension_specs
                 )
 
             if not ic_variants:
@@ -144,6 +152,17 @@ class AnalogDevicesExtractor(DatasheetExtractor):
         for i in range(max(0, len(pdf.pages) - 5), len(pdf.pages)):
             page_text = pdf.pages[i].extract_text()
             if page_text and ('ordering' in page_text.lower() or 'order' in page_text.lower()):
+                text_parts.append(page_text)
+        return "\n".join(text_parts)
+
+    def _extract_dimension_pages(self, pdf) -> str:
+        """Extract text from pages containing outline dimensions."""
+        text_parts = []
+        # Check last 10 pages for outline dimensions
+        for i in range(max(0, len(pdf.pages) - 10), len(pdf.pages)):
+            page_text = pdf.pages[i].extract_text()
+            if page_text and ('outline' in page_text.lower() or 'dimension' in page_text.lower()
+                              or 'package height' in page_text.lower() or 'body' in page_text.lower()):
                 text_parts.append(page_text)
         return "\n".join(text_parts)
 
@@ -230,15 +249,108 @@ class AnalogDevicesExtractor(DatasheetExtractor):
 
         return temp_specs
 
+    def _extract_dimensions_from_text(self, text: str) -> Dict[str, Dict]:
+        """
+        Extract package dimensions from PDF text.
+
+        Looks for patterns like:
+        - "5 mm × 5 mm Body and 0.75 mm Package Height"
+        - "7 mm × 7 mm Body and 0.75 mm Package Height"
+        - "32-Lead Lead Frame Chip Scale Package [LFCSP]"
+
+        Returns:
+            Dictionary mapping package info to dimensions, e.g.:
+            {
+                "LFCSP32": {"length": 5.0, "width": 5.0, "height": 0.75},
+                "LFCSP48": {"length": 7.0, "width": 7.0, "height": 0.75},
+            }
+        """
+        dimensions = {}
+
+        # Pattern for "X mm × Y mm Body and Z mm Package Height" with pin count context
+        # Captures: (pin_count, length, width, height, package_type)
+        patterns = [
+            # "32-Lead ... [LFCSP]\n5 mm × 5 mm Body and 0.75 mm Package Height"
+            r'(\d+)-?[Ll]ead[^\n]*\[([A-Z]+)\][^\d]*(\d+\.?\d*)\s*mm\s*[×xX]\s*(\d+\.?\d*)\s*mm\s*[Bb]ody\s*and\s*(\d+\.?\d*)\s*mm\s*[Pp]ackage\s*[Hh]eight',
+            # "Figure XX. 32-Lead Lead Frame Chip Scale Package [LFCSP]\n5 mm × 5 mm Body"
+            r'(\d+)-?[Ll]ead[^\n]*\[([A-Z]+)\][^\d]*(\d+\.?\d*)\s*mm\s*[×xX]\s*(\d+\.?\d*)\s*mm',
+            # Generic: "X mm × Y mm Body and Z mm Package Height" after pin count mention
+            r'(\d+)\s*mm\s*[×xX]\s*(\d+)\s*mm\s*[Bb]ody\s*(?:and\s*)?(\d+\.?\d*)\s*mm\s*[Pp]ackage\s*[Hh]eight',
+        ]
+
+        # First, try to find dimension blocks with package context
+        # Look for "Figure XX. NN-Lead ... [PACKAGE]" followed by dimensions
+        figure_pattern = r'Figure\s*\d+\.\s*(\d+)-[Ll]ead[^[]*\[([A-Z]+)\][^\n]*\n([^\n]*(?:\d+\.?\d*)\s*mm[^\n]*)'
+        figure_matches = re.finditer(figure_pattern, text, re.IGNORECASE)
+
+        for match in figure_matches:
+            try:
+                pin_count = int(match.group(1))
+                package_type = match.group(2).upper()
+                dim_text = match.group(3)
+
+                # Extract dimensions from the dimension text
+                dim_match = re.search(r'(\d+\.?\d*)\s*mm\s*[×xX]\s*(\d+\.?\d*)\s*mm', dim_text)
+                if dim_match:
+                    length = float(dim_match.group(1))
+                    width = float(dim_match.group(2))
+
+                    # Look for height
+                    height = None
+                    height_match = re.search(r'(\d+\.?\d*)\s*mm\s*[Pp]ackage\s*[Hh]eight', dim_text)
+                    if height_match:
+                        height = float(height_match.group(1))
+
+                    package_key = f"{package_type}{pin_count}"
+                    dimensions[package_key] = {
+                        "length": length,
+                        "width": width,
+                        "height": height
+                    }
+                    logger.debug(f"Found dimensions for {package_key}: {length}x{width}x{height} mm")
+            except (ValueError, IndexError) as e:
+                logger.debug(f"Failed to parse dimension match: {e}")
+                continue
+
+        # Also search for standalone dimension patterns with nearby package info
+        outline_section = re.search(r'OUTLINE\s+DIMENSIONS(.*?)(?:Rev\.|$)', text, re.DOTALL | re.IGNORECASE)
+        if outline_section:
+            section_text = outline_section.group(1)
+
+            # Find all "NN-Lead ... [PACKAGE]" with following "X mm × Y mm Body"
+            pkg_dim_pattern = r'(\d+)-[Ll]ead[^[]*\[([A-Z]+)\][^\n]*\n[^\n]*(\d+)\s*mm\s*[×xX]\s*(\d+)\s*mm\s*[Bb]ody(?:\s*and\s*(\d+\.?\d*)\s*mm)?'
+            for match in re.finditer(pkg_dim_pattern, section_text, re.IGNORECASE):
+                try:
+                    pin_count = int(match.group(1))
+                    package_type = match.group(2).upper()
+                    length = float(match.group(3))
+                    width = float(match.group(4))
+                    height = float(match.group(5)) if match.group(5) else None
+
+                    package_key = f"{package_type}{pin_count}"
+                    if package_key not in dimensions:
+                        dimensions[package_key] = {
+                            "length": length,
+                            "width": width,
+                            "height": height
+                        }
+                        logger.debug(f"Found dimensions for {package_key}: {length}x{width}x{height} mm")
+                except (ValueError, IndexError):
+                    continue
+
+        return dimensions
+
     def _extract_variants_from_text(
         self,
         text: str,
         voltage_specs: Dict,
-        temp_specs: Dict
+        temp_specs: Dict,
+        dimension_specs: Optional[Dict[str, Dict]] = None
     ) -> List[Dict]:
         """Extract IC variants from text using regex patterns."""
         variants = []
         seen_parts = set()
+        dimension_specs = dimension_specs or {}
 
         # Find ordering section
         ordering_section = self._find_ordering_section(text)
@@ -279,6 +391,35 @@ class AnalogDevicesExtractor(DatasheetExtractor):
                 if package_type:
                     description += f" - {package_type}"
 
+                # Look up dimensions from dimension_specs using package_type
+                dim_length = None
+                dim_width = None
+                dim_height = None
+
+                if package_type and dimension_specs:
+                    # Try exact match first (e.g., "LFCSP48")
+                    if package_type in dimension_specs:
+                        dims = dimension_specs[package_type]
+                        dim_length = dims.get("length")
+                        dim_width = dims.get("width")
+                        dim_height = dims.get("height")
+                        logger.debug(f"Found dimensions for {part_number} ({package_type}): {dim_length}x{dim_width}x{dim_height}")
+                    else:
+                        # Try matching by pin count if package type doesn't match exactly
+                        for pkg_key, dims in dimension_specs.items():
+                            # Check if pin counts match (e.g., "LFCSP48" matches "LQFP48")
+                            pkg_pin_match = re.search(r'(\d+)$', pkg_key)
+                            if pkg_pin_match and pin_count and int(pkg_pin_match.group(1)) == pin_count:
+                                # Also check if package family matches (LFCSP vs LQFP)
+                                pkg_family = re.sub(r'\d+$', '', package_type).upper()
+                                key_family = re.sub(r'\d+$', '', pkg_key).upper()
+                                if pkg_family == key_family:
+                                    dim_length = dims.get("length")
+                                    dim_width = dims.get("width")
+                                    dim_height = dims.get("height")
+                                    logger.debug(f"Found dimensions for {part_number} via family match ({pkg_key}): {dim_length}x{dim_width}x{dim_height}")
+                                    break
+
                 variant = {
                     "part_number": part_number,
                     "manufacturer": "ANALOG_DEVICES",
@@ -289,9 +430,9 @@ class AnalogDevicesExtractor(DatasheetExtractor):
                     "voltage_max": voltage_specs.get("voltage_max"),
                     "operating_temp_min": temp_specs.get("operating_temp_min"),
                     "operating_temp_max": temp_specs.get("operating_temp_max"),
-                    "dimension_length": None,
-                    "dimension_width": None,
-                    "dimension_height": None,
+                    "dimension_length": dim_length,
+                    "dimension_width": dim_width,
+                    "dimension_height": dim_height,
                     "electrical_specs": {}
                 }
                 variants.append(variant)

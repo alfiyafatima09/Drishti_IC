@@ -77,16 +77,23 @@ class STMExtractor(DatasheetExtractor):
             with pdfplumber.open(pdf_path) as pdf:
                 # Extract full text for regex-based parsing
                 full_text = self._extract_full_text(pdf)
-                
+
+                # Extract dimension pages from end of PDF
+                dimension_text = self._extract_dimension_pages(pdf)
+
                 # Extract voltage and temperature from text (more reliable than tables)
                 voltage_specs = self._extract_voltage_from_text(full_text)
                 temp_specs = self._extract_temperature_from_text(full_text)
-                
+
+                # Extract dimension specs
+                dimension_specs = self._extract_dimensions_from_text(dimension_text)
+
                 logger.debug(f"Extracted voltage specs: {voltage_specs}")
                 logger.debug(f"Extracted temp specs: {temp_specs}")
-                
+                logger.debug(f"Extracted dimension specs: {dimension_specs}")
+
                 # Try regex-based variant extraction (works well for STM32)
-                ic_variants = self._extract_variants_from_text(full_text, voltage_specs, temp_specs)
+                ic_variants = self._extract_variants_from_text(full_text, voltage_specs, temp_specs, dimension_specs)
             
             if not ic_variants:
                 logger.debug(f"No IC variants found in PDF: {pdf_path}")
@@ -109,6 +116,73 @@ class STMExtractor(DatasheetExtractor):
             if page_text:
                 text_parts.append(page_text)
         return "\n".join(text_parts)
+
+    def _extract_dimension_pages(self, pdf) -> str:
+        """Extract text from pages containing package dimensions."""
+        text_parts = []
+        # Check last 15 pages for package dimensions
+        for i in range(max(0, len(pdf.pages) - 15), len(pdf.pages)):
+            page_text = pdf.pages[i].extract_text()
+            if page_text and any(kw in page_text.lower() for kw in
+                ['package dimension', 'outline', 'mechanical data', 'package information', 'body size']):
+                text_parts.append(page_text)
+        return "\n".join(text_parts)
+
+    def _extract_dimensions_from_text(self, text: str) -> Dict[str, Dict]:
+        """
+        Extract package dimensions from PDF text.
+        STM datasheets typically have "Package mechanical data" sections.
+
+        Returns:
+            Dictionary mapping package type to dimensions
+        """
+        dimensions = {}
+
+        # Pattern for STM mechanical data tables
+        # Look for patterns like "LQFP48 - 7 × 7 mm, 0.5 mm pitch"
+        patterns = [
+            # "LQFP48 7 × 7 mm" or "LQFP48 - 7x7 mm"
+            r'\b([A-Z]{2,6})(\d+)\b[^\d]*(\d+\.?\d*)\s*[×xX]\s*(\d+\.?\d*)\s*mm',
+            # "7 mm × 7 mm body" with nearby package reference
+            r'(\d+\.?\d*)\s*mm\s*[×xX]\s*(\d+\.?\d*)\s*mm\s*(?:body|package)',
+        ]
+
+        # First pattern: look for explicit package with dimensions
+        pkg_dim_pattern = r'\b([A-Z]{2,6})(\d+)\b[^\n]*?(\d+\.?\d*)\s*[×xX]\s*(\d+\.?\d*)\s*mm'
+        for match in re.finditer(pkg_dim_pattern, text, re.IGNORECASE):
+            try:
+                pkg_type = match.group(1).upper()
+                pin_count = int(match.group(2))
+                length = float(match.group(3))
+                width = float(match.group(4))
+
+                # Sanity check - reasonable IC dimensions
+                if 1.0 <= length <= 50.0 and 1.0 <= width <= 50.0:
+                    package_key = f"{pkg_type}{pin_count}"
+                    if package_key not in dimensions:
+                        dimensions[package_key] = {
+                            "length": length,
+                            "width": width,
+                            "height": None
+                        }
+                        logger.debug(f"Found dimensions for {package_key}: {length}x{width} mm")
+            except (ValueError, IndexError):
+                continue
+
+        # Look for height/thickness patterns
+        height_pattern = r'(\d+\.?\d*)\s*mm\s*(?:max|typ)?\s*(?:height|thickness|standoff)'
+        for match in re.finditer(height_pattern, text, re.IGNORECASE):
+            try:
+                height = float(match.group(1))
+                if 0.1 <= height <= 5.0:  # Reasonable height range
+                    # Apply to all found packages
+                    for pkg_key in dimensions:
+                        if dimensions[pkg_key].get("height") is None:
+                            dimensions[pkg_key]["height"] = height
+            except (ValueError, IndexError):
+                continue
+
+        return dimensions
     
     def _extract_voltage_from_text(self, text: str) -> Dict:
         """Extract voltage specs from full PDF text using regex."""
@@ -184,41 +258,55 @@ class STMExtractor(DatasheetExtractor):
         self,
         text: str,
         voltage_specs: Dict,
-        temp_specs: Dict
+        temp_specs: Dict,
+        dimension_specs: Optional[Dict[str, Dict]] = None
     ) -> List[Dict]:
         """Extract IC variants from text using regex (STM32 focused)."""
         variants = []
         seen_parts = set()
-        
+        dimension_specs = dimension_specs or {}
+
         # Find ordering/device summary section (first 5000 chars usually contain summary)
         ordering_section = self._find_ordering_section(text)
         search_text = ordering_section if ordering_section else text[:5000]
-        
+
         # Try each part number pattern
         for pattern in self.PART_NUMBER_PATTERNS:
             matches = re.finditer(pattern, search_text, re.IGNORECASE)
-            
+
             for match in matches:
                 part_number = match.group(1).upper()
-                
+
                 # Skip if already seen or too short
                 if part_number in seen_parts or len(part_number) < 5:
                     continue
-                
+
                 # Skip common false positives
                 if part_number in ['TABLE', 'FLASH', 'PACKAGE', 'ORDER', 'LQFP', 'TSSOP']:
                     continue
-                
+
                 seen_parts.add(part_number)
-                
+
                 # Get context around match to extract package info
                 start = max(0, match.start() - 10)
                 end = min(len(search_text), match.end() + 200)
                 context = search_text[start:end]
-                
+
                 # Extract package and pin count from context
                 package_type, pin_count = self._extract_package_from_context(context)
-                
+
+                # Look up dimensions
+                dim_length = None
+                dim_width = None
+                dim_height = None
+
+                if package_type and dimension_specs:
+                    if package_type in dimension_specs:
+                        dims = dimension_specs[package_type]
+                        dim_length = dims.get("length")
+                        dim_width = dims.get("width")
+                        dim_height = dims.get("height")
+
                 variant = {
                     "part_number": part_number,
                     "manufacturer": "STM",
@@ -229,14 +317,14 @@ class STMExtractor(DatasheetExtractor):
                     "voltage_max": voltage_specs.get("voltage_max"),
                     "operating_temp_min": temp_specs.get("operating_temp_min"),
                     "operating_temp_max": temp_specs.get("operating_temp_max"),
-                    "dimension_length": None,
-                    "dimension_width": None,
-                    "dimension_height": None,
+                    "dimension_length": dim_length,
+                    "dimension_width": dim_width,
+                    "dimension_height": dim_height,
                     "electrical_specs": {}
                 }
-                
+
                 variants.append(variant)
-        
+
         return variants
     
     def _find_ordering_section(self, text: str) -> Optional[str]:

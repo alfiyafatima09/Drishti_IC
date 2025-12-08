@@ -399,6 +399,9 @@ class OnSemiExtractor(DatasheetExtractor):
             # Extract global specs (Voltage/Temp) usually found in "Maximum Ratings" or "Attributes"
             voltage_specs, temp_specs = self._extract_global_specs(pdf_path)
             
+            # Try to find the base part number from the PDF
+            base_part_number = self._extract_base_part_number(pdf_path)
+            
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
                     tables = page.extract_tables()
@@ -418,6 +421,17 @@ class OnSemiExtractor(DatasheetExtractor):
                                 table, 
                                 header_row, 
                                 voltage_specs, 
+                                temp_specs
+                            )
+                            ic_variants.extend(variants)
+                        
+                        # Also handle "Package | Programming Boards" table format
+                        elif "package" in header_text and ("programming" in header_text or "board" in header_text):
+                            variants = self._extract_from_package_table(
+                                table,
+                                header_row,
+                                base_part_number,
+                                voltage_specs,
                                 temp_specs
                             )
                             ic_variants.extend(variants)
@@ -447,7 +461,16 @@ class OnSemiExtractor(DatasheetExtractor):
         temp_specs = {}
         
         with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
+            for page in pdf.pages[:5]:  # Check first 5 pages
+                text = page.extract_text() or ""
+                
+                # Look for operating temperature in text
+                if 'operating temperature' in text.lower():
+                    temp_match = re.search(r'(-?\d+)°?C?\s+to\s+([+-]?\d+)°?C?', text, re.IGNORECASE)
+                    if temp_match:
+                        temp_specs['operating_temp_min'] = float(temp_match.group(1))
+                        temp_specs['operating_temp_max'] = float(temp_match.group(2))
+                
                 tables = page.extract_tables()
                 for table in tables:
                     if not table: continue
@@ -473,6 +496,34 @@ class OnSemiExtractor(DatasheetExtractor):
                                 if max_v is not None: voltage_specs['voltage_max'] = max_v
                                 
         return voltage_specs, temp_specs
+    
+    def _extract_base_part_number(self, pdf_path: Path) -> Optional[str]:
+        """
+        Extract the base part number from the PDF (usually on first page).
+        For OnSemi, this is often like LC87F7932B, MC34063, etc.
+        """
+        with pdfplumber.open(pdf_path) as pdf:
+            if len(pdf.pages) > 0:
+                text = pdf.pages[0].extract_text() or ""
+                
+                # Look for common OnSemi part number patterns
+                # LC87FXXXX, MCXXXXX, NSVXXXXX, etc.
+                patterns = [
+                    r'(LC87F[0-9A-Z]+)',
+                    r'(MC[0-9]{5}[A-Z]*)',
+                    r'(NSV[0-9]{4}[A-Z]*)',
+                    r'(NCV[0-9]{4,5}[A-Z]*)',
+                    r'([A-Z]{2,4}[0-9]{4,5}[A-Z]*)'
+                ]
+                
+                for pattern in patterns:
+                    match = re.search(pattern, text)
+                    if match:
+                        part = match.group(1)
+                        logger.info(f"Found base part number: {part}")
+                        return part
+        
+        return None
 
     def _extract_from_ordering_table(
         self, 
@@ -517,12 +568,92 @@ class OnSemiExtractor(DatasheetExtractor):
                 "voltage_max": voltage_specs.get("voltage_max"),
                 "operating_temp_min": temp_specs.get("operating_temp_min"),
                 "operating_temp_max": temp_specs.get("operating_temp_max"),
+                "dimension_length": None,
+                "dimension_width": None,
+                "dimension_height": None,
                 "electrical_specs": {
                     "raw_package_string": package_raw
                 }
             }
             variants.append(variant)
             
+        return variants
+    
+    def _extract_from_package_table(
+        self,
+        table: List[List],
+        header_row: List,
+        base_part_number: Optional[str],
+        voltage_specs: Dict,
+        temp_specs: Dict
+    ) -> List[Dict]:
+        """
+        Extracts IC variants from "Package | Programming Boards" style table.
+        Used when the datasheet doesn't have a full ordering table.
+        
+        Args:
+            table: Table data
+            header_row: Header row
+            base_part_number: Base part number from PDF
+            voltage_specs: Voltage specifications
+            temp_specs: Temperature specifications
+            
+        Returns:
+            List of IC variant dictionaries
+        """
+        variants = []
+        
+        if not base_part_number:
+            logger.warning("No base part number found, cannot extract from package table")
+            return variants
+        
+        # Find package column (should be first column)
+        package_col = None
+        for idx, cell in enumerate(header_row):
+            if cell and 'package' in str(cell).lower():
+                package_col = idx
+                break
+        
+        if package_col is None:
+            logger.warning("No package column found in table")
+            return variants
+        
+        # Process each row to create variants
+        for row in table[1:]:  # Skip header
+            if not row or len(row) <= package_col:
+                continue
+            
+            package_str = str(row[package_col]).strip()
+            if not package_str or package_str.lower() in ['none', 'n/a', '']:
+                continue
+            
+            # Parse package string like "QIP64E (14×14)" or "TQFP64J (7×7)"
+            package_type, pin_count = self._parse_package_string(package_str)
+            
+            # Create part number variant: use base part number
+            # e.g., LC87F7932B (base part number applies to all package variants)
+            part_number = base_part_number
+            
+            variant = {
+                "part_number": part_number,
+                "manufacturer": "ONSEMI",
+                "pin_count": pin_count,
+                "package_type": package_type,
+                "description": f"OnSemi {part_number} - {package_type}",
+                "voltage_min": voltage_specs.get("voltage_min"),
+                "voltage_max": voltage_specs.get("voltage_max"),
+                "operating_temp_min": temp_specs.get("operating_temp_min"),
+                "operating_temp_max": temp_specs.get("operating_temp_max"),
+                "dimension_length": None,
+                "dimension_width": None,
+                "dimension_height": None,
+                "electrical_specs": {
+                    "raw_package_string": package_str
+                }
+            }
+            
+            variants.append(variant)
+        
         return variants
 
     def _parse_package_string(self, package_str: str) -> Tuple[str, int]:
@@ -608,5 +739,8 @@ class OnSemiExtractor(DatasheetExtractor):
             "voltage_max": voltage_specs.get("voltage_max"),
             "operating_temp_min": temp_specs.get("operating_temp_min"),
             "operating_temp_max": temp_specs.get("operating_temp_max"),
+            "dimension_length": None,
+            "dimension_width": None,
+            "dimension_height": None,
             "electrical_specs": {}
         }
