@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  X,
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react'
@@ -417,138 +416,110 @@ export default function ScrapingPage() {
   const isSyncActive = useMemo(() => ['processing'].includes(syncStage), [syncStage])
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
 
-  const getStatusBadgeColor = (status: string) => {
-    const option = STATUS_OPTIONS.find((o) => o.value === status)
-    return option?.color || 'bg-gray-100 text-gray-700 border-gray-300'
-  }
+  const CurrentStageIcon = stageConfig[syncStage].icon
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 p-6">
+    <div className="h-screen w-full overflow-hidden bg-slate-50/50 p-4 animate-in fade-in duration-500 flex flex-col">
       {/* Header */}
-      <div className="shrink-0">
-        <div className="rounded-2xl border-2 border-blue-200 bg-white/80 p-6 shadow-lg backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-3xl font-black text-transparent">
-                IC Data Management
-              </h1>
-              <p className="text-base font-semibold text-slate-700">
-                Scrape datasheets, manage queue, and add ICs. This page extracts IC info from the
-                internet via web scraping and parsing.
-              </p>
-            </div>
-            <Globe className="h-12 w-12 text-cyan-600" />
+      <div className="shrink-0 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              IC Data Management
+            </h1>
+            <p className="text-sm font-medium text-slate-500">
+              Manage scraping queue and manually add components.
+            </p>
+          </div>
+          <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white shadow-sm border border-slate-200">
+            <Globe className="h-5 w-5 text-blue-600" />
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 h-full">
           {/* Left Column - Queue Table & Sync */}
-          <div className="space-y-6 lg:col-span-2">
+          <div className="flex flex-col gap-4 lg:col-span-2 min-h-0 h-full min-w-0">
             {/* Sync Control */}
-            <div className="rounded-2xl border-2 border-blue-300 bg-white p-6 shadow-xl">
+            <div className="shrink-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">Internet Sync & Scraping</h2>
-                <div className="flex items-center gap-3">
+                <h2 className="text-base font-bold text-slate-900">Internet Sync & Scraping</h2>
+                <div className="flex items-center gap-2">
                   {/* Auto-poll toggle */}
                   <button
                     onClick={() => setAutoPollEnabled(!autoPollEnabled)}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all',
+                      'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm',
                       autoPollEnabled
-                        ? 'border-green-300 bg-green-100 text-green-700 ring-2 ring-green-400 ring-offset-1'
-                        : 'border-gray-200 bg-gray-100 text-gray-500 hover:bg-gray-200',
+                        ? 'border-blue-200 bg-blue-50 text-blue-700'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700',
                     )}
                   >
                     <RefreshCw className={cn('h-3 w-3', autoPollEnabled && 'animate-spin')} />
-                    {autoPollEnabled ? 'Auto-refresh ON' : 'Auto-refresh'}
+                    {autoPollEnabled ? 'Auto ON' : 'Auto-refresh'}
                   </button>
-                  <Badge className="bg-amber-500 font-bold text-white">
-                    {pendingCount} Pending
-                  </Badge>
-                  <Badge className="bg-red-500 font-bold text-white">{failedCount} Failed</Badge>
-                  <Badge className="bg-purple-500 font-bold text-white">{fakeCount} Fake</Badge>
+                  <div className="flex gap-1.5">
+                    <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 shadow-none px-2 py-0.5 text-[10px]">
+                      {pendingCount} Pending
+                    </Badge>
+                    <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 shadow-none px-2 py-0.5 text-[10px]">{failedCount} Failed</Badge>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <p className="text-sm font-medium text-slate-600">
-                  Connect to the internet to scrape IC datasheets and update the database
-                  automatically.
-                </p>
-
-                {/* Transfer Fakes to Queue */}
+                {/* Transfer Fakes to Queue - Compact */}
                 {fakeCount > 0 && (
-                  <div className="rounded-xl border-2 border-purple-200 bg-purple-50 p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-purple-600" />
-                        <div>
-                          <p className="text-sm font-semibold text-purple-900">
-                            {fakeCount} ICs in Fake Registry
-                          </p>
-                          <p className="text-xs text-purple-600">
-                            Transfer to queue to retry scraping
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={transferFakesToQueue}
-                        disabled={transferLoading || syncStage === 'processing'}
-                        variant="outline"
-                        size="sm"
-                        className="border-purple-400 text-purple-700 hover:bg-purple-100"
-                      >
-                        {transferLoading ? (
-                          <>
-                            <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
-                            Transferring...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="mr-1 h-4 w-4" />
-                            Transfer to Queue
-                          </>
-                        )}
-                      </Button>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-slate-500" />
+                      <span className="text-xs font-bold text-slate-700">
+                        {fakeCount} items in Fake Registry
+                      </span>
                     </div>
-                    {transferMessage && (
-                      <p className="mt-2 text-xs font-medium text-purple-700">{transferMessage}</p>
-                    )}
+                    <Button
+                      onClick={transferFakesToQueue}
+                      disabled={transferLoading || syncStage === 'processing'}
+                      variant="outline"
+                      size="sm"
+                      className="h-7 border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs"
+                    >
+                      {transferLoading ? 'Transferring...' : 'Transfer to Queue'}
+                    </Button>
                   </div>
                 )}
 
                 {/* Sync Options */}
-                <div className="flex flex-wrap items-end gap-3">
+                <div className="flex items-end gap-3">
                   {/* Limit Input */}
-                  <div className="w-32">
-                    <Label className="mb-1 text-xs font-semibold text-slate-600">Max Items</Label>
+                  <div className="w-24">
+                    <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Max Items</Label>
                     <Input
                       type="number"
                       value={syncLimit}
                       onChange={(e) => setSyncLimit(e.target.value)}
                       placeholder="All"
                       min="1"
-                      className="h-9 text-sm"
+                      className="h-9 rounded-lg border-slate-200 text-xs focus:border-blue-500 focus:ring-blue-500/20 font-bold"
                     />
                   </div>
 
                   {/* Status Filter Pills */}
                   <div className="flex-1">
-                    <Label className="mb-1 text-xs font-semibold text-slate-600">
+                    <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
                       Filter by Status
                     </Label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {STATUS_OPTIONS.map((option) => (
                         <button
                           key={option.value}
                           onClick={() => toggleStatus(option.value)}
                           className={cn(
-                            'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all',
+                            'rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm',
                             selectedStatuses.includes(option.value)
-                              ? option.color + ' ring-2 ring-blue-400 ring-offset-1'
-                              : 'border-gray-200 bg-gray-100 text-gray-500 hover:bg-gray-200',
+                              ? 'bg-blue-50 border-blue-200 text-blue-700'
+                              : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900',
                           )}
                         >
                           {option.label}
@@ -557,31 +528,31 @@ export default function ScrapingPage() {
                       {selectedStatuses.length > 0 && (
                         <button
                           onClick={clearFilters}
-                          className="rounded-full px-2 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                          className="rounded-md px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 transition-colors uppercase tracking-wider"
                         >
-                          <X className="h-3 w-3" />
+                          Clear
                         </button>
                       )}
                     </div>
                   </div>
-                </div>
 
-                <Button
-                  onClick={handleStartSync}
-                  disabled={syncStage === 'processing' || (pendingCount === 0 && failedCount === 0)}
-                  className="h-14 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-base font-bold text-white shadow-xl hover:from-blue-700 hover:to-cyan-700"
-                >
-                  <Globe className="mr-2 h-5 w-5" />
-                  {selectedStatuses.length > 0
-                    ? `Sync ${selectedStatuses.join(' & ')} Items`
-                    : 'Start Sync & Scrape Queue'}
-                </Button>
+                  <Button
+                    onClick={handleStartSync}
+                    disabled={syncStage === 'processing' || (pendingCount === 0 && failedCount === 0)}
+                    className="h-9 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-sm text-xs px-4"
+                  >
+                    <Globe className="mr-2 h-3.5 w-3.5" />
+                    {selectedStatuses.length > 0
+                      ? `Sync Selected`
+                      : 'Start Sync'}
+                  </Button>
+                </div>
 
                 {isSyncActive && (
                   <Button
                     variant="outline"
                     onClick={handleCancelSync}
-                    className="h-12 w-full border-red-300 font-semibold text-red-600 hover:bg-red-50"
+                    className="h-9 w-full border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-700 hover:border-red-200 font-bold rounded-lg text-xs"
                   >
                     Cancel Sync
                   </Button>
@@ -589,22 +560,31 @@ export default function ScrapingPage() {
 
                 {/* Sync Progress */}
                 {syncStage !== 'idle' && (
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-1">
                     {/* Progress Bar */}
-                    <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className="h-full bg-gradient-to-r from-blue-600 to-cyan-600 transition-all duration-500"
+                        className="h-full bg-blue-600 transition-all duration-500 rounded-full"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
 
                     {/* Current Status */}
-                    <div className={cn('rounded-xl border-2 p-4', stageConfig[syncStage].color)}>
-                      <p className="font-bold text-slate-900">{stageConfig[syncStage].label}</p>
-                      {currentIC && (
-                        <p className="mt-1 text-sm text-slate-600">Processing: {currentIC}</p>
-                      )}
-                      {syncMessage && <p className="mt-1 text-sm text-slate-500">{syncMessage}</p>}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={cn("h-6 w-6 rounded-md flex items-center justify-center",
+                          syncStage === 'completed' ? 'bg-emerald-100 text-emerald-600' :
+                            syncStage === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                        )}>
+                          <CurrentStageIcon className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">{stageConfig[syncStage].label}</p>
+                          {currentIC && (
+                            <p className="text-[10px] font-medium text-slate-500">Processing: {currentIC}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -612,127 +592,97 @@ export default function ScrapingPage() {
             </div>
 
             {/* Queue Table */}
-            <div className="rounded-2xl border-2 border-blue-300 bg-white p-6 shadow-xl">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">Scraping Queue</h2>
+            <div className="flex-1 flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-0">
+              <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
+                <h2 className="text-base font-bold text-slate-900">Scraping Queue</h2>
                 {selectedStatuses.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-600">
-                      Filtering: {selectedStatuses.join(', ')}
+                  <div className="flex items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1">
+                    <Filter className="h-3 w-3 text-slate-400" />
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      Filtered
                     </span>
                   </div>
                 )}
               </div>
 
               {queueError && (
-                <div className="mb-3 rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                <div className="m-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800">
                   {queueError}
                 </div>
               )}
 
               {queueLoading ? (
-                <div className="py-8 text-center text-slate-500">Loading queue...</div>
+                <div className="flex-1 flex items-center justify-center p-8">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"></div>
+                    <p className="text-xs font-medium text-slate-500">Loading...</p>
+                  </div>
+                </div>
               ) : queueItems.length === 0 ? (
-                <div className="py-12 text-center">
-                  <Clock className="mx-auto mb-4 h-16 w-16 text-slate-300" />
-                  <p className="font-medium text-slate-500">
-                    {selectedStatuses.length > 0 ? 'No items match the filter' : 'Queue is empty'}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {selectedStatuses.length > 0
-                      ? 'Try adjusting your status filter'
-                      : 'ICs will be added here when scanned but not found in database'}
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 mb-3">
+                    <Clock className="h-6 w-6 text-slate-300" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-900">Queue is empty</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Add parts manually or via scan
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm text-slate-600">
-                    <span>
-                      Showing {queuePage * ITEMS_PER_PAGE + 1}-
-                      {Math.min(totalCount, (queuePage + 1) * ITEMS_PER_PAGE)} of {totalCount}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={queuePage === 0}
-                        onClick={() => setQueuePage((p) => Math.max(0, p - 1))}
-                        className="h-9 w-9"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="text-xs text-slate-500">
-                        Page {queuePage + 1} of {totalPages || 1}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={queuePage >= totalPages - 1}
-                        onClick={() => setQueuePage((p) => p + 1)}
-                        className="h-9 w-9"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b-2 border-blue-200">
-                          <th className="px-4 py-3 text-left font-bold text-slate-700">
-                            Part Number
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="overflow-auto custom-scrollbar">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50/80 backdrop-blur sticky top-0 z-10">
+                        <tr>
+                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            Part
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-slate-700">
-                            Added Date
+                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            Date
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-slate-700">Status</th>
-                          <th className="px-4 py-3 text-left font-bold text-slate-700">Retries</th>
-                          <th className="px-4 py-3 text-right font-bold text-slate-700">Actions</th>
+                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">Status</th>
+                          <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 text-center">Retries</th>
+                          <th className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200"></th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-slate-50">
                         {queueItems.map((item) => (
                           <tr
                             key={item.part_number}
-                            className="border-b border-slate-200 transition-colors hover:bg-blue-50"
+                            className="bg-white hover:bg-slate-50 transition-colors group"
                           >
-                            <td className="px-4 py-3 font-mono font-bold text-blue-600">
-                              {item.part_number}
+                            <td className="px-4 py-2.5">
+                              <span className="font-bold text-sm text-slate-900 font-mono">{item.part_number}</span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-slate-600">
+                            <td className="px-4 py-2.5 text-[10px] font-medium text-slate-500">
                               {item.first_seen_at
-                                ? new Date(item.first_seen_at).toLocaleString()
+                                ? new Date(item.first_seen_at).toLocaleDateString()
                                 : '—'}
                             </td>
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-2.5">
                               <Badge
                                 className={cn(
-                                  'border font-semibold',
-                                  getStatusBadgeColor(item.status || 'PENDING'),
+                                  'border font-bold shadow-none px-2 py-0 text-[10px]',
+                                  item.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                    item.status === 'PROCESSING' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                      item.status === 'FAILED' ? 'bg-red-50 text-red-700 border-red-200' :
+                                        'bg-slate-100 text-slate-700 border-slate-200'
                                 )}
                               >
-                                {item.status === 'PROCESSING' && (
-                                  <Download className="mr-1 h-3 w-3 animate-pulse" />
-                                )}
-                                {item.status === 'FAILED' && <XCircle className="mr-1 h-3 w-3" />}
-                                {item.status === 'PENDING' && <Clock className="mr-1 h-3 w-3" />}
                                 {item.status || 'Pending'}
                               </Badge>
                             </td>
-                            <td className="px-4 py-3 text-sm text-slate-600">
+                            <td className="px-4 py-2.5 text-xs font-bold text-slate-400 text-center">
                               {item.retry_count || 0}
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-4 py-2.5 text-right">
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => removeFromQueue(item.part_number)}
-                                className="border-red-300 text-red-600 hover:bg-red-50"
+                                className="h-6 w-6 p-0 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-full"
                               >
-                                <Trash2 className="mr-1 h-4 w-4" />
-                                Remove
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </td>
                           </tr>
@@ -740,61 +690,89 @@ export default function ScrapingPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Pagination Footer */}
+                  <div className="flex shrink-0 items-center justify-between border-t border-slate-100 bg-white px-4 py-2 mt-auto">
+                    <button
+                      onClick={() => setQueuePage((p) => Math.max(0, p - 1))}
+                      disabled={queuePage === 0}
+                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
+                    >
+                      <ChevronLeft size={12} />
+                      Prev
+                    </button>
+
+                    <span className="text-[10px] font-bold text-slate-400">
+                      Page {queuePage + 1}
+                    </span>
+
+                    <button
+                      onClick={() => setQueuePage((p) => p + 1)}
+                      disabled={queuePage >= totalPages - 1}
+                      className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
+                    >
+                      Next
+                      <ChevronRight size={12} />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           </div>
 
           {/* Right Column - Forms */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-4 lg:h-full min-w-0">
             {/* Manual IC Entry Form */}
-            <div className="rounded-2xl border-2 border-emerald-300 bg-white p-6 shadow-xl">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500">
-                  <Plus className="h-5 w-5 text-white" />
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm h-full flex flex-col">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100">
+                  <Plus className="h-4 w-4" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900">Add IC Manually</h2>
+                <h2 className="text-base font-bold text-slate-900">Add Manually</h2>
               </div>
 
-              <p className="mb-4 text-xs font-medium text-slate-500">
-                If scraping fails, queue a part number to fetch online via sync.
-              </p>
+              <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 mb-4">
+                <p className="text-xs font-medium text-slate-500 leading-relaxed text-justify break-words">
+                  Manually queue a part number. The system will attempt to fetch datasheets and details from online sources.
+                </p>
+              </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4 flex-1">
                 <div>
-                  <Label className="mb-1 text-sm font-bold text-slate-700">Part Number *</Label>
+                  <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Part Number *</Label>
                   <Input
                     value={manualPart}
                     onChange={(e) => setManualPart(e.target.value)}
                     placeholder="e.g., LM555"
-                    className="h-10 border-2 border-emerald-200 focus:border-emerald-400"
+                    className="h-10 rounded-lg border-slate-200 text-sm font-bold focus:border-blue-500 focus:ring-blue-500/20"
                   />
                 </div>
 
-                <div>
-                  <Label className="mb-1 text-sm font-bold text-slate-700">Note (optional)</Label>
+                <div className="flex-1">
+                  <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Note (optional)</Label>
                   <Textarea
                     value={manualNote}
                     onChange={(e) => setManualNote(e.target.value)}
-                    placeholder="Context for adding this IC"
-                    rows={2}
-                    className="border-2 border-emerald-200 focus:border-emerald-400"
+                    placeholder="Context for adding"
+                    className="rounded-lg border-slate-200 resize-none focus:border-blue-500 focus:ring-blue-500/20 h-[100px] text-xs"
                   />
                 </div>
 
                 {manualError && (
-                  <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
                     {manualError}
                   </div>
                 )}
 
-                <Button
-                  onClick={addToQueue}
-                  className="h-12 w-full bg-emerald-600 font-bold text-white shadow-lg hover:bg-emerald-700"
-                  disabled={!manualPart.trim() || manualLoading}
-                >
-                  {manualLoading ? 'Adding...' : 'Add to Queue'}
-                </Button>
+                <div className="mt-auto">
+                  <Button
+                    onClick={addToQueue}
+                    className="h-10 w-full bg-blue-600 font-bold text-white rounded-xl shadow-sm hover:bg-blue-700 transition-all text-xs"
+                    disabled={!manualPart.trim() || manualLoading}
+                  >
+                    {manualLoading ? 'Adding...' : 'Add to Queue'}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

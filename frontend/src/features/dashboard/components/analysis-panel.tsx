@@ -5,13 +5,8 @@ import {
   HelpCircle,
   ShieldAlert,
   Cpu,
-  Hash,
   Building2,
-  Package,
   FileText,
-  Ruler,
-  Zap,
-  Thermometer,
   ExternalLink,
   Sparkles,
   Loader2,
@@ -171,18 +166,18 @@ export function AnalysisPanel({
   }
 
   return (
-    <Card className="h-full flex flex-col shadow-sm border-border">
-      <CardHeader className="items-start space-y-1 pb-4">
+    <Card className="flex h-full flex-col overflow-hidden rounded-2xl border-slate-200 bg-white shadow-lg shadow-slate-200/50">
+      <CardHeader className="border-b border-slate-100 bg-white pb-4">
         <div className="flex items-center justify-between w-full">
-          <CardTitle>Analysis</CardTitle>
+          <CardTitle className="text-xl font-bold text-slate-900">Analysis</CardTitle>
           {scanResult && config && (
-            <Badge variant={config.variant} className={config.className}>
-              {StatusIcon && <StatusIcon className="mr-1 h-3 w-3" />}
+            <Badge variant={config.variant} className={cn("px-2.5 py-0.5 font-bold", config.className)}>
+              {StatusIcon && <StatusIcon className="mr-1.5 h-3.5 w-3.5" />}
               {config.label}
             </Badge>
           )}
         </div>
-        <CardDescription>
+        <CardDescription className="text-slate-500">
           {scanResult ? 'Results and specifications' : 'Ready to analyze captured image'}
         </CardDescription>
       </CardHeader>
@@ -207,7 +202,7 @@ export function AnalysisPanel({
           <Button
             onClick={onAnalyze}
             size="lg"
-            className="w-full"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             Analyze IC Image
@@ -225,12 +220,12 @@ export function AnalysisPanel({
 
         {/* Results */}
         {scanResult && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 p-1">
             {/* Status Message */}
-            <div className={cn("p-4 rounded-lg border text-sm",
-              scanResult.status === 'PASS' ? "bg-emerald-50 text-emerald-900 border-emerald-200" :
-                scanResult.status === 'FAIL' ? "bg-red-50 text-red-900 border-red-200" :
-                  "bg-secondary/50 text-secondary-foreground"
+            <div className={cn("px-4 py-3 rounded-xl border text-sm font-medium shadow-sm",
+              scanResult.status === 'PASS' ? "bg-emerald-50 text-emerald-900 border-emerald-100" :
+                scanResult.status === 'FAIL' ? "bg-red-50 text-red-900 border-red-100" :
+                  "bg-slate-50 text-slate-700 border-slate-200"
             )}>
               <p>{scanResult.message}</p>
             </div>
@@ -276,42 +271,46 @@ export function AnalysisPanel({
               </div>
             )}
 
-            {/* Parameters List */}
+            {/* Parameters List - Compact */}
             <div className="space-y-4">
-              <h4 className="text-sm font-medium leading-none">Detected Information</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-1">
-                  <p className="text-xs text-muted-foreground">Part Number</p>
-                  <div className="font-mono text-lg font-semibold tracking-tight border rounded-md px-3 py-2 bg-muted/40 break-all">
+              <h4 className="text-sm font-medium leading-none text-slate-900">Detected Information</h4>
+              <div className="grid grid-cols-2 gap-3">
+
+                {/* Part Number */}
+                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Part Number</span>
+                  <div className="font-mono text-base font-bold text-slate-900 truncate">
                     {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
                   </div>
                 </div>
 
-                {scanResult.manufacturer_detected && (
-                  <div className="col-span-2 space-y-1">
-                    <p className="text-xs text-muted-foreground">Manufacturer</p>
-                    <div className="font-medium flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      {scanResult.manufacturer_detected}
-                    </div>
+                {/* Manufacturer */}
+                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Manufacturer</span>
+                  <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                    <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span className="break-words">{scanResult.manufacturer_detected || 'Unknown'}</span>
                   </div>
-                )}
-
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Pins</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Cpu className="h-4 w-4 text-muted-foreground" />
-                    {scanResult.detected_pins}
-                  </p>
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Confidence</p>
-                  <p className="font-medium flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-muted-foreground" />
-                    {scanResult.confidence_score.toFixed(1)}%
-                  </p>
+                {/* Pins */}
+                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Pins Detected</span>
+                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                    <Cpu className="h-3.5 w-3.5 text-slate-400" />
+                    <span>{scanResult.detected_pins}</span>
+                  </div>
                 </div>
+
+                {/* Confidence */}
+                <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Confidence</span>
+                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+                    <span>{scanResult.confidence_score.toFixed(1)}%</span>
+                  </div>
+                </div>
+
               </div>
             </div>
 
