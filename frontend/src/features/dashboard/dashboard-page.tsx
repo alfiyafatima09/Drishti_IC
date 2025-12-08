@@ -4,10 +4,7 @@ import { ImageUpload } from './components/image-upload';
 import { AnalysisPanel } from './components/analysis-panel';
 import { API_BASE } from '@/lib/config';
 import type { ScanResult } from '@/types/api';
-
-// ============================================================
-// COMPONENT
-// ============================================================
+import logo from '@/assets/logo_nobg.png';
 
 export default function DashboardPage() {
   const [currentScanResult, setCurrentScanResult] = useState<ScanResult | null>(null);
@@ -15,35 +12,23 @@ export default function DashboardPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * Handle camera capture - just show image, don't analyze yet
-   */
   const handleCapture = useCallback((imageUrl: string) => {
-    console.log('[Dashboard] Image captured');
     setCapturedImage(imageUrl);
     setCurrentScanResult(null);
   }, []);
 
-  /**
-   * Handle file upload - just show image, don't analyze yet
-   */
   const handleFileSelect = useCallback((file: File) => {
-    console.log('[Dashboard] File selected');
     const imageUrl = URL.createObjectURL(file);
     setCapturedImage(imageUrl);
     setCurrentScanResult(null);
   }, []);
 
-  /**
-   * Analyze the captured/uploaded image
-   */
   const handleAnalyze = useCallback(async () => {
     if (!capturedImage || isAnalyzing) return;
 
     setIsAnalyzing(true);
 
     try {
-      // Convert image URL to File
       const response = await fetch(capturedImage);
       const blob = await response.blob();
       const file = new File([blob], 'ic-image.jpg', { type: 'image/jpeg' });
@@ -62,7 +47,6 @@ export default function DashboardPage() {
       }
 
       const scanResult: ScanResult = await apiResponse.json();
-      console.log('[Dashboard] Scan result:', scanResult);
       setCurrentScanResult(scanResult);
     } catch (error) {
       console.error('[Dashboard] Analysis error:', error);
@@ -72,46 +56,67 @@ export default function DashboardPage() {
   }, [capturedImage, isAnalyzing]);
 
   return (
-    <div className="flex flex-col h-full gap-6 p-6 overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
-      {/* Header */}
-      <div className="shrink-0">
-        <div className="flex items-center justify-between bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-2 border-blue-200">
-          <div>
-            <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 bg-clip-text text-transparent mb-2">
-              Drishti IC
-            </h1>
-            <p className="text-base font-semibold text-slate-700">Intelligent Integrated Circuit Inspection System</p>
+    <div className="h-full w-full bg-slate-50 overflow-auto">
+      <div className="max-w-[1800px] mx-auto p-4 md:p-6 lg:p-8">
+        
+        {/* Header - Compact */}
+        <header className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white rounded-xl p-4 md:p-5 shadow-sm border border-slate-200">
+            <div className="flex items-center gap-4">
+              <img 
+                src={logo} 
+                alt="Drishti IC" 
+                className="w-16 h-16 object-contain"
+              />
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-slate-900">IC Inspection</h1>
+                <p className="text-sm text-slate-500">Capture or upload an IC image to analyze</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                System Ready
+              </span>
+            </div>
           </div>
-          <div className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 shadow-lg">
-            <p className="text-sm text-white font-bold">AOI Technology</p>
-          </div>
-        </div>
-      </div>
+        </header>
 
-      {/* Main Content Grid */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0 overflow-hidden">
-        {/* Left Section - Camera & Upload */}
-        <div className="lg:col-span-2 flex flex-col gap-6 overflow-hidden">
-          {/* Video Feed */}
-          <div className="flex-1 min-h-0 bg-white rounded-2xl shadow-2xl border-2 border-blue-300 p-6">
-            <VideoFeed onCapture={handleCapture} />
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          
+          {/* Left Column - Camera & Upload */}
+          <div className="xl:col-span-7 2xl:col-span-8 space-y-6">
+            
+            {/* Camera Feed Card */}
+            <section className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-4 md:p-5">
+                <VideoFeed onCapture={handleCapture} />
+              </div>
+            </section>
+
+            {/* Upload Card */}
+            <section>
+              <ImageUpload 
+                onFileSelect={handleFileSelect} 
+                fileInputRef={fileInputRef} 
+                disabled={isAnalyzing} 
+              />
+            </section>
           </div>
 
-          {/* Upload Section */}
-          <div className="shrink-0">
-            <ImageUpload onFileSelect={handleFileSelect} fileInputRef={fileInputRef} disabled={isAnalyzing} />
+          {/* Right Column - Analysis */}
+          <div className="xl:col-span-5 2xl:col-span-4">
+            <div className="sticky top-6">
+              <AnalysisPanel
+                capturedImage={capturedImage}
+                scanResult={currentScanResult}
+                isAnalyzing={isAnalyzing}
+                onAnalyze={handleAnalyze}
+                onResultUpdate={setCurrentScanResult}
+              />
+            </div>
           </div>
-        </div>
-
-        {/* Right Section - Analysis Panel */}
-        <div className="overflow-hidden">
-          <AnalysisPanel
-            capturedImage={capturedImage}
-            scanResult={currentScanResult}
-            isAnalyzing={isAnalyzing}
-            onAnalyze={handleAnalyze}
-            onResultUpdate={setCurrentScanResult}
-          />
         </div>
       </div>
     </div>

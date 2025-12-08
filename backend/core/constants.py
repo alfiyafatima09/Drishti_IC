@@ -62,21 +62,27 @@ def get_supported_manufacturers() -> List[str]:
 
 
 def get_manufacturer_name(code: str) -> str:
-    """Get full manufacturer name from code."""
+    """Get full manufacturer name from code. Returns original code if not found."""
+    if not code:
+        return ""
     try:
         manufacturer = Manufacturer(code.upper())
         return MANUFACTURER_NAMES.get(manufacturer, code)
     except ValueError:
-        raise ValueError(f"Unsupported manufacturer: {code}")
+        # Return the original code if not a known manufacturer
+        return code
 
 
 def get_manufacturer_url_pattern(code: str) -> str:
-    """Get URL pattern for manufacturer's datasheet downloads."""
+    """Get URL pattern for manufacturer's datasheet downloads. Returns empty string if not found."""
+    if not code:
+        return ""
     try:
         manufacturer = Manufacturer(code.upper())
         return MANUFACTURER_URL_PATTERNS.get(manufacturer, "")
     except ValueError:
-        raise ValueError(f"Unsupported manufacturer: {code}")
+        # Return empty string if not a known manufacturer
+        return ""
 
 
 def get_manufacturer_details() -> Dict[str, Dict]:

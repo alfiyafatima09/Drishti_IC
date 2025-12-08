@@ -1,10 +1,10 @@
 import { useCallback, useState, RefObject } from 'react';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { Upload, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ImageUploadProps {
   onFileSelect: (file: File) => void;
-  fileInputRef: RefObject<HTMLInputElement>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
   disabled?: boolean;
 }
 
@@ -61,14 +61,15 @@ export function ImageUpload({ onFileSelect, fileInputRef, disabled }: ImageUploa
   }, [fileInputRef, disabled]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-300 p-5">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-          <ImageIcon className="w-6 h-6 text-white" />
+        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+          <ImageIcon className="w-5 h-5 text-slate-600" />
         </div>
         <div>
-          <h3 className="text-base font-bold text-slate-900">Upload IC Image</h3>
-          <p className="text-sm text-purple-600 font-medium">Alternative to live capture</p>
+          <h3 className="text-sm font-semibold text-slate-900">Upload Image</h3>
+          <p className="text-xs text-slate-500">Or drag and drop a file</p>
         </div>
       </div>
 
@@ -80,6 +81,7 @@ export function ImageUpload({ onFileSelect, fileInputRef, disabled }: ImageUploa
         className="hidden"
       />
 
+      {/* Drop Zone */}
       <div
         onClick={handleClick}
         onDragEnter={handleDragEnter}
@@ -87,24 +89,24 @@ export function ImageUpload({ onFileSelect, fileInputRef, disabled }: ImageUploa
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className={cn(
-          'relative rounded-xl border-3 border-dashed transition-all cursor-pointer p-8',
-          'hover:border-purple-500 hover:bg-purple-50',
-          isDragging && 'border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 scale-105 shadow-xl',
-          !isDragging && 'border-purple-300 bg-gradient-to-br from-slate-50 to-purple-50',
+          'relative rounded-lg border-2 border-dashed transition-all cursor-pointer',
+          'flex flex-col items-center justify-center py-8 px-4',
+          isDragging && 'border-blue-500 bg-blue-50',
+          !isDragging && 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100',
           disabled && 'opacity-50 cursor-not-allowed'
         )}
       >
-        <div className="flex flex-col items-center justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-3 shadow-lg">
-            <Upload className="w-7 h-7 text-white" />
-          </div>
-          <p className="text-base font-bold text-slate-900 text-center">
-            {isDragging ? 'Drop image here' : 'Click or drag & drop'}
-          </p>
-          <p className="text-sm text-purple-600 font-medium mt-2">JPG, PNG (Max 10MB)</p>
+        <div className={cn(
+          'w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors',
+          isDragging ? 'bg-blue-100' : 'bg-slate-200'
+        )}>
+          <Upload className={cn('w-5 h-5', isDragging ? 'text-blue-600' : 'text-slate-500')} />
         </div>
+        <p className="text-sm font-medium text-slate-700 text-center">
+          {isDragging ? 'Drop image here' : 'Click to browse or drag & drop'}
+        </p>
+        <p className="text-xs text-slate-400 mt-1">PNG, JPG up to 10MB</p>
       </div>
     </div>
   );
 }
-

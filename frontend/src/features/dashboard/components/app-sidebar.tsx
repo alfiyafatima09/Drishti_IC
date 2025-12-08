@@ -10,12 +10,13 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { LayoutDashboard, ScanLine, Database, History, Shield, Search } from 'lucide-react'
+import { ScanLine, Database, History, Search } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import logo from '@/assets/logo_nobg.png'
 
 import * as React from 'react'
 
-// Menu items.
+// Menu items
 const items = [
   {
     title: 'New Scan',
@@ -23,18 +24,13 @@ const items = [
     icon: ScanLine,
   },
   {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
     title: 'IC Database',
-    url: '/ic',
+    url: '/database',
     icon: Search,
   },
   {
-    title: 'Scrape & Manage',
-    url: '/scrape',
+    title: 'Manage Data',
+    url: '/manage',
     icon: Database,
   },
   {
@@ -64,16 +60,18 @@ export function AppSidebar() {
         } as React.CSSProperties
       }
     >
-      <SidebarHeader className="flex h-20 items-center justify-center border-b-2 border-cyan-400 px-4 group-data-[collapsible=icon]:px-2 bg-white/10 backdrop-blur-sm">
+      <SidebarHeader className="flex h-20 items-center justify-center border-b border-cyan-400/50 px-3 group-data-[collapsible=icon]:px-2 bg-white/5">
         <div className="flex w-full items-center gap-3 overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-cyan-300 bg-white shadow-lg">
-            <Shield className="h-6 w-6 text-blue-600" />
-          </div>
+          <img 
+            src={logo} 
+            alt="Drishti IC" 
+            className="h-14 w-14 shrink-0 object-contain"
+          />
           <div className="flex flex-col overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
-            <span className="font-black text-lg tracking-tight whitespace-nowrap text-white">
+            <span className="font-bold text-lg tracking-tight whitespace-nowrap text-white">
               Drishti IC
             </span>
-            <span className="text-xs font-semibold text-cyan-200">
+            <span className="text-xs font-medium text-cyan-200/80">
               SIH 2025 • BEL
             </span>
           </div>
@@ -114,7 +112,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
       </SidebarContent>
 
       <SidebarRail />
