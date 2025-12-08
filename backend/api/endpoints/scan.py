@@ -1,6 +1,8 @@
 """Scan endpoints - Core inspection operations (Phase 1 & 2)."""
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from services.llm import LLM
+import os
 from uuid import UUID
 import asyncio
 import logging
@@ -26,6 +28,8 @@ from schemas.scan_verify import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["Core Inspection"])
+
+# Maximum number of adjacent lines to combine when generating candidates
 MAX_ADJACENT_LINES = 4
 
 
@@ -210,6 +214,10 @@ async def scan_image(
         fallback_text = clean_text_for_part_number(top_result.text)
         if fallback_text:
             best_part_number = fallback_text
+    # ========== Placeholders for Vision Analysis ==========
+    # TODO: Integrate with pin detection service (Gemini Vision or local model)
+    detected_pins = 0  # Placeholder - would come from vision analysis
+    manufacturer_detected = None  # Placeholder - could be extracted from OCR or vision
     
     # ========== Detect Manufacturer ==========
     manufacturer_detected = None

@@ -43,38 +43,15 @@ class LLM:
         self.target_kb = target_kb
         self.min_quality = min_quality
         self.timeout = timeout
-        
-        self.prompt = """
-        You are an expert in all IC package types, especially DIP, SOIC, and TSSOP packages where pins exist only on two opposite long sides.
 
-IMPORTANT:
-- Detect whether the IC has pins on only two sides (DIP/SOIC style) or on all four sides (QFN/QFP).
-- If the chip has pins ONLY on two opposite long sides, then you MUST count only those two sides and ignore the other two sides entirely.
-
-Instructions:
-1. Identify how many sides actually have pins. If only two opposite sides have pins (as in a DIP or SOIC), then:
-   - Count the pins on the left side.
-   - Count the pins on the right side.
-2. Add left-side pins + right-side pins to get the total pin count.
-3. Do NOT assume 4-sided pins if they are not present.
-4. Do NOT count shadows, bevels, or edges of the package as pins.
-
-CRITICAL:
-Your final output must be ONLY the total pin count as a single integer.
-No extra words. No explanation. No symbols.
-
-Output format:
-<total_pin_count>
-        """
-
-        # self.prompt = (
-        #     "You are given an image of an electronic IC chip. "
-        #     "Analyze the image and identify:\n"
-        #     "1. The manufacturer name of the chip from the logo\n"
-        #     "2. The total number of pins\n\n"
-        #     "Respond ONLY in JSON format with no additional text:\n"
-        #     '{"manufacturer": "<manufacturer_name>", "pin_count": <number>}'
-        # )
+        self.prompt = (
+            "You are given an image of an electronic IC chip. "
+            "Analyze the image and identify:\n"
+            "1. The manufacturer name of the chip from the logo\n"
+            "2. The total number of pins\n\n"
+            "Respond ONLY in JSON format with no additional text:\n"
+            '{"manufacturer": "<manufacturer_name>", "pin_count": <number>}'
+        )
 
     def compress_image(self, image_path: str) -> bytes:
         """

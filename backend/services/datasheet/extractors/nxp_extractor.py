@@ -90,15 +90,22 @@ class NXPExtractor(DatasheetExtractor):
                 logger.warning(f"No text extracted from PDF: {pdf_path}")
                 return [self._create_basic_entry(pdf_path, {}, {})]
 
+            # Extract dimension pages
+            dimension_text = self._extract_dimension_pages(pdf_path)
+
             # Extract operating conditions (voltage, temperature)
             voltage_specs = self._extract_voltage_from_text(full_text)
             temp_specs = self._extract_temperature_from_text(full_text)
 
+            # Extract dimension specs
+            dimension_specs = self._extract_dimensions_from_text(dimension_text)
+
             logger.debug(f"Extracted voltage specs: {voltage_specs}")
             logger.debug(f"Extracted temp specs: {temp_specs}")
+            logger.debug(f"Extracted dimension specs: {dimension_specs}")
 
             # Extract IC variants from ordering information section
-            ic_variants = self._extract_variants_from_text(full_text, voltage_specs, temp_specs)
+            ic_variants = self._extract_variants_from_text(full_text, voltage_specs, temp_specs, dimension_specs)
 
             if not ic_variants:
                 logger.debug(f"No IC variants found via regex, creating basic entry")
@@ -122,6 +129,63 @@ class NXPExtractor(DatasheetExtractor):
                 if page_text:
                     text_parts.append(page_text)
         return "\n".join(text_parts)
+
+    def _extract_dimension_pages(self, pdf_path: Path) -> str:
+        """Extract text from pages containing package dimensions."""
+        text_parts = []
+        with pdfplumber.open(pdf_path) as pdf:
+            for i in range(max(0, len(pdf.pages) - 15), len(pdf.pages)):
+                page_text = pdf.pages[i].extract_text()
+                if page_text and any(kw in page_text.lower() for kw in
+                    ['package outline', 'package dimension', 'mechanical data', 'outline dimension', 'body size']):
+                    text_parts.append(page_text)
+        return "\n".join(text_parts)
+
+    def _extract_dimensions_from_text(self, text: str) -> Dict[str, Dict]:
+        """
+        Extract package dimensions from PDF text.
+        NXP datasheets typically have "Package outline" sections.
+
+        Returns:
+            Dictionary mapping package type to dimensions
+        """
+        dimensions = {}
+
+        # Pattern for NXP package dimensions
+        # Look for patterns like "TSSOP20 - 4.4 × 6.5 mm"
+        pkg_dim_pattern = r'\b([A-Z]{2,6})(\d+)\b[^\n]*?(\d+\.?\d*)\s*[×xX]\s*(\d+\.?\d*)\s*mm'
+        for match in re.finditer(pkg_dim_pattern, text, re.IGNORECASE):
+            try:
+                pkg_type = match.group(1).upper()
+                pin_count = int(match.group(2))
+                length = float(match.group(3))
+                width = float(match.group(4))
+
+                if 1.0 <= length <= 50.0 and 1.0 <= width <= 50.0:
+                    package_key = f"{pkg_type}{pin_count}"
+                    if package_key not in dimensions:
+                        dimensions[package_key] = {
+                            "length": length,
+                            "width": width,
+                            "height": None
+                        }
+                        logger.debug(f"Found dimensions for {package_key}: {length}x{width} mm")
+            except (ValueError, IndexError):
+                continue
+
+        # Look for height patterns
+        height_pattern = r'(\d+\.?\d*)\s*mm\s*(?:max|typ)?\s*(?:height|thickness|standoff)'
+        for match in re.finditer(height_pattern, text, re.IGNORECASE):
+            try:
+                height = float(match.group(1))
+                if 0.1 <= height <= 5.0:
+                    for pkg_key in dimensions:
+                        if dimensions[pkg_key].get("height") is None:
+                            dimensions[pkg_key]["height"] = height
+            except (ValueError, IndexError):
+                continue
+
+        return dimensions
 
     def _extract_voltage_from_text(self, text: str) -> Dict:
         """
@@ -215,7 +279,8 @@ class NXPExtractor(DatasheetExtractor):
         self,
         text: str,
         voltage_specs: Dict,
-        temp_specs: Dict
+        temp_specs: Dict,
+        dimension_specs: Optional[Dict[str, Dict]] = None
     ) -> List[Dict]:
         """
         Extract IC variants from ordering information section using regex.
@@ -226,6 +291,7 @@ class NXPExtractor(DatasheetExtractor):
         """
         variants = []
         seen_parts = set()
+        dimension_specs = dimension_specs or {}
 
         # Find the ordering information section
         ordering_section = self._find_ordering_section(text)
@@ -260,6 +326,18 @@ class NXPExtractor(DatasheetExtractor):
                 # Extract package and pin count from context
                 package_type, pin_count = self._extract_package_from_context(context)
 
+                # Look up dimensions
+                dim_length = None
+                dim_width = None
+                dim_height = None
+
+                if package_type and dimension_specs:
+                    if package_type in dimension_specs:
+                        dims = dimension_specs[package_type]
+                        dim_length = dims.get("length")
+                        dim_width = dims.get("width")
+                        dim_height = dims.get("height")
+
                 variant = {
                     "part_number": part_number,
                     "manufacturer": "NXP",
@@ -270,9 +348,9 @@ class NXPExtractor(DatasheetExtractor):
                     "voltage_max": voltage_specs.get("voltage_max"),
                     "operating_temp_min": temp_specs.get("operating_temp_min"),
                     "operating_temp_max": temp_specs.get("operating_temp_max"),
-                    "dimension_length": None,
-                    "dimension_width": None,
-                    "dimension_height": None,
+                    "dimension_length": dim_length,
+                    "dimension_width": dim_width,
+                    "dimension_height": dim_height,
                     "electrical_specs": {}
                 }
 

@@ -10,6 +10,8 @@ from .nxp_extractor import NXPExtractor
 from .microchip_extractor import MicrochipExtractor
 from .infineon_extractor import InfineonExtractor
 from .analog_devices_extractor import AnalogDevicesExtractor
+from .atmel_extractor import AtmelExtractor
+from .raspberrypi_extractor import RaspberryPiExtractor
 
 # Registry of supported manufacturers -> extractor classes
 EXTRACTORS = {
@@ -20,6 +22,8 @@ EXTRACTORS = {
     "MICROCHIP": MicrochipExtractor,
     "INFINEON": InfineonExtractor,
     "ANALOG_DEVICES": AnalogDevicesExtractor,
+    "ATMEL": AtmelExtractor,
+    "RASPBERRY_PI": RaspberryPiExtractor,
 }
 
 __all__ = [
@@ -31,6 +35,8 @@ __all__ = [
     "MicrochipExtractor",
     "InfineonExtractor",
     "AnalogDevicesExtractor",
+    "AtmelExtractor",
+    "RaspberryPiExtractor",
     "EXTRACTORS",
 ]
 
