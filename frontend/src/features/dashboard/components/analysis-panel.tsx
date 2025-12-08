@@ -202,7 +202,7 @@ export function AnalysisPanel({
           <Button
             onClick={onAnalyze}
             size="lg"
-            className="w-full"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             Analyze IC Image
