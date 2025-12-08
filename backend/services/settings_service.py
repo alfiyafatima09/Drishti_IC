@@ -21,6 +21,11 @@ DEFAULT_SETTINGS = {
     "ocr_model": ("paddleocr", "STRING"),
     "max_scrape_retries": ("3", "INTEGER"),
     "scrape_timeout_seconds": ("30", "INTEGER"),
+    # Dimension measurement calibration
+    # Set this by measuring a known object (e.g., IC with known dimensions)
+    # Formula: mm_per_pixel = known_dimension_mm / measured_pixels
+    # Default 0.0 means auto-calculate (which may be inaccurate)
+    "dimension_mm_per_pixel": ("0.0", "FLOAT"),
 }
 
 

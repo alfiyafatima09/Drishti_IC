@@ -22,6 +22,14 @@ class FakeRegistryInfo(BaseModel):
     reason: Optional[str] = None
 
 
+class DimensionData(BaseModel):
+    """IC chip dimension measurement results."""
+    width_mm: float = Field(..., description="IC width in millimeters")
+    height_mm: float = Field(..., description="IC height in millimeters")
+    area_mm2: float = Field(..., description="IC area in square millimeters")
+    confidence: str = Field(..., description="Detection confidence (high/medium/low)")
+
+
 class ScanResult(BaseModel):
     """Complete scan result response."""
     scan_id: UUID
@@ -35,6 +43,7 @@ class ScanResult(BaseModel):
     part_number_source: PartNumberSource = PartNumberSource.OCR_BEST_GUESS 
     manufacturer_detected: Optional[str] = None
     detected_pins: Optional[int] = None
+    dimension_data: Optional[DimensionData] = None
     message: Optional[str] = None
     match_details: Optional[MatchDetails] = None
     queued_for_sync: bool = False

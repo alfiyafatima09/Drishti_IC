@@ -14,6 +14,8 @@ from core.constants import MANUFACTURER_KEYWORDS
 from services import ScanService, ICService, FakeService, QueueService
 from services.ocr import extract_text_from_image, OCRResponse
 from services.llm import LLM
+from services.dimension_service import DimensionService
+from services.settings_service import SettingsService
 from schemas import (
     ScanResult,
     ManualOverrideRequest,
@@ -22,6 +24,7 @@ from schemas import (
     PartNumberSource,
     ErrorResponse,
 )
+from schemas.scan import DimensionData
 
 logger = logging.getLogger(__name__)
 
@@ -272,6 +275,43 @@ async def scan_image(
         # Don't fail the scan if vision analysis fails, just log and continue
         logger.warning("Continuing scan without vision analysis results")
     
+    # ========== Dimension Measurement ==========
+    dimension_data = None
+    try:
+        # Get calibration setting (mm_per_pixel)
+        calibration_mm_per_pixel = await SettingsService.get(db, "dimension_mm_per_pixel")
+        if calibration_mm_per_pixel and float(calibration_mm_per_pixel) > 0:
+            mm_per_pixel = float(calibration_mm_per_pixel)
+            print(f"[DIMENSION] Using calibrated mm_per_pixel: {mm_per_pixel}")
+        else:
+            mm_per_pixel = None  # Will use auto-calculation (may be inaccurate)
+            print("[DIMENSION] No calibration set, using auto-calculation (may be inaccurate)")
+        
+        print("[DIMENSION] Starting dimension measurement...")
+        dim_result = await asyncio.to_thread(
+            DimensionService.measure_from_bytes, 
+            image_data,
+            mm_per_pixel=mm_per_pixel
+        )
+        print(f"[DIMENSION] Result: {dim_result is not None}")
+        
+        if dim_result:
+            print(f"[DIMENSION] Width: {dim_result['width_mm']:.2f}mm, Height: {dim_result['height_mm']:.2f}mm")
+            dimension_data = DimensionData(
+                width_mm=dim_result['width_mm'],
+                height_mm=dim_result['height_mm'],
+                area_mm2=dim_result['area_mm2'],
+                confidence=dim_result['confidence']
+            )
+            print(f"[DIMENSION] Data created: {dimension_data}")
+        else:
+            print("[DIMENSION] No result from measurement")
+    except Exception as exc:
+        print(f"[DIMENSION] Exception: {exc}")
+        import traceback
+        traceback.print_exc()
+        # Don't fail the scan, continue without dimensions
+    
     logger.info(f"Creating scan - part_number: {part_number}, source: {part_number_source.value}, pins: {detected_pins}")
     
     # Create scan and perform verification
@@ -312,6 +352,7 @@ async def scan_image(
         manufacturer_detected=scan.manufacturer_detected,
         image_path=stored_image_path,
         detected_pins=scan.detected_pins,
+        dimension_data=dimension_data,
         message=scan.message,
         match_details=scan.match_details,
         queued_for_sync=(scan.status == ScanStatus.UNKNOWN.value),

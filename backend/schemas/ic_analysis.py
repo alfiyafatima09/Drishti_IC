@@ -29,6 +29,19 @@ class PinDetectionData(BaseModel):
     detection_method: str = Field(..., description="Method used for detection")
 
 
+class DimensionData(BaseModel):
+    """IC chip dimension measurement results."""
+    
+    width_mm: float = Field(..., description="IC width in millimeters (including pins)")
+    height_mm: float = Field(..., description="IC height in millimeters (including pins)")
+    width_px: float = Field(..., description="IC width in pixels")
+    height_px: float = Field(..., description="IC height in pixels")
+    area_mm2: float = Field(..., description="IC area in square millimeters")
+    angle: float = Field(..., description="Rotation angle of IC in degrees")
+    confidence: str = Field(..., description="Detection confidence level (high/medium/low)")
+    visualization_path: Optional[str] = Field(None, description="Path to annotated measurement image")
+
+
 class ICAnalysisResult(BaseModel):
     """Complete IC analysis result."""
     
@@ -36,6 +49,7 @@ class ICAnalysisResult(BaseModel):
     image_path: str = Field(..., description="Path to analyzed image")
     ocr_data: OCRTextData = Field(..., description="OCR text extraction results")
     pin_data: PinDetectionData = Field(..., description="Pin detection results")
+    dimension_data: Optional[DimensionData] = Field(None, description="IC dimension measurement results")
     analyzed_at: datetime = Field(..., description="Timestamp of analysis")
     processing_time_ms: float = Field(..., description="Processing time in milliseconds")
     
@@ -59,6 +73,16 @@ class ICAnalysisResult(BaseModel):
                     "pin_layout": "Dual in-line, 8 pins total",
                     "confidence_score": 95.0,
                     "detection_method": "Gemini Vision Analysis"
+                },
+                "dimension_data": {
+                    "width_mm": 9.53,
+                    "height_mm": 6.35,
+                    "width_px": 476.5,
+                    "height_px": 317.5,
+                    "area_mm2": 60.52,
+                    "angle": -2.5,
+                    "confidence": "high",
+                    "visualization_path": "scanned_images/measured_550e8400.png"
                 },
                 "analyzed_at": "2025-12-02T10:30:00Z",
                 "processing_time_ms": 1250.5

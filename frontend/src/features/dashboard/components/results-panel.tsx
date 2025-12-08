@@ -10,7 +10,8 @@ import {
   Clock,
   FileText,
   RotateCcw,
-  Loader2
+  Loader2,
+  Ruler
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -262,6 +263,44 @@ export function ResultsPanel({ scanResult, capturedImage, onScanBottom }: Result
             {scanResult.detected_pins}
           </p>
         </div>
+
+        {/* Dimensions */}
+        {scanResult.dimension_data && (
+          <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">
+            <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+              <Ruler className="w-3.5 h-3.5" />
+              IC Dimensions
+              <span className={cn(
+                'ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium',
+                scanResult.dimension_data.confidence === 'high' ? 'bg-emerald-500/20 text-emerald-400' :
+                scanResult.dimension_data.confidence === 'medium' ? 'bg-amber-500/20 text-amber-400' :
+                'bg-zinc-500/20 text-zinc-400'
+              )}>
+                {scanResult.dimension_data.confidence}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-[10px] text-zinc-500 uppercase">Width</p>
+                <p className="text-lg font-mono font-bold text-zinc-100">
+                  {scanResult.dimension_data.width_mm.toFixed(2)}<span className="text-xs text-zinc-500 ml-0.5">mm</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-zinc-500 uppercase">Height</p>
+                <p className="text-lg font-mono font-bold text-zinc-100">
+                  {scanResult.dimension_data.height_mm.toFixed(2)}<span className="text-xs text-zinc-500 ml-0.5">mm</span>
+                </p>
+              </div>
+            </div>
+            <div className="mt-2 pt-2 border-t border-zinc-800">
+              <p className="text-[10px] text-zinc-500 uppercase">Area</p>
+              <p className="text-sm font-mono text-zinc-300">
+                {scanResult.dimension_data.area_mm2.toFixed(2)} mm²
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Timestamp */}
         <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800">

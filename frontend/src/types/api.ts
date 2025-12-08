@@ -37,6 +37,13 @@ export interface MatchDetails {
   manufacturer_match?: boolean | null;
 }
 
+export interface DimensionData {
+  width_mm: number;
+  height_mm: number;
+  area_mm2: number;
+  confidence: 'high' | 'medium' | 'low';
+}
+
 export interface FakeRegistryInfo {
   added_at: string;
   source: FakeSource;
@@ -72,6 +79,7 @@ export interface ScanResult {
   part_number: string;
   manufacturer_detected?: string | null;
   detected_pins: number;
+  dimension_data?: DimensionData | null;
   message: string;
   match_details?: MatchDetails | null;
   queued_for_sync: boolean;
