@@ -1,0 +1,3937 @@
+{
+  "datasheet_path": "fa3b32a98447f5cf.pdf",
+  "manufacturer": "TI",
+  "parse_status": "success",
+  "total_variants": 182,
+  "ic_variants": [
+    {
+      "part_number": "LM124, LM224, LM224A, LM224K, LM224KA, LM324, LM324A, LM324B, LM324BA, LM324K, LM324KA, LM2902, LM2902B, LM2902BA, LM2902K, LM2902KAV, LM2902KV,",
+      "manufacturer": "TI",
+      "pin_count": 0,
+      "package_type": "D (SOIC, 14)",
+      "description": "TI LM124, LM224, LM224A, LM224K, LM224KA, LM324, LM324A, LM324B, LM324BA, LM324K, LM324KA, LM2902, LM2902B, LM2902BA, LM2902K, LM2902KAV, LM2902KV, - D (SOIC, 14)",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324, LM324A, LM324B, LM324BA, LM324K, LM324KA, LM2902, LM2902B, LM2902BA, LM1902K, LM2902KAV, LM2902KV",
+      "manufacturer": "TI",
+      "pin_count": 0,
+      "package_type": "PW (TSSOP, 14)",
+      "description": "TI LM324, LM324A, LM324B, LM324BA, LM324K, LM324KA, LM2902, LM2902B, LM2902BA, LM1902K, LM2902KAV, LM2902KV - PW (TSSOP, 14)",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM224, LM224A, LM224K, LM224KA, LM324, LM324A, LM324K, LM324KA, LM2902, LM2902K",
+      "manufacturer": "TI",
+      "pin_count": 0,
+      "package_type": "N (PDIP, 14)",
+      "description": "TI LM224, LM224A, LM224K, LM224KA, LM324, LM324A, LM324K, LM324KA, LM2902, LM2902K - N (PDIP, 14)",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 19.3,
+      "dimension_width": 9.4,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {
+          "length_mm": 19.3,
+          "width_mm": 9.4
+        }
+      }
+    },
+    {
+      "part_number": "LM324, LM324A, LM324K, LM324KA, LM2902, LM2902K",
+      "manufacturer": "TI",
+      "pin_count": 0,
+      "package_type": "NS (SOP, 14)",
+      "description": "TI LM324, LM324A, LM324K, LM324KA, LM2902, LM2902K - NS (SOP, 14)",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 10.3,
+      "dimension_width": 7.8,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "NS",
+        "dimensions": {
+          "length_mm": 10.3,
+          "width_mm": 7.8
+        }
+      }
+    },
+    {
+      "part_number": "LM324A, LM2902K",
+      "manufacturer": "TI",
+      "pin_count": 0,
+      "package_type": "DB (SSOP, 14)",
+      "description": "TI LM324A, LM2902K - DB (SSOP, 14)",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.5,
+      "dimension_width": 5.6,
+      "dimension_height": 2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "DB",
+        "dimensions": {
+          "length_mm": 6.5,
+          "width_mm": 5.6,
+          "height_mm": 2
+        }
+      }
+    },
+    {
+      "part_number": "LM124, LM124A",
+      "manufacturer": "TI",
+      "pin_count": 0,
+      "package_type": "FK (LCCC, 20)",
+      "description": "TI LM124, LM124A - FK (LCCC, 20)",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 8.89,
+      "dimension_width": 8.89,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "FK",
+        "dimensions": {
+          "length_mm": 8.89,
+          "width_mm": 8.89
+        }
+      }
+    },
+    {
+      "part_number": "LM324B, LM2902B",
+      "manufacturer": "TI",
+      "pin_count": 0,
+      "package_type": "RTE (WQFN, 16)",
+      "description": "TI LM324B, LM2902B - RTE (WQFN, 16)",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 3.1,
+      "dimension_width": 3.1,
+      "dimension_height": 0.8,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "RTE",
+        "dimensions": {
+          "length_mm": 3.1,
+          "width_mm": 3.1,
+          "height_mm": 0.8
+        }
+      }
+    },
+    {
+      "part_number": "77043012A",
+      "manufacturer": "TI",
+      "pin_count": 20,
+      "package_type": "LCCC (FK) | 20",
+      "description": "TI 77043012A - LCCC (FK) | 20",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "7704301CA",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI 7704301CA - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "7704301DA",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI 7704301DA - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "77043022A",
+      "manufacturer": "TI",
+      "pin_count": 20,
+      "package_type": "LCCC (FK) | 20",
+      "description": "TI 77043022A - LCCC (FK) | 20",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "7704302CA",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI 7704302CA - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "7704302DA",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI 7704302DA - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "JM38510/11005BCA",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI JM38510/11005BCA - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "JM38510/11005BCA.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI JM38510/11005BCA.A - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124AFKB",
+      "manufacturer": "TI",
+      "pin_count": 20,
+      "package_type": "LCCC (FK) | 20",
+      "description": "TI LM124AFKB - LCCC (FK) | 20",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124AFKB.A",
+      "manufacturer": "TI",
+      "pin_count": 20,
+      "package_type": "LCCC (FK) | 20",
+      "description": "TI LM124AFKB.A - LCCC (FK) | 20",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124AJ",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124AJ - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 15,
+      "dimension_width": null,
+      "dimension_height": 5.08,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "J",
+        "dimensions": {
+          "length_mm": 15,
+          "height_mm": 5.08
+        }
+      }
+    },
+    {
+      "part_number": "LM124AJ.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124AJ.A - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124AJB",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124AJB - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 15,
+      "dimension_width": null,
+      "dimension_height": 5.08,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "J",
+        "dimensions": {
+          "length_mm": 15,
+          "height_mm": 5.08
+        }
+      }
+    },
+    {
+      "part_number": "LM124AJB.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124AJB.A - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124AWB",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI LM124AWB - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124AWB.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI LM124AWB.A - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124D",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM124D - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM124DR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM124DR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM124DRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM124DRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM124DRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM124DRG4.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM124FKB",
+      "manufacturer": "TI",
+      "pin_count": 20,
+      "package_type": "LCCC (FK) | 20",
+      "description": "TI LM124FKB - LCCC (FK) | 20",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124FKB.A",
+      "manufacturer": "TI",
+      "pin_count": 20,
+      "package_type": "LCCC (FK) | 20",
+      "description": "TI LM124FKB.A - LCCC (FK) | 20",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124J",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124J - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 15,
+      "dimension_width": null,
+      "dimension_height": 5.08,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "J",
+        "dimensions": {
+          "length_mm": 15,
+          "height_mm": 5.08
+        }
+      }
+    },
+    {
+      "part_number": "LM124J.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124J.A - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124JB",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124JB - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 15,
+      "dimension_width": null,
+      "dimension_height": 5.08,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "J",
+        "dimensions": {
+          "length_mm": 15,
+          "height_mm": 5.08
+        }
+      }
+    },
+    {
+      "part_number": "LM124JB.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI LM124JB.A - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124W",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI LM124W - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124W.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI LM124W.A - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124WB",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI LM124WB - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM124WB.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CFP (W) | 14",
+      "description": "TI LM124WB.A - CFP (W) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "CFP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224AD",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224AD - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224AD.B",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224AD.B - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224ADR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224ADR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224ADR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224ADR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224ADRE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224ADRE4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224ADRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224ADRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224ADRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224ADRG4.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224AN",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224AN - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224AN.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224AN.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224D",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224D - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224DR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224DR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224DR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224DR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224DRG3",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224DRG3 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224DRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224DRG4.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224KAD",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224KAD - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224KADR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224KADR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224KADR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224KADR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224KADRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224KADRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224KAN",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224KAN - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224KAN.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224KAN.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224KDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224KDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224KDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM224KDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM224KN",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224KN - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224KN.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224KN.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224N",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224N - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224N.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224N.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM224NE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM224NE4 - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902BAIDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902BAIDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BAIDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902BAIDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BAIPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902BAIPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BAIPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902BAIPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BIDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902BIDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BIDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902BIDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BIPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902BIPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BIPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902BIPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902BIRTER",
+      "manufacturer": "TI",
+      "pin_count": 16,
+      "package_type": "WQFN (RTE) | 16",
+      "description": "TI LM2902BIRTER - WQFN (RTE) | 16",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 3.1,
+      "dimension_width": 3.1,
+      "dimension_height": 0.8,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "RTE",
+        "dimensions": {
+          "length_mm": 3.1,
+          "width_mm": 3.1,
+          "height_mm": 0.8
+        }
+      }
+    },
+    {
+      "part_number": "LM2902D",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902D - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902DR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902DR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902DR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902DR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902DRE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902DRE4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902DRG3",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902DRG3 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902DRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902DRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902DRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902DRG4.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KAVQDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KAVQDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KAVQDRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KAVQDRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KAVQPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KAVQPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KAVQPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KAVQPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KAVQPWRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KAVQPWRG4 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KAVQPWRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KAVQPWRG4.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KD",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KD - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KDB",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SSOP (DB) | 14",
+      "description": "TI LM2902KDB - SSOP (DB) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.5,
+      "dimension_width": 5.6,
+      "dimension_height": 2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "DB",
+        "dimensions": {
+          "length_mm": 6.5,
+          "width_mm": 5.6,
+          "height_mm": 2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KDB.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SSOP (DB) | 14",
+      "description": "TI LM2902KDB.A - SSOP (DB) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902KDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KN",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM2902KN - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902KN.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM2902KN.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902KNSR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM2902KNSR - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902KNSR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM2902KNSR.A - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902KNSRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM2902KNSRG4 - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902KPW",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KPW - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KVQDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KVQDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KVQDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KVQDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KVQDRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM2902KVQDRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KVQPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KVQPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KVQPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KVQPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KVQPWRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KVQPWRG4 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902KVQPWRG4.B",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902KVQPWRG4.B - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902N",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM2902N - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902N.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM2902N.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902NE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM2902NE4 - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902NSR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM2902NSR - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM2902PW",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902PW - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902PWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902PWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902PWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902PWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902PWRE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902PWRE4 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902PWRG3",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902PWRG3 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902PWRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902PWRG4 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM2902PWRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM2902PWRG4.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324AD",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324AD - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324ADBR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SSOP (DB) | 14",
+      "description": "TI LM324ADBR - SSOP (DB) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.5,
+      "dimension_width": 5.6,
+      "dimension_height": 2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "DB",
+        "dimensions": {
+          "length_mm": 6.5,
+          "width_mm": 5.6,
+          "height_mm": 2
+        }
+      }
+    },
+    {
+      "part_number": "LM324ADBR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SSOP (DB) | 14",
+      "description": "TI LM324ADBR.A - SSOP (DB) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.5,
+      "dimension_width": 5.6,
+      "dimension_height": 2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "DB",
+        "dimensions": {
+          "length_mm": 6.5,
+          "width_mm": 5.6,
+          "height_mm": 2
+        }
+      }
+    },
+    {
+      "part_number": "LM324ADR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324ADR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324ADR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324ADR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324ADRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324ADRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324AN",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324AN - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324AN.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324AN.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324ANSR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324ANSR - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324ANSR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324ANSR.A - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324ANSRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324ANSRG4 - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324APWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324APWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324APWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324APWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324APWRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324APWRG4 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324APWRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324APWRG4.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324BAIDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324BAIDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324BAIDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324BAIDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324BAIPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324BAIPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324BAIPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324BAIPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324BIDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324BIDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324BIDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324BIDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324BIPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324BIPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324BIPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324BIPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324D",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324D - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324DR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324DR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324DR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324DR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324DRE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324DRE4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324DRG3",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324DRG3 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324DRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324DRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324DRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324DRG4.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324KAD",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324KAD - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324KADR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324KADR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324KADR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324KADR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324KADRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324KADRG4 - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324KAN",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324KAN - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KAN.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324KAN.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KANSR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324KANSR - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KANSR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324KANSR.A - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KAPW",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324KAPW - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324KAPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324KAPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324KAPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324KAPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324KDR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324KDR - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324KDR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOIC (D) | 14",
+      "description": "TI LM324KDR.A - SOIC (D) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.2,
+      "dimension_width": 4,
+      "dimension_height": 1.75,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "D",
+        "dimensions": {
+          "length_mm": 6.2,
+          "width_mm": 4,
+          "height_mm": 1.75
+        }
+      }
+    },
+    {
+      "part_number": "LM324KN",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324KN - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KN.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324KN.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KNSR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324KNSR - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KNSR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324KNSR.A - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324KPW",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324KPW - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324KPWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324KPWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324KPWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324KPWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324N",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324N - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "N",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324N.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324N.A - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324NE3",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "PDIP (N) | 14",
+      "description": "TI LM324NE3 - PDIP (N) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324NSR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324NSR - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324NSR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324NSR.A - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324NSRE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324NSRE4 - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324NSRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "SOP (NS) | 14",
+      "description": "TI LM324NSRG4 - SOP (NS) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "SOP",
+        "dimensions": {}
+      }
+    },
+    {
+      "part_number": "LM324PW",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324PW - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324PWR",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324PWR - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324PWR.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324PWR.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324PWRE4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324PWRE4 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324PWRG3",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324PWRG3 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324PWRG4",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324PWRG4 - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "LM324PWRG4.A",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "TSSOP (PW) | 14",
+      "description": "TI LM324PWRG4.A - TSSOP (PW) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": 6.6,
+      "dimension_width": 5.1,
+      "dimension_height": 1.2,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": "PW",
+        "dimensions": {
+          "length_mm": 6.6,
+          "width_mm": 5.1,
+          "height_mm": 1.2
+        }
+      }
+    },
+    {
+      "part_number": "M38510/11005BCA",
+      "manufacturer": "TI",
+      "pin_count": 14,
+      "package_type": "CDIP (J) | 14",
+      "description": "TI M38510/11005BCA - CDIP (J) | 14",
+      "voltage_min": null,
+      "voltage_max": null,
+      "operating_temp_min": 0,
+      "operating_temp_max": 70,
+      "dimension_length": null,
+      "dimension_width": null,
+      "dimension_height": null,
+      "electrical_specs": {
+        "package_name": null,
+        "package_drawing": null,
+        "dimensions": {}
+      }
+    }
+  ],
+  "saved_to_db": 0,
+  "error": null
+}

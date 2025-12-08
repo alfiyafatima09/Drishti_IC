@@ -36,7 +36,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               autoComplete="email"
               autoCorrect="off"
               disabled={isLoading}
-              className="h-12 rounded-xl border-2 border-blue-300 bg-white px-4 text-base font-medium transition-all placeholder:text-blue-400 hover:border-blue-400 focus:border-cyan-500 focus:bg-blue-50 focus:ring-4 focus:ring-cyan-100 shadow-sm"
+              className="h-12 rounded-xl border-2 border-blue-300 bg-white px-4 text-base font-medium shadow-sm transition-all placeholder:text-blue-400 hover:border-blue-400 focus:border-cyan-500 focus:bg-blue-50 focus:ring-4 focus:ring-cyan-100"
             />
           </div>
           <div className="grid gap-2">
@@ -57,12 +57,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
               autoCapitalize="none"
               autoComplete="current-password"
               disabled={isLoading}
-              className="h-12 rounded-xl border-2 border-blue-300 bg-white px-4 text-base font-medium transition-all hover:border-blue-400 focus:border-cyan-500 focus:bg-blue-50 focus:ring-4 focus:ring-cyan-100 shadow-sm"
+              className="h-12 rounded-xl border-2 border-blue-300 bg-white px-4 text-base font-medium shadow-sm transition-all hover:border-blue-400 focus:border-cyan-500 focus:bg-blue-50 focus:ring-4 focus:ring-cyan-100"
             />
           </div>
           <Button
             disabled={isLoading}
-            className="mt-2 h-14 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-base font-bold text-white transition-all hover:from-blue-700 hover:via-cyan-700 hover:to-blue-800 shadow-xl hover:shadow-2xl active:scale-[0.98]"
+            className="mt-2 h-14 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-base font-bold text-white shadow-xl transition-all hover:from-blue-700 hover:via-cyan-700 hover:to-blue-800 hover:shadow-2xl active:scale-[0.98]"
           >
             {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
             Sign In

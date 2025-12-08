@@ -28,20 +28,20 @@ const formatValue = (value: unknown): string | null => {
 };
 
 interface ICSearchResultItem {
-  part_number: string;
-  manufacturer: string;
-  manufacturer_name?: string;
-  pin_count: number;
-  package_type?: string;
-  description?: string;
-  has_datasheet?: boolean;
+  part_number: string
+  manufacturer: string
+  manufacturer_name?: string
+  pin_count: number
+  package_type?: string
+  description?: string
+  has_datasheet?: boolean
 }
 
 interface ICSearchResult {
-  results: ICSearchResultItem[];
-  total_count: number;
-  limit: number;
-  offset: number;
+  results: ICSearchResultItem[]
+  total_count: number
+  limit: number
+  offset: number
 }
 
 interface ICSpecification {
@@ -209,25 +209,25 @@ export default function ICDatabasePage() {
 
   // Handle IC click to load details
   const handleICClick = useCallback(async (partNumber: string) => {
-    setIsLoadingDetails(true);
-    setError(null);
+    setIsLoadingDetails(true)
+    setError(null)
 
     try {
       const response = await fetch(`${API_BASE}/ic/details?part_number=${encodeURIComponent(partNumber)}`);
       
       if (!response.ok) {
-        throw new Error('Failed to load IC details');
+        throw new Error('Failed to load IC details')
       }
 
-      const data: ICSpecification = await response.json();
-      setSelectedIC(data);
+      const data: ICSpecification = await response.json()
+      setSelectedIC(data)
     } catch (err) {
-      setError('Failed to load IC details. Please try again.');
-      console.error('Details error:', err);
+      setError('Failed to load IC details. Please try again.')
+      console.error('Details error:', err)
     } finally {
-      setIsLoadingDetails(false);
+      setIsLoadingDetails(false)
     }
-  }, []);
+  }, [])
 
   // Handle datasheet view - open in new tab
   const handleViewDatasheet = useCallback((partNumber: string) => {
@@ -256,7 +256,7 @@ export default function ICDatabasePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         {/* Header Section */}
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">IC Database</h1>
@@ -413,7 +413,7 @@ export default function ICDatabasePage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Left Panel: Search Results */}
           <div className="space-y-4">
             {isLoading && !hasLoadedOnce && (
@@ -451,13 +451,14 @@ export default function ICDatabasePage() {
                     <div
                       key={`${ic.part_number}-${ic.manufacturer}-${index}`}
                       onClick={() => handleICClick(ic.part_number)}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-lg
-                        ${selectedIC?.part_number === ic.part_number && selectedIC?.manufacturer === ic.manufacturer
+                      className={`cursor-pointer rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
+                        selectedIC?.part_number === ic.part_number &&
+                        selectedIC?.manufacturer === ic.manufacturer
                           ? 'border-green-500 bg-green-50 shadow-md'
                           : 'border-blue-200 bg-blue-50 hover:border-blue-400'
-                        }`}
+                      }`}
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="mb-2 flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <Cpu className="text-blue-600 flex-shrink-0" size={20} />
                           <h3 className="text-lg font-bold text-gray-800 break-all">{ic.part_number}</h3>
@@ -468,7 +469,7 @@ export default function ICDatabasePage() {
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="space-y-1 text-sm">
                         <p className="text-gray-700">
                           <span className="font-semibold">Manufacturer:</span> {ic.manufacturer_name || ic.manufacturer}
@@ -646,7 +647,7 @@ export default function ICDatabasePage() {
                 )}
 
                 {/* Metadata */}
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t-2 border-gray-200">
+                <div className="grid grid-cols-2 gap-4 border-t-2 border-gray-200 pt-4">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Data Source</p>
                     <p className="text-sm font-semibold text-gray-800">
@@ -656,10 +657,9 @@ export default function ICDatabasePage() {
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Last Updated</p>
                     <p className="text-sm font-semibold text-gray-800">
-                      {selectedIC.updated_at 
+                      {selectedIC.updated_at
                         ? new Date(selectedIC.updated_at).toLocaleDateString()
-                        : 'N/A'
-                      }
+                        : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -672,7 +672,7 @@ export default function ICDatabasePage() {
                       href={selectedIC.datasheet_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 font-medium text-sm break-all underline"
+                      className="text-sm font-medium break-all text-blue-600 underline hover:text-blue-800"
                     >
                       {selectedIC.datasheet_url}
                     </a>
@@ -692,5 +692,5 @@ export default function ICDatabasePage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

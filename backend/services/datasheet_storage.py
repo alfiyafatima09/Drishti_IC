@@ -10,6 +10,7 @@ import logging
 import time
 from pathlib import Path
 from typing import Optional, Tuple
+from urllib.parse import urlparse, parse_qs, unquote
 
 import httpx
 import requests
@@ -148,6 +149,7 @@ async def download_pdf_async(
 ) -> Tuple[str, int]:
     """
     Download a PDF asynchronously and save it to the unified storage location.
+    Includes automatic URL resolution for TI webview and redirects.
     
     Args:
         url: URL to download from
@@ -162,14 +164,17 @@ async def download_pdf_async(
     Raises:
         Exception: If download fails
     """
+    # Resolve URL (handle TI webview and redirects) - use sync version since it's just URL parsing
+    resolved_url = resolve_url(url)
+    
     filename = get_datasheet_filename(part_number, manufacturer_code)
     local_path = get_storage_folder() / filename
     
-    logger.info(f"Downloading PDF for {part_number} ({manufacturer_code}) from {url}")
+    logger.info(f"Downloading PDF for {part_number} ({manufacturer_code}) from {resolved_url}")
     logger.debug(f"Saving to: {local_path}")
     
     async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-        response = await client.get(url)
+        response = await client.get(resolved_url)
         
         if response.status_code == 404:
             raise Exception(f"Datasheet not found (HTTP 404) for {part_number}")
@@ -199,7 +204,7 @@ def download_pdf_sync(
 ) -> Tuple[str, int]:
     """
     Download a PDF synchronously and save it to the unified storage location.
-    Includes retry logic for robustness.
+    Includes retry logic for robustness and automatic URL resolution.
     
     Args:
         url: URL to download from
@@ -215,6 +220,9 @@ def download_pdf_sync(
     Raises:
         Exception: If download fails after all retries
     """
+    # Resolve URL (handle TI webview and redirects)
+    resolved_url = resolve_url(url)
+    
     filename = get_datasheet_filename(part_number, manufacturer_code)
     local_path = get_storage_folder() / filename
     
@@ -225,9 +233,9 @@ def download_pdf_sync(
     
     for attempt in range(max_retries):
         try:
-            logger.info(f"Downloading PDF for {part_number} from {url} (attempt {attempt + 1}/{max_retries})")
+            logger.info(f"Downloading PDF for {part_number} from {resolved_url} (attempt {attempt + 1}/{max_retries})")
             
-            with requests.get(url, stream=True, timeout=timeout, headers=headers) as r:
+            with requests.get(resolved_url, stream=True, timeout=timeout, headers=headers) as r:
                 if r.status_code == 404:
                     raise Exception(f"Datasheet not found (HTTP 404) for {part_number}")
                 
@@ -260,6 +268,160 @@ def download_pdf_sync(
     raise Exception("Failed to download PDF after all retries")
 
 
+def resolve_ti_webview_url(url: str) -> str:
+    """
+    Resolve TI webview redirect URLs to actual PDF URLs.
+
+    TI often provides URLs like:
+    https://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=http%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Flm224
+
+    The actual PDF URL is in the gotoUrl parameter (double URL-encoded).
+    
+    Args:
+        url: Original URL that might be a TI webview redirect
+        
+    Returns:
+        Resolved URL (or original if not a TI webview URL)
+    """
+    if "suppproductinfo.tsp" not in url and "ti.com/general/docs" not in url:
+        return url
+
+    try:
+        parsed = urlparse(url)
+        query_params = parse_qs(parsed.query)
+
+        if "gotoUrl" in query_params:
+            # The gotoUrl is double URL-encoded
+            goto_url = query_params["gotoUrl"][0]
+            # Decode twice
+            actual_url = unquote(unquote(goto_url))
+            logger.info(f"Resolved TI webview URL: {url} -> {actual_url}")
+            return actual_url
+    except Exception as e:
+        logger.warning(f"Failed to parse TI webview URL: {e}")
+
+    return url
+
+
+def extract_pdf_from_preview_page(url: str, timeout: int = 30) -> Optional[str]:
+    """
+    Some URLs (like OnSemi Widen CDN) return HTML preview pages with embedded PDF URLs.
+    This function fetches the page and extracts the actual PDF URL from JavaScript.
+    
+    Args:
+        url: URL that might be an HTML preview page
+        timeout: Request timeout in seconds
+        
+    Returns:
+        Extracted PDF URL if found, None otherwise
+    """
+    try:
+        import re
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }
+        
+        resp = requests.get(url, headers=headers, timeout=timeout)
+        
+        if resp.status_code != 200:
+            return None
+            
+        content_type = resp.headers.get('content-type', '').lower()
+        
+        # If it's already a PDF, return the URL as-is
+        if 'application/pdf' in content_type:
+            return url
+            
+        # If it's HTML, try to extract PDF URL from JavaScript
+        if 'text/html' in content_type:
+            html_content = resp.text
+            
+            # Pattern 1: window.viewerPdfUrl = 'URL'
+            match = re.search(r'window\.viewerPdfUrl\s*=\s*[\'"]([^\'\"]+)[\'"]', html_content)
+            if match:
+                pdf_url = match.group(1)
+                logger.info(f"Extracted PDF URL from preview page: {pdf_url}")
+                return pdf_url
+            
+            # Pattern 2: data-pdf-url="URL"
+            match = re.search(r'data-pdf-url=[\'"]([^\'\"]+)[\'"]', html_content)
+            if match:
+                pdf_url = match.group(1)
+                logger.info(f"Extracted PDF URL from data attribute: {pdf_url}")
+                return pdf_url
+            
+            # Pattern 3: Look for .pdf URLs in the HTML
+            pdf_urls = re.findall(r'https?://[^\s\'"<>]+\.pdf[^\s\'"<>]*', html_content)
+            if pdf_urls:
+                pdf_url = pdf_urls[0]
+                logger.info(f"Found PDF URL in HTML: {pdf_url}")
+                return pdf_url
+                
+        return None
+        
+    except Exception as e:
+        logger.warning(f"Failed to extract PDF from preview page {url}: {e}")
+        return None
+
+
+def follow_redirects(url: str, timeout: int = 30) -> str:
+    """
+    Follow HTTP redirects to get the final PDF URL.
+    TI's /lit/gpn/ URLs and other manufacturer URLs often redirect to the actual PDF.
+    
+    Args:
+        url: Original URL
+        timeout: Request timeout in seconds
+        
+    Returns:
+        Final URL after following all redirects
+    """
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/pdf,*/*'
+        }
+        # Use HEAD request to follow redirects without downloading
+        resp = requests.head(url, allow_redirects=True, timeout=timeout, headers=headers)
+        
+        if resp.url != url:
+            logger.info(f"Followed redirect: {url} -> {resp.url}")
+            return resp.url
+        
+        return url
+        
+    except Exception as e:
+        logger.warning(f"Failed to follow redirects for {url}: {e}")
+        return url
+
+
+def resolve_url(url: str) -> str:
+    """
+    Resolve a datasheet URL by handling TI webview URLs, preview pages, and following redirects.
+    This should be called before downloading to ensure we have the actual PDF URL.
+    
+    Args:
+        url: Original datasheet URL
+        
+    Returns:
+        Resolved URL ready for download
+    """
+    # First, resolve TI webview URLs (double URL-encoded)
+    url = resolve_ti_webview_url(url)
+    
+    # Then, try to extract PDF URL from preview pages (OnSemi Widen CDN, etc.)
+    extracted_url = extract_pdf_from_preview_page(url)
+    if extracted_url:
+        url = extracted_url
+    
+    # Finally, follow any HTTP redirects
+    url = follow_redirects(url)
+    
+    return url
+
+
 # Manufacturer name normalization for hash generation
 MANUFACTURER_NAME_MAP = {
     "stmicroelectronics": "STM",
@@ -275,10 +437,14 @@ MANUFACTURER_NAME_MAP = {
     "adi": "ANALOG_DEVICES",
     "infineon": "INFINEON",
     "microchip": "MICROCHIP",
+    "atmel": "ATMEL",
     "maxim": "MAXIM",
     "maxim integrated": "MAXIM",
     "renesas": "RENESAS",
     "rohm": "ROHM",
+    "raspberry pi": "RASPBERRY_PI",
+    "raspberry pi ltd": "RASPBERRY_PI",
+    "raspberrypi": "RASPBERRY_PI",
 }
 
 
