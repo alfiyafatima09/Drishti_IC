@@ -4,12 +4,18 @@
 help:
 	@echo "Available commands:"
 	@echo "  make install      - Install dependencies"
-	@echo "  make run          - Run the API server"
+	@echo "  make run          - Run the API server and model (with GPU auto-detection)"
 	@echo "  make format       - Format code using Ruff"
 	@echo "  make lint         - Lint code using Ruff"
 	@echo "  make type-check   - Run static type checking using Mypy"
 	@echo "  make test         - Run tests using Pytest"
 	@echo "  make clean        - Clean up cache files"
+	@echo ""
+	@echo "GPU Configuration:"
+	@echo "  The script auto-detects GPU and CUDA. To force CPU mode:"
+	@echo "    LLAMA_GPU_LAYERS=0 make run"
+	@echo "  To force specific GPU layers:"
+	@echo "    LLAMA_GPU_LAYERS=32 make run"
 
 # Install dependencies
 install:

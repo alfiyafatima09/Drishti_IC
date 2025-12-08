@@ -252,3 +252,15 @@ class SettingValueType(str, Enum):
     BOOLEAN = "BOOLEAN"
     JSON = "JSON"
 
+
+# ============================================================
+# OCR & VISION ANALYSIS CONSTANTS
+# ============================================================
+
+# Manufacturer keywords for OCR text detection
+MANUFACTURER_KEYWORDS = [
+    'TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP',
+    'INFINEON', 'ATMEL', 'FREESCALE', 'ON SEMI', 'ONSEMI', 'FAIRCHILD',
+    'NATIONAL', 'LINEAR', 'VISHAY', 'ROHM', 'TOSHIBA', 'RENESAS'
+]
+

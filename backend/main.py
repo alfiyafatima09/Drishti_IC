@@ -73,7 +73,7 @@ app.include_router(system_router)
 app.include_router(camera_router)
 app.include_router(images.router)
 app.include_router(datasheets.router)
-# app.include_router(ic_analysis.router)
+app.include_router(ic_analysis.router)
 app.include_router(digikey_router.router)
 
 

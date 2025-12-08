@@ -30,9 +30,6 @@ function App() {
         <Route path="/history" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
         </Route>
-        <Route path="/settings" element={<DashboardLayout />}>
-          <Route index element={<DashboardPage />} />
-        </Route>
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/scan" replace />} />
       </Routes>

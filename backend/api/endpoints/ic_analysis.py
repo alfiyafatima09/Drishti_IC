@@ -1,25 +1,32 @@
 """
 IC Analysis API endpoint.
-Upload IC images for OCR text extraction and pin count detection using Gemini AI.
+Upload IC images for OCR text extraction and pin count detection using Local Model.
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, HTTPException, status  # pyright: ignore[reportMissingImports]
 from datetime import datetime
 import logging
 import uuid
 import time
+import asyncio
+import tempfile
+import os
 
+from core.constants import MANUFACTURER_KEYWORDS
 from schemas.ic_analysis import (
     ICAnalysisResult,
+    OCRTextData,
+    PinDetectionData,
     ErrorResponse
 )
 from services.storage import save_image_file
-# from services.gemini_service import gemini_service, GeminiServiceException
+from services.ocr import extract_text_from_image
+from services.llm import LLM
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/api/v1",
-    tags=["Core Inspection"],
+    prefix="/api/v1/ic-analysis",
+    tags=["IC Analysis"],
     responses={
         400: {"model": ErrorResponse, "description": "Bad Request"},
         500: {"model": ErrorResponse, "description": "Internal Server Error"},
@@ -48,7 +55,7 @@ router = APIRouter(
        - Identifies pin layout
        - Provides confidence scores
     
-    **Powered by:** Google Gemini 1.5 Flash AI
+    **Powered by:** Local Vision Model (Qwen3-VL)
     
     **Supported formats:** JPEG, PNG, BMP, TIFF  
     **Max file size:** 10MB
@@ -62,7 +69,7 @@ async def scan_ic_image(
     file: UploadFile = File(..., description="IC chip image (JPEG, PNG, BMP, TIFF)")
 ):
     """
-    Analyze IC chip image using Gemini AI.
+    Analyze IC chip image using Local Model and OCR.
     
     Args:
         file: Uploaded image file
@@ -111,25 +118,126 @@ async def scan_ic_image(
         image_id, image_path = save_image_file(image_bytes, file.filename or "ic_image.jpg")
         logger.info(f"[{analysis_id}] Image saved: {image_path}")
         
-        # Analyze with Gemini AI
-        try:
-            ocr_data, pin_data = await gemini_service.analyze_ic(image_path)
-            logger.info(f"[{analysis_id}] Analysis complete - Part: {ocr_data.part_number}, Pins: {pin_data.pin_count}")
-            
-        except GeminiServiceException as e:
-            logger.error(f"[{analysis_id}] Gemini service error: {e}")
+        # ========== OCR Processing ==========
+        logger.debug(f"[{analysis_id}] Starting OCR extraction...")
+        ocr_response = extract_text_from_image(image_bytes, preprocess=True)
+        
+        if ocr_response.status == "error":
+            logger.error(f"[{analysis_id}] OCR failed: {ocr_response.error}")
             raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail={
-                    "error": "AI_SERVICE_ERROR",
-                    "message": "AI analysis service is unavailable or failed",
+                    "error": "OCR_ERROR",
+                    "message": f"OCR processing failed: {ocr_response.error}",
                     "details": {
-                        "service": "Google Gemini",
-                        "error": str(e),
-                        "suggestion": "Please check GEMINI_API_KEY configuration"
+                        "analysis_id": analysis_id
                     }
                 }
             )
+        
+        # Calculate OCR confidence
+        ocr_confidence = 0.0
+        if ocr_response.results:
+            ocr_confidence = sum(r.confidence for r in ocr_response.results) / len(ocr_response.results) * 100
+        
+        # Extract part number and manufacturer from OCR text
+        ocr_text = ocr_response.full_text
+        ocr_lines = [r.text.strip() for r in ocr_response.results if r.text.strip()]
+        
+        # Simple heuristic for part number (first substantial line)
+        part_number = None
+        if ocr_lines:
+            # Try to find a line that looks like a part number
+            for line in ocr_lines:
+                if len(line) >= 3 and any(c.isdigit() for c in line) and any(c.isalpha() for c in line):
+                    part_number = line
+                    break
+            if not part_number:
+                part_number = ocr_lines[0] if ocr_lines else None
+        
+        # Extract manufacturer from OCR
+        manufacturer = None
+        for text_segment in ocr_response.texts:
+            upper_text = text_segment.upper()
+            for keyword in MANUFACTURER_KEYWORDS:
+                if keyword in upper_text:
+                    manufacturer = text_segment
+                    break
+            if manufacturer:
+                break
+        
+        # Build OCR data
+        ocr_data = OCRTextData(
+            raw_text=ocr_text,
+            part_number=part_number,
+            manufacturer=manufacturer,
+            date_code=None,  # Could be extracted with more sophisticated parsing
+            lot_code=None,   # Could be extracted with more sophisticated parsing
+            other_markings=ocr_lines[1:] if len(ocr_lines) > 1 else [],
+            confidence_score=round(ocr_confidence, 2)
+        )
+        
+        # ========== Vision Analysis (Local Model) for Pin Detection ==========
+        pin_count = 0
+        package_type = None
+        pin_confidence = 0.0
+        
+        try:
+            # Save image to temp file for LLM analysis
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+                tmp_file.write(image_bytes)
+                tmp_path = tmp_file.name
+            
+            try:
+                llm_client = LLM()
+                llm_result = await asyncio.to_thread(llm_client.analyze_image, tmp_path)
+                logger.info(f"[{analysis_id}] Vision analysis successful: {llm_result}")
+                
+                # Parse pin count
+                pin_count_str = llm_result.get("pin_count", "")
+                if pin_count_str:
+                    try:
+                        pin_count = int(pin_count_str)
+                        pin_confidence = 90.0  # High confidence for vision-based detection
+                    except (ValueError, TypeError):
+                        logger.warning(f"[{analysis_id}] Could not parse pin count: {pin_count_str}")
+                
+                # Get manufacturer from vision if not found in OCR
+                if not manufacturer and llm_result.get("manufacturer"):
+                    manufacturer = llm_result.get("manufacturer")
+                    ocr_data.manufacturer = manufacturer
+                
+                # Infer package type from pin count (simple heuristic)
+                if pin_count > 0:
+                    if pin_count <= 8:
+                        package_type = "DIP-8" if pin_count == 8 else f"DIP-{pin_count}"
+                    elif pin_count <= 16:
+                        package_type = f"SOIC-{pin_count}"
+                    elif pin_count <= 32:
+                        package_type = f"QFP-{pin_count}"
+                    else:
+                        package_type = f"BGA/QFN-{pin_count}"
+                
+            finally:
+                # Clean up temp file
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                    
+        except Exception as e:
+            logger.error(f"[{analysis_id}] Vision analysis failed: {e}", exc_info=True)
+            # Don't fail the entire request, just log and continue with OCR-only results
+            pin_confidence = 0.0
+        
+        # Build pin detection data
+        pin_data = PinDetectionData(
+            pin_count=pin_count,
+            package_type=package_type,
+            pin_layout=f"{package_type or 'Unknown'} package, {pin_count} pins total" if pin_count > 0 else None,
+            confidence_score=round(pin_confidence, 2),
+            detection_method="Local Vision Model (Qwen3-VL)"
+        )
+        
+        logger.info(f"[{analysis_id}] Analysis complete - Part: {ocr_data.part_number}, Pins: {pin_data.pin_count}")
         
         # Calculate processing time
         processing_time_ms = (time.time() - start_time) * 1000
@@ -170,20 +278,35 @@ async def scan_ic_image(
     "/health",
     tags=["System"],
     summary="Health Check",
-    description="Check if the API is running and Gemini service is configured"
+    description="Check if the API is running and Local Model service is configured"
 )
 async def health_check():
     """API health check endpoint."""
     
-    gemini_configured = bool(gemini_service)
+    # Check if local model is accessible
+    local_model_configured = False
+    local_model_endpoint = None
+    try:
+        llm_client = LLM()
+        # Just check if we can initialize (doesn't make actual request)
+        local_model_configured = llm_client.endpoint is not None
+        local_model_endpoint = llm_client.endpoint if local_model_configured else None
+    except Exception as e:
+        logger.warning(f"Local model not configured: {e}")
+        local_model_configured = False
     
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
         "services": {
-            "gemini_ai": {
-                "configured": gemini_configured,
-                "status": "ready" if gemini_configured else "not_configured"
+            "local_model": {
+                "configured": local_model_configured,
+                "status": "ready" if local_model_configured else "not_configured",
+                "endpoint": local_model_endpoint
+            },
+            "ocr": {
+                "configured": True,
+                "status": "ready"
             }
         }
     }
