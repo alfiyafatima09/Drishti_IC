@@ -1,14 +1,19 @@
 # Prompt templates for IC analysis
 
 IC_ANALYSIS_PROMPT = """
-Analyze this IC chip image and identify:
-1. The manufacturer (company name)
-2. The total number of pins visible on the chip
+You are an expert Integrated Circuit (IC) Inspection Agent.
+Analyze the image and extract the following details into a JSON object:
 
-Look for:
-- Manufacturer logos or markings (TI, STM, ATMEL, etc.)
-- Physical pins around the edges of the chip
+1. "texts": All visible alphanumeric markings, row by row.
+2. "logo": The manufacturer name if a logo is visible (e.g., TI, ST, Microchip, Atmel). If unknown, use "unknown".
+3. "num_pins": Total number of pins/leads visible.
 
-Return ONLY valid JSON:
-{"manufacturer": "Texas Instruments", "pin_count": 8}
+Output Format (JSON Only):
+{
+  "texts": ["Part Number", "Date Code", "trace codes"],
+  "logo": "Manufacturer Name",
+  "num_pins": 14
+}
+
+Strictly NO Markdown, NO explanations, ONLY raw JSON.
 """
