@@ -10,12 +10,13 @@ function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* <Route path="/" element={<LoginPage />} /> */}
-        <Route path="/" element={<Navigate to="/scan" replace />} />
-        <Route path="/dashboard" element={<DashboardLayout />}>
+        {/* Home/New Scan page - main entry point */}
+        <Route path="/" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
         </Route>
-        <Route path="/scan" element={<DashboardLayout />}>
+        {/* Redirect /scan to home */}
+        <Route path="/scan" element={<Navigate to="/" replace />} />
+        <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
         </Route>
         <Route path="/ic" element={<DashboardLayout />}>
@@ -31,7 +32,7 @@ function App() {
           <Route index element={<DashboardPage />} />
         </Route>
         {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/scan" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>
   )
