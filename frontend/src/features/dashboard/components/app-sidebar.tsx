@@ -12,7 +12,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import logoNobg from '@/assets/logo_nobg.png'
-import { ScanLine, Database, History, Search } from 'lucide-react'
+import { ScanLine, Database, History, Search, LayoutDashboard } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 import * as React from 'react'
@@ -24,6 +24,11 @@ const items = [
     title: 'New Scan',
     url: '/scan',
     icon: ScanLine,
+  },
+  {
+    title: 'Dashboard',
+    url: '/dashboard',
+    icon: LayoutDashboard,
   },
   {
     title: 'IC Database',
