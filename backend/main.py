@@ -21,7 +21,17 @@ from api.endpoints import (
     sync_router,
     settings_router,
     system_router,
+    scan_router,
+    ic_router,
+    scans_history_router,
+    dashboard_router,
+    queue_router,
+    fakes_router,
+    sync_router,
+    settings_router,
+    system_router,
     camera_router,
+    websockets,
 )
 from api.endpoints import images, datasheets, ic_analysis
 
@@ -71,6 +81,7 @@ app.include_router(sync_router)
 app.include_router(settings_router)
 app.include_router(system_router)
 app.include_router(camera_router)
+app.include_router(websockets.router)
 app.include_router(images.router)
 app.include_router(datasheets.router)
 # app.include_router(ic_analysis.router)

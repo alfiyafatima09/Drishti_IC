@@ -104,7 +104,7 @@ const DEFAULT_FILTERS: Filters = {
   sort_dir: 'asc',
 }
 
-const ITEMS_PER_PAGE = 20
+const ITEMS_PER_PAGE = 4
 
 export default function ICDatabasePage() {
   const [searchResults, setSearchResults] = useState<ICSearchResult | null>(null)
@@ -289,10 +289,10 @@ export default function ICDatabasePage() {
   const totalPages = searchResults ? Math.ceil(searchResults.total_count / ITEMS_PER_PAGE) : 0
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-50/50 p-6 animate-in fade-in duration-500 flex flex-col">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-slate-50/50 p-4 animate-in fade-in duration-500">
       <div className="mx-auto w-full max-w-7xl flex-1 flex flex-col min-h-0">
         {/* Header Section */}
-        <div className="flex shrink-0 items-end justify-between mb-6">
+        <div className="flex shrink-0 items-end justify-between mb-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-black tracking-tight text-slate-900">IC Database</h1>
             <p className="text-slate-500 font-medium">
@@ -320,7 +320,7 @@ export default function ICDatabasePage() {
         </div>
 
         {/* Search & Filters Container */}
-        <div className="shrink-0 space-y-4 mb-6 relative z-20">
+        <div className="shrink-0 space-y-4 mb-4 relative z-20">
           {/* Search Bar */}
           <div className="relative group max-w-2xl">
             <input
@@ -460,7 +460,7 @@ export default function ICDatabasePage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 min-h-0 flex-1">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 min-h-0 flex-1">
           {/* Left Panel: Search Results */}
           <div className="flex flex-col min-h-0">
             {isLoading && !hasLoadedOnce && (
@@ -587,7 +587,7 @@ export default function ICDatabasePage() {
           {/* Right Panel: IC Details */}
           <div className="flex flex-col min-h-0">
             {isLoadingDetails && (
-              <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 shadow-lg shadow-slate-200/50 min-h-[400px]">
+              <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 shadow-lg shadow-slate-200/50 min-h-[200px]">
                 <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
                 <p className="font-medium text-slate-500">Loading IC details...</p>
               </div>
@@ -746,7 +746,7 @@ export default function ICDatabasePage() {
             )}
 
             {!selectedIC && !isLoadingDetails && (
-              <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 text-center shadow-lg shadow-slate-200/50 min-h-[400px]">
+              <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-slate-200 bg-white p-16 text-center shadow-lg shadow-slate-200/50 min-h-[200px]">
                 <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-50 text-slate-300">
                   <Cpu size={40} />
                 </div>

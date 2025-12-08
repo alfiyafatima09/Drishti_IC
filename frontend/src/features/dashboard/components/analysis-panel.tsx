@@ -287,9 +287,9 @@ export function AnalysisPanel({
                 {/* Manufacturer */}
                 <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
                   <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Manufacturer</span>
-                  <div className="flex items-center gap-1.5 font-medium text-slate-900 truncate">
-                    <Building2 className="h-3.5 w-3.5 text-slate-400" />
-                    <span className="truncate">{scanResult.manufacturer_detected || 'Unknown'}</span>
+                  <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                    <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span className="break-words">{scanResult.manufacturer_detected || 'Unknown'}</span>
                   </div>
                 </div>
 

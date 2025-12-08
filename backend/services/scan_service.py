@@ -11,7 +11,9 @@ from models import ScanHistory, ICSpecification, FakeRegistry, DatasheetQueue
 from schemas import ScanStatus, ActionRequired, MatchDetails, PartNumberSource, ScanResult
 from services.ic_service import ICService
 from services.queue_service import QueueService
+from services.websocket_manager import manager
 from services.fake_service import FakeService
+from services.websocket_manager import manager
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +91,6 @@ class ScanService:
             scanned_at=datetime.utcnow(),
         )
         db.add(scan)
-        await db.flush()
         await db.refresh(scan)
         logger.info(f"Created extraction scan: {scan.scan_id}")
         return scan
@@ -114,9 +115,21 @@ class ScanService:
         scan.status = "EXTRACTED"
         scan.action_required = ActionRequired.VERIFY.value
         
-        await db.flush()
+        await db.refresh(scan)
         await db.refresh(scan)
         logger.info(f"Updated bottom scan: {scan_id}, detected_pins: {detected_pins}")
+        
+        # Broadcast update
+        await manager.broadcast({
+            "type": "scan_updated",
+            "data": scan.to_dict() if hasattr(scan, "to_dict") else {
+                "scan_id": str(scan.scan_id),
+                "part_number": scan.part_number_verified or scan.part_number_detected,
+                "status": scan.status,
+                "scanned_at": scan.scanned_at.isoformat() if scan.scanned_at else None
+            }
+        })
+        
         return scan
 
     @staticmethod
@@ -149,6 +162,23 @@ class ScanService:
             db.add(scan)
             await db.flush()
             await db.refresh(scan)
+            db.add(scan)
+            await db.flush()
+            await db.refresh(scan)
+            
+            # Broadcast
+            await manager.broadcast({
+                "type": "scan_created",
+                "data": {
+                    "scan_id": str(scan.scan_id),
+                    "part_number": scan.part_number_detected,
+                    "status": scan.status,
+                    "scanned_at": scan.scanned_at.isoformat() if scan.scanned_at else None,
+                    "confidence_score": scan.confidence_score,
+                    "detected_pins": scan.detected_pins
+                }
+            })
+            
             return scan
 
         # 2. Look up IC in golden record
@@ -173,6 +203,22 @@ class ScanService:
             db.add(scan)
             await db.flush()
             await db.refresh(scan)
+            await db.flush()
+            await db.refresh(scan)
+            
+            # Broadcast
+            await manager.broadcast({
+                "type": "scan_created",
+                "data": {
+                    "scan_id": str(scan.scan_id),
+                    "part_number": scan.part_number_detected,
+                    "status": scan.status,
+                    "scanned_at": scan.scanned_at.isoformat() if scan.scanned_at else None,
+                    "confidence_score": scan.confidence_score,
+                    "detected_pins": scan.detected_pins
+                }
+            })
+            
             return scan
 
         # 3. IC found - verify against golden record
@@ -231,8 +277,22 @@ class ScanService:
             completed_at=datetime.utcnow(),
         )
         db.add(scan)
-        await db.flush()
         await db.refresh(scan)
+        await db.refresh(scan)
+        
+        # Broadcast success/fail
+        await manager.broadcast({
+            "type": "scan_created",
+            "data": {
+                "scan_id": str(scan.scan_id),
+                "part_number": scan.part_number_verified or scan.part_number_detected,
+                "status": scan.status,
+                "scanned_at": scan.scanned_at.isoformat() if scan.scanned_at else None,
+                "confidence_score": scan.confidence_score,
+                "detected_pins": scan.detected_pins
+            }
+        })
+        
         return scan
 
     @staticmethod
@@ -276,7 +336,6 @@ class ScanService:
         scan.action_required = ActionRequired.NONE.value
         scan.completed_at = datetime.utcnow()
 
-        await db.flush()
         await db.refresh(scan)
         return scan
 
@@ -340,8 +399,21 @@ class ScanService:
         scan.action_required = ActionRequired.NONE.value
         scan.completed_at = datetime.utcnow()
 
-        await db.flush()
         await db.refresh(scan)
+        await db.refresh(scan)
+        
+        # Broadcast override
+        await manager.broadcast({
+            "type": "scan_updated",
+            "data": {
+                "scan_id": str(scan.scan_id),
+                "part_number": scan.part_number_verified,
+                "status": scan.status,
+                "scanned_at": scan.scanned_at.isoformat() if scan.scanned_at else None,
+                "was_manual_override": True
+            }
+        })
+
         return scan
 
     @staticmethod
