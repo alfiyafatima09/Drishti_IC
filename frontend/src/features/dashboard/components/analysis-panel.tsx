@@ -23,6 +23,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import type { ScanResult, ScanStatus } from '@/types/api'
 import { API_BASE } from '@/lib/config'
@@ -40,45 +42,36 @@ const STATUS_CONFIG: Record<
   {
     icon: typeof CheckCircle2
     label: string
-    color: string
-    bgColor: string
-    badgeColor: string
+    variant: 'default' | 'destructive' | 'secondary' | 'outline'
+    className?: string
   }
 > = {
   PASS: {
     icon: CheckCircle2,
     label: 'Verified',
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
-    badgeColor: 'bg-emerald-500',
+    variant: 'default',
+    className: 'bg-emerald-600 hover:bg-emerald-700',
   },
   FAIL: {
     icon: XCircle,
     label: 'Failed',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    badgeColor: 'bg-red-500',
+    variant: 'destructive',
   },
   PARTIAL: {
     icon: AlertTriangle,
     label: 'Partial',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
-    badgeColor: 'bg-amber-500',
+    variant: 'secondary',
+    className: 'text-amber-600 bg-amber-100',
   },
   UNKNOWN: {
     icon: HelpCircle,
     label: 'Unknown',
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
-    badgeColor: 'bg-slate-500',
+    variant: 'secondary',
   },
   COUNTERFEIT: {
     icon: ShieldAlert,
     label: 'Counterfeit',
-    color: 'text-red-700',
-    bgColor: 'bg-red-100',
-    badgeColor: 'bg-red-600',
+    variant: 'destructive',
   },
 }
 
@@ -104,17 +97,13 @@ export function AnalysisPanel({
 
   if (!capturedImage) {
     return (
-      <div className="flex h-full flex-col rounded-2xl border-2 border-blue-300 bg-white p-6 shadow-2xl">
-        <div className="flex flex-1 flex-col items-center justify-center">
-          <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-xl">
-            <Cpu className="h-12 w-12 text-white" />
-          </div>
-          <p className="mb-2 text-lg font-bold text-slate-900">No IC Captured</p>
-          <p className="max-w-[220px] text-center text-sm font-medium text-blue-600">
-            Capture from camera or upload an image to begin analysis
-          </p>
-        </div>
-      </div>
+      <Card className="h-full border-dashed shadow-none bg-muted/30">
+        <CardContent className="flex flex-col items-center justify-center h-full min-h-[400px] text-muted-foreground p-6 text-center">
+          <Cpu className="h-12 w-12 mb-4 opacity-20" />
+          <h3 className="text-lg font-semibold mb-2">No IC Captured</h3>
+          <p className="text-sm">Capture from camera or upload an image to begin analysis</p>
+        </CardContent>
+      </Card>
     )
   }
 
@@ -182,57 +171,34 @@ export function AnalysisPanel({
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border-2 border-blue-300 bg-white shadow-2xl">
-      {/* Header */}
-      <div className="border-b-2 border-blue-300 bg-gradient-to-r from-blue-100 via-cyan-100 to-blue-100 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-lg',
-              config ? config.bgColor : 'bg-blue-50',
-            )}
-          >
-            {StatusIcon ? (
-              <StatusIcon className={cn('h-5 w-5', config?.color)} />
-            ) : (
-              <Sparkles className="h-5 w-5 text-blue-500" />
-            )}
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold text-slate-900">
-              {scanResult ? 'Analysis Complete' : 'Captured Image'}
-            </h3>
-            <p className={cn('text-sm font-semibold', config ? config.color : 'text-blue-600')}>
-              {scanResult ? config?.label : 'Ready for analysis'}
-            </p>
-          </div>
-          {scanResult && (
-            <Badge className={cn('text-xs font-semibold text-white', config?.badgeColor)}>
-              {scanResult.confidence_score.toFixed(0)}%
+    <Card className="h-full flex flex-col shadow-sm border-border">
+      <CardHeader className="items-start space-y-1 pb-4">
+        <div className="flex items-center justify-between w-full">
+          <CardTitle>Analysis</CardTitle>
+          {scanResult && config && (
+            <Badge variant={config.variant} className={config.className}>
+              {StatusIcon && <StatusIcon className="mr-1 h-3 w-3" />}
+              {config.label}
             </Badge>
           )}
         </div>
-      </div>
+        <CardDescription>
+          {scanResult ? 'Results and specifications' : 'Ready to analyze captured image'}
+        </CardDescription>
+      </CardHeader>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 space-y-4 overflow-y-auto p-6">
+      <CardContent className="flex-1 overflow-y-auto space-y-6">
         {/* Image Preview */}
-        <div className="relative overflow-hidden rounded-lg border-2 border-slate-400 bg-slate-100 shadow-md">
+        <div className="relative rounded-lg overflow-hidden border bg-muted">
           <img
             src={capturedImage}
             alt="Captured IC"
             className="aspect-video w-full object-contain"
           />
           {scanResult && (
-            <div
-              className={cn(
-                'absolute top-3 right-3 rounded-full border-2 border-white/50 px-3 py-1.5 text-xs font-semibold shadow-lg backdrop-blur-sm',
-                config?.bgColor,
-                config?.color,
-              )}
-            >
-              {config?.label}
-            </div>
+            <Badge className="absolute top-2 right-2 backdrop-blur-md bg-background/80 text-foreground hover:bg-background/90" variant="outline">
+              Confidence: {scanResult.confidence_score.toFixed(0)}%
+            </Badge>
           )}
         </div>
 
@@ -241,42 +207,40 @@ export function AnalysisPanel({
           <Button
             onClick={onAnalyze}
             size="lg"
-            className="h-16 w-full animate-pulse bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-lg font-black text-white shadow-2xl hover:from-blue-700 hover:via-cyan-700 hover:to-blue-800"
+            className="w-full"
           >
-            <Sparkles className="mr-2 h-6 w-6" />
+            <Sparkles className="mr-2 h-4 w-4" />
             Analyze IC Image
           </Button>
         )}
 
         {/* Analyzing State */}
         {isAnalyzing && (
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-cyan-50 py-10 shadow-xl">
-            <Loader2 className="mb-4 h-16 w-16 animate-spin text-blue-600" />
-            <p className="text-lg font-black text-blue-700">Analyzing IC...</p>
-            <p className="mt-2 text-sm font-semibold text-cyan-600">Extracting parameters</p>
+          <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+            <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
+            <p className="font-medium">Processing Image...</p>
+            <p className="text-sm">Extracting component features</p>
           </div>
         )}
 
         {/* Results */}
         {scanResult && (
-          <>
-            {/* Status Card */}
-            <div className={cn('rounded-lg border-2 p-4 shadow-md', config?.bgColor)}>
-              <div className="flex items-start gap-3">
-                {StatusIcon && <StatusIcon className={cn('mt-0.5 h-5 w-5', config?.color)} />}
-                <div>
-                  <p className={cn('text-sm font-semibold', config?.color)}>{config?.label}</p>
-                  <p className="mt-1 text-xs text-slate-600">{scanResult.message}</p>
-                </div>
-              </div>
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5">
+            {/* Status Message */}
+            <div className={cn("p-4 rounded-lg border text-sm",
+              scanResult.status === 'PASS' ? "bg-emerald-50 text-emerald-900 border-emerald-200" :
+                scanResult.status === 'FAIL' ? "bg-red-50 text-red-900 border-red-200" :
+                  "bg-secondary/50 text-secondary-foreground"
+            )}>
+              <p>{scanResult.message}</p>
             </div>
 
             {/* Bottom Scan prompt */}
             {needsBottomScan && (
-              <div className="space-y-3 rounded-xl border-2 border-amber-400 bg-amber-50 p-4">
-                <div className="flex items-center gap-2 font-semibold text-amber-700">
-                  <AlertTriangle className="h-5 w-5" />
-                  <span>Pins not visible. Please upload bottom-view image.</span>
+              <div className="space-y-3 p-4 rounded-lg border border-amber-200 bg-amber-50">
+                <div className="flex items-center gap-2 font-medium text-amber-800">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Pins hidden. Bottom view required.</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -290,19 +254,21 @@ export function AnalysisPanel({
                     }}
                   />
                   <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
                     disabled={bottomUploading}
                     onClick={() => bottomFileRef.current?.click()}
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 font-semibold text-white hover:from-amber-600 hover:to-orange-600"
                   >
                     {bottomUploading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading...
+                        Uploading
                       </>
                     ) : (
                       <>
                         <Upload className="mr-2 h-4 w-4" />
-                        Upload Bottom View
+                        Upload Bottom
                       </>
                     )}
                   </Button>
@@ -310,30 +276,131 @@ export function AnalysisPanel({
               </div>
             )}
 
-            {/* Manual Override */}
-            <div className="space-y-3 rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
-              <div className="flex items-center gap-2 font-semibold text-blue-800">
-                <Edit3 className="h-5 w-5" />
-                <span>Manual Part Number Override</span>
+            {/* Parameters List */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium leading-none">Detected Information</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 space-y-1">
+                  <p className="text-xs text-muted-foreground">Part Number</p>
+                  <div className="font-mono text-lg font-semibold tracking-tight border rounded-md px-3 py-2 bg-muted/40 break-all">
+                    {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
+                  </div>
+                </div>
+
+                {scanResult.manufacturer_detected && (
+                  <div className="col-span-2 space-y-1">
+                    <p className="text-xs text-muted-foreground">Manufacturer</p>
+                    <div className="font-medium flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      {scanResult.manufacturer_detected}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Pins</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Cpu className="h-4 w-4 text-muted-foreground" />
+                    {scanResult.detected_pins}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Confidence</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-muted-foreground" />
+                    {scanResult.confidence_score.toFixed(1)}%
+                  </p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-3">
+            </div>
+
+            <Separator />
+
+            {/* IC Specifications */}
+            {scanResult.ic_specification && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium leading-none">Specifications</h4>
+
+                <div className="grid gap-4 text-sm">
+                  {scanResult.ic_specification.description && (
+                    <p className="text-muted-foreground leading-relaxed">
+                      {scanResult.ic_specification.description}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {scanResult.ic_specification.package_type && (
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-muted-foreground">Package</span>
+                        <span className="font-medium">{scanResult.ic_specification.package_type}</span>
+                      </div>
+                    )}
+
+                    {scanResult.ic_specification.pin_count && (
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-muted-foreground">Spec Pins</span>
+                        <span className="font-medium">{scanResult.ic_specification.pin_count}</span>
+                      </div>
+                    )}
+
+                    {(scanResult.ic_specification.voltage_min && scanResult.ic_specification.voltage_max) && (
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-muted-foreground">Voltage</span>
+                        <span className="font-medium">{scanResult.ic_specification.voltage_min}V - {scanResult.ic_specification.voltage_max}V</span>
+                      </div>
+                    )}
+
+                    {(scanResult.ic_specification.operating_temp_min && scanResult.ic_specification.operating_temp_max) && (
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-muted-foreground">Temp</span>
+                        <span className="font-medium">{scanResult.ic_specification.operating_temp_min}°C to {scanResult.ic_specification.operating_temp_max}°C</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {scanResult.ic_specification.datasheet_path && (
+                  <Button variant="outline" className="w-full" asChild>
+                    <a
+                      href={scanResult.ic_specification.datasheet_path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Datasheet
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Manual Override */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Edit3 className="h-4 w-4 text-muted-foreground" />
+                <span>Manual Override</span>
+              </div>
+              <div className="space-y-3">
                 <Input
-                  placeholder="Enter correct part number"
+                  placeholder="Part Number"
                   value={overridePart}
                   onChange={(e) => setOverridePart(e.target.value)}
-                  className="border-2 border-blue-200"
                 />
                 <Textarea
-                  placeholder="Note (optional)"
+                  placeholder="Notes (optional)"
                   value={overrideNote}
                   onChange={(e) => setOverrideNote(e.target.value)}
-                  rows={2}
-                  className="border-2 border-blue-200"
+                  className="min-h-[60px]"
                 />
                 <Button
                   disabled={overrideLoading || !overridePart.trim()}
                   onClick={handleOverride}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 font-semibold text-white hover:from-blue-700 hover:to-cyan-700"
+                  className="w-full"
+                  variant="secondary"
                 >
                   {overrideLoading ? (
                     <>
@@ -348,162 +415,18 @@ export function AnalysisPanel({
             </div>
 
             {localError && (
-              <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 text-sm text-red-700">
+              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive font-medium">
                 {localError}
               </div>
             )}
 
-            {/* Parameters Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2 rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-md">
-                <div className="mb-2 flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-900">Part Number</span>
-                </div>
-                <p className="font-mono text-xl font-bold break-all text-blue-900">
-                  {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
-                </p>
-              </div>
-
-              {scanResult.manufacturer_detected && (
-                <div className="col-span-2 rounded-lg border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 p-4 shadow-md">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-purple-600" />
-                    <span className="text-xs font-medium text-purple-900">Manufacturer</span>
-                  </div>
-                  <p className="text-base font-semibold text-purple-900">
-                    {scanResult.manufacturer_detected}
-                  </p>
-                </div>
-              )}
-
-              <div className="rounded-lg border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50 p-4 shadow-md">
-                <div className="mb-2 flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-emerald-600" />
-                  <span className="text-xs font-medium text-emerald-900">Pins</span>
-                </div>
-                <p className="font-mono text-2xl font-bold text-emerald-900">
-                  {scanResult.detected_pins}
-                </p>
-              </div>
-
-              <div className="rounded-lg border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-md">
-                <div className="mb-2 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-amber-600" />
-                  <span className="text-xs font-medium text-amber-900">Confidence</span>
-                </div>
-                <p className="font-mono text-2xl font-bold text-amber-900">
-                  {scanResult.confidence_score.toFixed(1)}%
-                </p>
-              </div>
+            <div className="text-xs text-muted-foreground flex justify-between pt-2">
+              <span>Scan ID: <span className="font-mono">{scanResult.scan_id.slice(0, 8)}</span></span>
+              <span>{new Date(scanResult.scanned_at).toLocaleTimeString()}</span>
             </div>
-
-            {/* IC Specifications */}
-            {scanResult.ic_specification && (
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-slate-900 uppercase">IC Specification</h4>
-
-                {scanResult.ic_specification.package_type && (
-                  <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 shadow-sm">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Package className="h-3.5 w-3.5 text-slate-500" />
-                      <span className="text-xs font-medium text-slate-600">Package Type</span>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {scanResult.ic_specification.package_type}
-                    </p>
-                  </div>
-                )}
-
-                {scanResult.ic_specification.description && (
-                  <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 shadow-sm">
-                    <div className="mb-1 flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 text-slate-500" />
-                      <span className="text-xs font-medium text-slate-600">Description</span>
-                    </div>
-                    <p className="text-sm text-slate-900">
-                      {scanResult.ic_specification.description}
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 shadow-sm">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Ruler className="h-3.5 w-3.5 text-slate-500" />
-                      <span className="text-xs font-medium text-slate-600">Spec Pins</span>
-                    </div>
-                    <p className="font-mono text-sm font-semibold text-slate-900">
-                      {scanResult.ic_specification.pin_count}
-                    </p>
-                  </div>
-
-                  {scanResult.ic_specification.voltage_min &&
-                    scanResult.ic_specification.voltage_max && (
-                      <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 shadow-sm">
-                        <div className="mb-1 flex items-center gap-2">
-                          <Zap className="h-3.5 w-3.5 text-slate-500" />
-                          <span className="text-xs font-medium text-slate-600">Voltage</span>
-                        </div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          {scanResult.ic_specification.voltage_min}V -{' '}
-                          {scanResult.ic_specification.voltage_max}V
-                        </p>
-                      </div>
-                    )}
-                </div>
-
-                {scanResult.ic_specification.operating_temp_min &&
-                  scanResult.ic_specification.operating_temp_max && (
-                    <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 shadow-sm">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Thermometer className="h-3.5 w-3.5 text-slate-500" />
-                        <span className="text-xs font-medium text-slate-600">
-                          Temperature Range
-                        </span>
-                      </div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {scanResult.ic_specification.operating_temp_min}°C to{' '}
-                        {scanResult.ic_specification.operating_temp_max}°C
-                      </p>
-                    </div>
-                  )}
-
-                {scanResult.ic_specification.datasheet_path && (
-                  <a
-                    href={scanResult.ic_specification.datasheet_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      className="w-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
-                      size="lg"
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      View Datasheet
-                      <ExternalLink className="ml-2 h-4 w-4" />
-                    </Button>
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Metadata */}
-            <div className="border-t-2 border-slate-300 pt-3">
-              <div className="space-y-1 text-xs text-slate-500">
-                <div className="flex justify-between">
-                  <span>Scan ID:</span>
-                  <span className="font-mono">{scanResult.scan_id.slice(0, 8)}...</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Scanned At:</span>
-                  <span>{new Date(scanResult.scanned_at).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          </>
+          </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

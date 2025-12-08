@@ -71,17 +71,7 @@ export function ImageUpload({ onFileSelect, fileInputRef, disabled }: ImageUploa
   }, [fileInputRef, disabled])
 
   return (
-    <div className="rounded-2xl border-2 border-blue-300 bg-white p-5 shadow-2xl">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-          <ImageIcon className="h-6 w-6 text-white" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-slate-900">Upload IC Image</h3>
-          <p className="text-sm font-medium text-purple-600">Alternative to live capture</p>
-        </div>
-      </div>
-
+    <div className="w-full">
       <input
         ref={fileInputRef}
         type="file"
@@ -97,22 +87,27 @@ export function ImageUpload({ onFileSelect, fileInputRef, disabled }: ImageUploa
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         className={cn(
-          'relative cursor-pointer rounded-xl border-3 border-dashed p-8 transition-all',
-          'hover:border-purple-500 hover:bg-purple-50',
-          isDragging &&
-            'scale-105 border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 shadow-xl',
-          !isDragging && 'border-purple-300 bg-gradient-to-br from-slate-50 to-purple-50',
+          'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center transition-colors cursor-pointer',
+          isDragging
+            ? 'border-primary bg-primary/5'
+            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50',
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >
-        <div className="flex flex-col items-center justify-center">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-            <Upload className="h-7 w-7 text-white" />
-          </div>
-          <p className="text-center text-base font-bold text-slate-900">
-            {isDragging ? 'Drop image here' : 'Click or drag & drop'}
+        <div className="rounded-full bg-muted p-4 mb-4">
+          {isDragging ? (
+            <Upload className="h-6 w-6 text-primary" />
+          ) : (
+            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+          )}
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">
+            {isDragging ? 'Drop image here' : 'Click or drag image to upload'}
           </p>
-          <p className="mt-2 text-sm font-medium text-purple-600">JPG, PNG (Max 10MB)</p>
+          <p className="text-xs text-muted-foreground">
+            JPG or PNG (max 10MB)
+          </p>
         </div>
       </div>
     </div>
