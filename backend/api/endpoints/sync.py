@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
+import asyncio
 
 from core.database import get_db, get_db_for_background
 from services import SyncService, QueueService
@@ -44,6 +45,8 @@ async def start_sync(
     Triggers background scraping for queued ICs matching the filter criteria.
     Requires internet connection.
     
+    If a sync job is already running, it will be cancelled immediately and a new one will start.
+    
     Parameters:
     - max_items: Limit how many items to process
     - retry_failed: Whether to retry previously failed items
@@ -56,46 +59,44 @@ async def start_sync(
     4. Removes successfully processed items from queue
     5. After 3 failed attempts, moves item to fake registry
     """
-    try:
-        job = await SyncService.start_sync(
-            db=db,
-            max_items=request.max_items,
-            retry_failed=request.retry_failed,
-            status_filter=request.status_filter,
-        )
-        
-        # Commit the job creation
-        await db.commit()
-        
-        # Start background processing
-        background_tasks.add_task(run_sync_background, job.job_id)
-        
-        # Estimate time (roughly 5 seconds per item for download + parse)
-        estimated_minutes = max(1, (job.total_items * 5) // 60)
-        
-        status_msg = ""
-        if request.status_filter:
-            status_msg = f" (filtering by: {', '.join(request.status_filter)})"
-        
-        return SyncJobInfo(
-            job_id=job.job_id,
-            status=SyncStatus.PROCESSING,
-            message=f"Sync job started successfully. Processing {job.total_items} items{status_msg}.",
-            queue_size=job.total_items,
-            estimated_time_minutes=estimated_minutes,
-        )
-    except ValueError as e:
-        # Job already running
-        active = await SyncService.get_active_job(db)
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "error": "SYNC_IN_PROGRESS",
-                "message": str(e),
-                "current_job_id": str(active.job_id) if active else None,
-                "progress_percentage": active._calculate_progress() if active else 0,
-            }
-        )
+    # Check if there's an active job and cancel it if exists
+    active = await SyncService.get_active_job(db)
+    if active:
+        logger.info(f"Cancelling existing sync job {active.job_id} to start new one")
+        await SyncService.cancel_sync(db)
+        # Wait a bit for the cancellation to take effect
+        await asyncio.sleep(0.5)
+    
+    # Now start the new sync job
+    job = await SyncService.start_sync(
+        db=db,
+        max_items=request.max_items,
+        retry_failed=request.retry_failed,
+        status_filter=request.status_filter,
+    )
+    
+    # Commit the job creation
+    await db.commit()
+    
+    # Start background processing
+    background_tasks.add_task(run_sync_background, job.job_id)
+    
+    # Estimate time (roughly 5 seconds per item for download + parse)
+    estimated_minutes = max(1, (job.total_items * 5) // 60)
+    
+    status_msg = ""
+    if request.status_filter:
+        status_msg = f" (filtering by: {', '.join(request.status_filter)})"
+    
+    cancelled_msg = " (previous job cancelled)" if active else ""
+    
+    return SyncJobInfo(
+        job_id=job.job_id,
+        status=SyncStatus.PROCESSING,
+        message=f"Sync job started successfully{cancelled_msg}. Processing {job.total_items} items{status_msg}.",
+        queue_size=job.total_items,
+        estimated_time_minutes=estimated_minutes,
+    )
 
 
 @router.get("/status", response_model=SyncStatusResponse)
@@ -130,9 +131,9 @@ async def cancel_sync(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Cancel running sync job.
+    Cancel running sync job immediately.
     
-    The job will stop after completing the current item.
+    The job will be stopped immediately and marked as cancelled.
     """
     job = await SyncService.cancel_sync(db)
     
@@ -147,7 +148,7 @@ async def cancel_sync(
     
     return SuccessResponse(
         success=True,
-        message=f"Cancellation requested. Job will stop after current item. {job.processed_items} of {job.total_items} items processed so far.",
+        message=f"Sync job cancelled immediately. {job.processed_items} of {job.total_items} items were processed.",
     )
 
 

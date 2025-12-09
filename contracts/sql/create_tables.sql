@@ -63,15 +63,19 @@ CREATE TABLE IF NOT EXISTS scan_history (
     scan_id UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
     ocr_text_raw TEXT,
     part_number_detected VARCHAR(100),
+    part_number_candidates JSONB,
     part_number_verified VARCHAR(100),
     status VARCHAR(20) NOT NULL CHECK (status IN ('PASS', 'FAIL', 'PARTIAL', 'UNKNOWN', 'COUNTERFEIT')),
     confidence_score FLOAT,
     detected_pins INTEGER,
     expected_pins INTEGER,
     manufacturer_detected VARCHAR(100),
+    batch_id VARCHAR(100),
+    batch_vender VARCHAR(100),
     action_required VARCHAR(20) DEFAULT 'NONE' CHECK (action_required IN ('NONE', 'SCAN_BOTTOM')),
     has_bottom_scan BOOLEAN DEFAULT FALSE,
     match_details JSONB,
+    verification_checks JSONB,
     failure_reasons JSONB,
     message TEXT,
     was_manual_override BOOLEAN DEFAULT FALSE,
@@ -84,6 +88,9 @@ CREATE INDEX IF NOT EXISTS idx_scan_history_scan_id ON scan_history(scan_id);
 CREATE INDEX IF NOT EXISTS idx_scan_history_status ON scan_history(status);
 CREATE INDEX IF NOT EXISTS idx_scan_history_scanned_at ON scan_history(scanned_at);
 CREATE INDEX IF NOT EXISTS idx_scan_history_part_number ON scan_history(part_number_verified);
+CREATE INDEX IF NOT EXISTS idx_scan_history_part_number_detected ON scan_history(part_number_detected);
+CREATE INDEX IF NOT EXISTS idx_scan_history_batch_id ON scan_history(batch_id);
+CREATE INDEX IF NOT EXISTS idx_scan_history_batch_vender ON scan_history(batch_vender);
 
 -- ============================================================
 -- TABLE 3: datasheet_queue (Pending Datasheet Queue)
