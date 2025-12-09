@@ -9,6 +9,7 @@ from api.endpoints.sync import router as sync_router
 from api.endpoints.settings import router as settings_router
 from api.endpoints.system import router as system_router
 from api.endpoints.camera import router as camera_router
+from api.endpoints.batch import router as batch_router
 
 __all__ = [
     "scan_router",
@@ -21,5 +22,6 @@ __all__ = [
     "settings_router",
     "system_router",
     "camera_router",
+    "batch_router",
 ]
 

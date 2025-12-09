@@ -9,6 +9,7 @@ interface ImageUploadProps {
   disabled?: boolean
   title?: string
   multiple?: boolean
+  acceptFolders?: boolean
 }
 
 export function ImageUpload({
@@ -17,6 +18,7 @@ export function ImageUpload({
   disabled,
   title,
   multiple = false,
+  acceptFolders = false,
 }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
 
@@ -51,11 +53,17 @@ export function ImageUpload({
       const files = e.dataTransfer.files
       if (files && files.length > 0) {
         const validFiles: File[] = []
-        const maxFiles = multiple ? 2 : 1
+        const maxFiles = multiple ? (acceptFolders ? 100 : 2) : 1
 
         for (let i = 0; i < Math.min(files.length, maxFiles); i++) {
-          if (files[i].type.startsWith('image/')) {
-            validFiles.push(files[i])
+          const file = files[i]
+          if (acceptFolders) {
+            // Accept images and ZIP files
+            if (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.zip')) {
+              validFiles.push(file)
+            }
+          } else if (file.type.startsWith('image/')) {
+            validFiles.push(file)
           }
         }
 
@@ -72,10 +80,18 @@ export function ImageUpload({
       const files = e.target.files
       if (files && files.length > 0) {
         const validFiles: File[] = []
-        const maxFiles = multiple ? 2 : 1
+        const maxFiles = multiple ? (acceptFolders ? 100 : 2) : 1
 
         for (let i = 0; i < Math.min(files.length, maxFiles); i++) {
-          validFiles.push(files[i])
+          const file = files[i]
+          if (acceptFolders) {
+            // Accept images and ZIP files
+            if (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.zip')) {
+              validFiles.push(file)
+            }
+          } else if (file.type.startsWith('image/')) {
+            validFiles.push(file)
+          }
         }
 
         onFileSelect(validFiles)
@@ -84,7 +100,7 @@ export function ImageUpload({
         fileInputRef.current.value = ''
       }
     },
-    [onFileSelect, fileInputRef, multiple],
+    [onFileSelect, fileInputRef, multiple, acceptFolders],
   )
 
   const handleClick = useCallback(() => {
@@ -103,7 +119,7 @@ export function ImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={acceptFolders ? 'image/*,.zip' : 'image/*'}
         multiple={multiple}
         onChange={handleFileChange}
         className="hidden"
@@ -133,10 +149,12 @@ export function ImageUpload({
         <div className="space-y-1">
           <p className="text-foreground text-sm font-medium">
             {isDragging
-              ? `Drop ${multiple ? 'images' : 'image'} here`
-              : `Click or drag ${multiple ? 'up to 2 images' : 'image'} to upload`}
+              ? `Drop ${acceptFolders ? 'files/folders' : multiple ? 'images' : 'image'} here`
+              : `Click or drag ${acceptFolders ? 'images, ZIP folders, or select multiple files' : multiple ? 'up to 2 images' : 'image'} to upload`}
           </p>
-          <p className="text-muted-foreground text-xs">JPG or PNG (max 10MB)</p>
+          <p className="text-muted-foreground text-xs">
+            {acceptFolders ? 'JPG, PNG, or ZIP (max 50MB total)' : 'JPG or PNG (max 10MB)'}
+          </p>
         </div>
       </div>
     </div>

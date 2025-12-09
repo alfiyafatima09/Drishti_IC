@@ -35,6 +35,8 @@ tags:
     description: Health checks and system status
   - name: Camera
     description: AOI camera feed and capture control
+  - name: Sampling Theory
+    description: EWMA sampling control decisions
 
 paths:
   # ================================================================
@@ -1266,6 +1268,51 @@ paths:
                 error: "CAMERA_NOT_CONNECTED"
                 message: "No camera feed available. Please connect the AOI device."
 
+  # ================================================================
+  # SAMPLING THEORY ENDPOINTS
+  # ================================================================
+  /api/v1/sampling-theory/ewma-decision:
+    post:
+      tags: [Sampling Theory]
+      summary: Evaluate EWMA-based sampling decision
+      operationId: evaluateEWMADecision
+      description: |
+        Evaluate the EWMA control chart for a given defect fraction and prior EWMA state.
+        Returns decision, updated EWMA, limits, and recommended actions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SamplingTheoryEWMARequest'
+            example:
+              s_prev: 0.01
+              x: 0.2
+              extra_signals:
+                additionalProp1: {}
+      responses:
+        '200':
+          description: EWMA decision computed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SamplingTheoryEWMAResponse'
+              example:
+                decision: "Suspect - confirm (single-lot spike)"
+                S_t: 0.052
+                UCL: 0.071
+                sigma_EWMA: 0.02
+                reason: "Single-lot spike: x_t (0.2000) > instant_thresh (0.0300)"
+                actions:
+                  - "Request immediate repeat measurement(s) of this lot (reinspect same wafers/dies)"
+                  - "If repeat confirms, treat as SUSPECT and force 100% inspection"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 # ================================================================
 # COMPONENTS (SCHEMAS)
 # ================================================================
@@ -2334,6 +2381,72 @@ components:
         scan_id:
           type: string
           format: uuid
+
+    # --------------------------------------------------
+    # SAMPLING THEORY SCHEMAS
+    # --------------------------------------------------
+    SamplingTheoryEWMARequest:
+      type: object
+      description: Input for EWMA sampling decision.
+      required: [x]
+      properties:
+        s_prev:
+          type: number
+          format: float
+          default: 0.01
+          description: Previous EWMA value. Defaults to baseline when omitted.
+        x:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Observed defect fraction for the current lot.
+        extra_signals:
+          type: object
+          additionalProperties: true
+          description: Optional contextual signals (tool alarms, recipe changes, etc.).
+      example:
+        s_prev: 0.01
+        x: 0.2
+        extra_signals:
+          additionalProp1: {}
+
+    SamplingTheoryEWMAResponse:
+      type: object
+      description: EWMA decision outcome and rationale.
+      properties:
+        decision:
+          type: string
+          description: High-level recommendation (Normal, Suspect, escalation).
+        S_t:
+          type: number
+          format: float
+          description: Updated EWMA value.
+        UCL:
+          type: number
+          format: float
+          nullable: true
+          description: Upper control limit used for decision.
+        sigma_EWMA:
+          type: number
+          format: float
+          description: EWMA sigma used in control chart.
+        reason:
+          type: string
+          description: Human-readable rationale for the decision.
+        actions:
+          type: array
+          items:
+            type: string
+          description: Recommended next steps.
+      example:
+        decision: "Normal"
+        S_t: 0.012
+        UCL: 0.071
+        sigma_EWMA: 0.02
+        reason: "No threshold crossed (S_t 0.0120 <= UCL 0.0710, x_t 0.0200 <= instant_thresh 0.0300)"
+        actions:
+          - "Normal - Continue baseline sampling"
 
     # --------------------------------------------------
     # COMMON SCHEMAS

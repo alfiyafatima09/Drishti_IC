@@ -12,7 +12,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import logoNobg from '@/assets/logo_nobg.png'
-import { ScanLine, Database, History, Search, LayoutDashboard } from 'lucide-react'
+import { ScanLine, Database, History, Search, LayoutDashboard, FolderOpen } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 import * as React from 'react'
@@ -24,6 +24,11 @@ const items = [
     title: 'New Scan',
     url: '/scan',
     icon: ScanLine,
+  },
+  {
+    title: 'Batch Analysis',
+    url: '/batch',
+    icon: FolderOpen,
   },
   {
     title: 'Dashboard',
@@ -67,20 +72,20 @@ export function AppSidebar() {
         } as React.CSSProperties
       }
     >
-      <SidebarHeader className="flex h-20 items-center justify-center border-b-2 border-cyan-400 bg-white/10 px-4 backdrop-blur-sm group-data-[collapsible=icon]:px-2">
-        <div className="flex w-full items-center gap-3 overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
+      <SidebarHeader className="flex h-24 items-center justify-center border-b-2 border-cyan-400 bg-white/10 px-4 backdrop-blur-sm group-data-[collapsible=icon]:px-2">
+        <div className="flex w-full items-center gap-4 overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
           <div className="flex shrink-0 items-center justify-center">
             <img
               src={logoNobg}
               alt="Drishti IC"
-              className="h-10 w-auto object-contain transition-all duration-300 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+              className="h-16 w-auto object-contain drop-shadow-lg transition-all duration-300 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10"
             />
           </div>
           <div className="flex flex-col overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0">
-            <span className="text-lg font-black tracking-tight whitespace-nowrap text-white">
+            <span className="text-2xl font-black tracking-tight whitespace-nowrap text-white drop-shadow-md">
               Drishti IC
             </span>
-            <span className="text-xs font-semibold text-cyan-200">SIH 2025 • BEL</span>
+            <span className="text-sm font-bold text-cyan-100">SIH 2025 • BEL</span>
           </div>
         </div>
       </SidebarHeader>
@@ -99,11 +104,10 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       tooltip={item.title}
-                      className={`h-11 rounded-lg font-semibold transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white ${
-                        isActive
-                          ? 'border-l-4 border-cyan-300 bg-white/30 text-white shadow-lg'
-                          : 'text-white'
-                      }`}
+                      className={`h-11 rounded-lg font-semibold transition-all group-data-[collapsible=icon]:justify-center hover:bg-white/20 hover:text-white ${isActive
+                        ? 'border-l-4 border-cyan-300 bg-white/30 text-white shadow-lg'
+                        : 'text-white'
+                        }`}
                     >
                       <Link to={item.url}>
                         <item.icon className="h-5 w-5 shrink-0" />
