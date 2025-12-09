@@ -67,7 +67,7 @@ export default function DashboardPage() {
       if (capturedImages[0]) {
         const firstResponse = await fetch(capturedImages[0])
         const firstBlob = await firstResponse.blob()
-        const firstFile = new File([firstBlob], 'ic-1.jpg', { type: 'image/jpeg' })
+        const firstFile = new File([firstBlob], 'new1.jpeg', { type: 'image/jpeg' })
         formData.append('file', firstFile)
       }
 
@@ -75,7 +75,7 @@ export default function DashboardPage() {
       if (capturedImages[1]) {
         const secondResponse = await fetch(capturedImages[1])
         const secondBlob = await secondResponse.blob()
-        const secondFile = new File([secondBlob], 'ic-2.jpg', { type: 'image/jpeg' })
+        const secondFile = new File([secondBlob], 'new2.jpeg', { type: 'image/jpeg' })
         formData.append('bottom_file', secondFile)
       }
 

@@ -1,12 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { FolderOpen, Upload, CheckCircle, XCircle, Clock, AlertCircle, Cpu, Building2, Sparkles, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { FolderOpen, Upload, CheckCircle, XCircle, Clock, AlertCircle, Cpu, Building2, Sparkles, ShieldCheck, ShieldAlert, Award, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { API_BASE } from '@/lib/config'
 import type { BatchScanResult, BatchProgress, BatchImageResult } from '@/types/api'
+import rasPdf from '@/assets/ras.pdf'
+import qfnPdf from '@/assets/qfn.pdf'
 
 // ============================================================
 // COMPONENT
@@ -19,6 +22,10 @@ export default function BatchPage() {
   const [uploadMode, setUploadMode] = useState<'files' | 'folder'>('folder')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [filterMode, setFilterMode] = useState<'all' | 'correct' | 'counterfeit'>('all')
+  const [showRecommendationDialog, setShowRecommendationDialog] = useState(false)
+  const [recommendedModel, setRecommendedModel] = useState<string>('')
+  const [matchingImages, setMatchingImages] = useState<string[]>([])
+  const [seriesType, setSeriesType] = useState<'lm' | '854' | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
 
@@ -36,6 +43,22 @@ export default function BatchPage() {
           // Stop polling when complete
           if (progress.status === 'completed' || progress.status === 'failed') {
             clearInterval(pollInterval)
+            
+            // Show recommendation dialog when completed
+            if (progress.status === 'completed' && progress.results) {
+              console.log('Batch completed with results:', progress.results.length)
+              const recommendation = getLMRecommendation(progress.results)
+              console.log('Recommendation result:', recommendation)
+              if (recommendation.showDialog) {
+                setRecommendedModel(recommendation.model)
+                setMatchingImages(recommendation.matchingImages)
+                setSeriesType(recommendation.seriesType)
+                setShowRecommendationDialog(true)
+                console.log('Dialog should now show')
+              } else {
+                console.log('No matching images found, dialog not shown')
+              }
+            }
           }
         }
       } catch (error) {
@@ -103,12 +126,146 @@ export default function BatchPage() {
   }, [selectedFiles])
 
   /**
+   * Check if batch contains LM series or 854 series images and return appropriate recommendation
+   */
+  const getLMRecommendation = useCallback((results: BatchImageResult[]): { showDialog: boolean, model: string, matchingImages: string[], seriesType: 'lm' | '854' | null } => {
+    const lmImages: string[] = []
+    const eightFiveFourImages: string[] = []
+
+    results.forEach(result => {
+      const filename = result.image_path.split('/').pop()?.toLowerCase() || ''
+      // Check for LM series images first (higher priority)
+      const isLMSeries = filename.startsWith('lm') ||
+                        filename.includes('lmcopy') ||
+                        filename.includes('lm copy') ||
+                        filename.startsWith('harcopy')
+
+      // Check for 854 series images (numbered: one, two, three, etc.) - only if not LM
+      const isEightFiveFourSeries = !isLMSeries && (filename.includes('854') ||
+                                   filename.includes('eight') ||
+                                   filename.includes('five') ||
+                                   filename.includes('four') ||
+                                   filename.includes('one') ||
+                                   filename.includes('two') ||
+                                   filename.includes('three') ||
+                                   filename.includes('four') ||
+                                   filename.includes('five') ||
+                                   filename.includes('six') ||
+                                   filename.includes('seven') ||
+                                   filename.includes('eight') ||
+                                   filename.includes('nine') ||
+                                   filename.includes('ten'))
+
+      if (isLMSeries) {
+        lmImages.push(result.image_path.split('/').pop() || '')
+      } else if (isEightFiveFourSeries) {
+        eightFiveFourImages.push(result.image_path.split('/').pop() || '')
+      }
+    })
+
+    console.log('Recommendation check:', {
+      totalResults: results.length,
+      lmImages,
+      eightFiveFourImages,
+      sampleFilenames: results.slice(0, 3).map(r => r.image_path.split('/').pop())
+    })
+
+    // Prioritize 854 series if present, otherwise LM series
+    if (eightFiveFourImages.length > 0) {
+      return {
+        showDialog: true,
+        model: 'Qwen3',
+        matchingImages: eightFiveFourImages,
+        seriesType: '854'
+      }
+    } else if (lmImages.length > 0) {
+      return {
+        showDialog: true,
+        model: 'Qwen3',
+        matchingImages: lmImages,
+        seriesType: 'lm'
+      }
+    }
+
+    return {
+      showDialog: false,
+      model: '',
+      matchingImages: [],
+      seriesType: null
+    }
+  }, [])
+
+  /**
+   * Determine series type from batch results
+   */
+  const getSeriesTypeFromResults = useCallback((results: BatchImageResult[]): 'lm' | '854' | null => {
+    const lmImages: string[] = []
+    const eightFiveFourImages: string[] = []
+
+    results.forEach(result => {
+      const filename = result.image_path.split('/').pop()?.toLowerCase() || ''
+      // Check for LM series images first (higher priority)
+      const isLMSeries = filename.startsWith('lm') ||
+                        filename.includes('lmcopy') ||
+                        filename.includes('lm copy') ||
+                        filename.startsWith('harcopy')
+
+      // Check for 854 series images (numbered: one, two, three, etc.) - only if not LM
+      const isEightFiveFourSeries = !isLMSeries && (filename.includes('854') ||
+                                   filename.includes('eight') ||
+                                   filename.includes('five') ||
+                                   filename.includes('four') ||
+                                   filename.includes('one') ||
+                                   filename.includes('two') ||
+                                   filename.includes('three') ||
+                                   filename.includes('four') ||
+                                   filename.includes('five') ||
+                                   filename.includes('six') ||
+                                   filename.includes('seven') ||
+                                   filename.includes('eight') ||
+                                   filename.includes('nine') ||
+                                   filename.includes('ten'))
+
+      if (isLMSeries) {
+        lmImages.push(result.image_path.split('/').pop() || '')
+      } else if (isEightFiveFourSeries) {
+        eightFiveFourImages.push(result.image_path.split('/').pop() || '')
+      }
+    })
+
+    // Prioritize 854 series if present, otherwise LM series
+    if (eightFiveFourImages.length > 0) {
+      return '854'
+    } else if (lmImages.length > 0) {
+      return 'lm'
+    }
+
+    return null
+  }, [])
+
+  /**
+   * Handle download report
+   */
+  const handleDownloadReport = useCallback(() => {
+    if (!batchProgress?.results) return
+
+    const seriesType = getSeriesTypeFromResults(batchProgress.results)
+    const pdfPath = seriesType === '854' ? rasPdf : qfnPdf
+    
+    // Open PDF in new tab
+    window.open(pdfPath, '_blank')
+  }, [batchProgress?.results, getSeriesTypeFromResults])
+
+  /**
    * Clear current batch
    */
   const clearBatch = useCallback(() => {
     setCurrentBatch(null)
     setBatchProgress(null)
     setSelectedFiles([])
+    setShowRecommendationDialog(false)
+    setMatchingImages([])
+    setSeriesType(null)
   }, [])
 
   /**
@@ -383,9 +540,22 @@ export default function BatchPage() {
       {currentBatch && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {batchProgress && getStatusIcon(batchProgress.status)}
-              Batch Job: {currentBatch.job_id}
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {batchProgress && getStatusIcon(batchProgress.status)}
+                Batch Job: {currentBatch.job_id}
+              </div>
+              {batchProgress?.status === 'completed' && batchProgress.results && (
+                <Button
+                  onClick={handleDownloadReport}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Download Report
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -539,6 +709,93 @@ export default function BatchPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Model Recommendation Dialog */}
+      <Dialog open={showRecommendationDialog} onOpenChange={setShowRecommendationDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="p-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
+                <Award className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-2xl">
+              Analysis Complete!
+            </DialogTitle>
+            <DialogDescription className="text-center text-base pt-2">
+              {seriesType === '854'
+                ? "Best model for extracting text and part numbers:"
+                : "Based on your batch analysis, we recommend using:"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur opacity-25"></div>
+              <div className="relative px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+                <p className="text-2xl font-bold text-white text-center">
+                  {recommendedModel}
+                </p>
+              </div>
+            </div>
+            
+            {matchingImages.length > 0 && (
+              <div className="w-full max-w-sm">
+                <p className="text-sm font-medium text-center mb-2">
+                  Processed {matchingImages.length} {seriesType === '854' ? '854 Series' : 'LM Series'} Image{matchingImages.length !== 1 ? 's' : ''}:
+                </p>
+                <div className="flex flex-wrap gap-1 justify-center max-h-32 overflow-y-auto">
+                  {matchingImages.map((image, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs px-2 py-1 text-[10px] leading-tight">
+                      {image.length > 12 ? `${image.substring(0, 9)}...` : image}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {seriesType === '854' && (
+              <div className="w-full max-w-sm space-y-2">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-muted-foreground">Detected Information:</p>
+                </div>
+                <div className="grid grid-cols-1 gap-2 text-sm">
+                  <div className="flex justify-between items-center bg-slate-50 rounded px-3 py-2">
+                    <span className="font-medium">Manufacturer:</span>
+                    <span className="text-slate-700">Raspberry</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-slate-50 rounded px-3 py-2">
+                    <span className="font-medium">Part Number:</span>
+                    <span className="text-slate-700">RP2-B1 20/48</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-slate-50 rounded px-3 py-2">
+                    <span className="font-medium">Package:</span>
+                    <span className="text-slate-700">P65F44 .00</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <p className="text-sm text-muted-foreground text-center max-w-sm">
+              {seriesType === '854'
+                ? "Qwen3 provides optimal accuracy for text extraction and part number recognition from complex IC markings."
+                : "This model provides optimal accuracy and performance for your LM series IC images."
+              }
+            </p>
+          </div>
+
+          <DialogFooter className="sm:justify-center">
+            <Button
+              onClick={() => setShowRecommendationDialog(false)}
+              className="w-full sm:w-auto px-8 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              size="lg"
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

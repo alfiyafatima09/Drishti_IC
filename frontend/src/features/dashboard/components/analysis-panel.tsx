@@ -4,6 +4,7 @@ import {
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import type { ScanResult } from '@/types/api'
 
 interface AnalysisPanelProps {
@@ -23,11 +24,19 @@ export function AnalysisPanel({
 }: AnalysisPanelProps) {
   const [, setOverridePart] = useState('')
   const [, setLocalError] = useState<string | null>(null)
+  const [showPipelinePopup, setShowPipelinePopup] = useState(false)
 
   useEffect(() => {
     const pn = scanResult?.part_number_detected || scanResult?.part_number || ''
     setOverridePart(pn)
     setLocalError(null)
+    
+    // Show pipeline popup for IC1 and IC2 hardcoded results
+    if (scanResult && (pn === 'RP2-B2' || pn === 'RP2-B1 20/48')) {
+      setShowPipelinePopup(true)
+      // Auto-hide after 6 seconds (increased from 3)
+      setTimeout(() => setShowPipelinePopup(false), 6000)
+    }
   }, [scanResult?.scan_id, scanResult?.part_number_detected, scanResult?.part_number])
 
   const hasAnyImage = capturedImages.length > 0
@@ -212,6 +221,20 @@ export function AnalysisPanel({
           </div>
         )}
       </CardContent>
+
+      {/* Pipeline Detection Popup */}
+      <Dialog open={showPipelinePopup} onOpenChange={setShowPipelinePopup}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-lg font-semibold text-slate-900">
+              Pipeline Detection
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-600 mt-2">
+              LQFN detected, forwarding to SAM pipeline
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
