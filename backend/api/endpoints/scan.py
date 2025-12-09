@@ -147,6 +147,7 @@ def _parse_pin_count(raw_pin_count) -> int:
 @router.post("/scan", response_model=ScanExtractResult)
 async def scan_image(
     file: UploadFile = File(...),
+    bottom_file: UploadFile = File(None),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -164,21 +165,34 @@ async def scan_image(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    # Read and save image
-    image_data = await file.read()
+    # Read and save top image
+    top_image_data = await file.read()
     backend_root = Path(__file__).resolve().parent.parent.parent
     image_dir = backend_root / "scanned_images"
     image_dir.mkdir(parents=True, exist_ok=True)
 
     suffix = Path(file.filename).suffix if file.filename else ".img"
-    image_path = image_dir / f"{uuid.uuid4()}{suffix}"
-    await asyncio.to_thread(image_path.write_bytes, image_data)
+    top_image_path = image_dir / f"{uuid.uuid4()}{suffix}"
+    await asyncio.to_thread(top_image_path.write_bytes, top_image_data)
 
-    logger.info(f"Processing scan for file: {file.filename}, size: {len(image_data)} bytes")
-    
+    # Handle bottom image if provided
+    bottom_image_path = None
+    bottom_image_data = None
+    if bottom_file and bottom_file.filename:
+        if not bottom_file.content_type or not bottom_file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="Bottom file must be an image")
+        bottom_image_data = await bottom_file.read()
+        bottom_suffix = Path(bottom_file.filename).suffix if bottom_file.filename else ".img"
+        bottom_image_path = image_dir / f"{uuid.uuid4()}{bottom_suffix}"
+        await asyncio.to_thread(bottom_image_path.write_bytes, bottom_image_data)
+
+    logger.info(f"Processing scan for file: {file.filename}, size: {len(top_image_data)} bytes")
+    if bottom_image_path:
+        logger.info(f"Processing bottom file: {bottom_file.filename}, size: {len(bottom_image_data)} bytes")
+
     # ========== OCR Processing ==========
-    logger.debug("Starting OCR extraction...")
-    ocr_response = await asyncio.to_thread(extract_text_from_image, image_data, preprocess=True)
+    logger.debug("Starting OCR extraction for top image...")
+    ocr_response = await asyncio.to_thread(extract_text_from_image, top_image_data, preprocess=True)
     print(ocr_response)
     
     if ocr_response.status == "error":
@@ -188,20 +202,52 @@ async def scan_image(
             detail=f"OCR processing failed: {ocr_response.error}"
         )
     
-    # Get OCR text and calculate confidence
-    ocr_text = ocr_response.full_text
-    logger.debug(f"OCR extracted text: {ocr_text}")
-    logger.debug(f"OCR results count: {len(ocr_response.results)}")
+    # Get OCR text and calculate confidence for top image
+    top_ocr_text = ocr_response.full_text
+    logger.debug(f"Top OCR extracted text: {top_ocr_text}")
+    logger.debug(f"Top OCR results count: {len(ocr_response.results)}")
     for i, result in enumerate(ocr_response.results):
-        logger.debug(f"  OCR segment {i+1}: '{result.text}' (confidence: {result.confidence:.2%})")
+        logger.debug(f"  Top OCR segment {i+1}: '{result.text}' (confidence: {result.confidence:.2%})")
     
-    avg_confidence = 0.0
+    top_avg_confidence = 0.0
     if ocr_response.results:
-        avg_confidence = sum(r.confidence for r in ocr_response.results) / len(ocr_response.results) * 100
+        top_avg_confidence = sum(r.confidence for r in ocr_response.results) / len(ocr_response.results) * 100
+
+    # Process bottom image OCR if provided
+    bottom_ocr_text = ""
+    bottom_avg_confidence = 0.0
+    combined_ocr_text = top_ocr_text
+    combined_avg_confidence = top_avg_confidence
     
+    if bottom_image_data:
+        logger.debug("Starting OCR extraction for bottom image...")
+        bottom_ocr_response = await asyncio.to_thread(extract_text_from_image, bottom_image_data, preprocess=True)
+        print(bottom_ocr_response)
+        
+        if bottom_ocr_response.status == "error":
+            logger.warning(f"Bottom OCR failed: {bottom_ocr_response.error}")
+        else:
+            bottom_ocr_text = bottom_ocr_response.full_text
+            logger.debug(f"Bottom OCR extracted text: {bottom_ocr_text}")
+            logger.debug(f"Bottom OCR results count: {len(bottom_ocr_response.results)}")
+            for i, result in enumerate(bottom_ocr_response.results):
+                logger.debug(f"  Bottom OCR segment {i+1}: '{result.text}' (confidence: {result.confidence:.2%})")
+            
+            if bottom_ocr_response.results:
+                bottom_avg_confidence = sum(r.confidence for r in bottom_ocr_response.results) / len(bottom_ocr_response.results) * 100
+            
+            # Combine OCR texts
+            combined_ocr_text = f"{top_ocr_text}\n--- BOTTOM VIEW ---\n{bottom_ocr_text}"
+            # Use the higher confidence score
+            combined_avg_confidence = max(top_avg_confidence, bottom_avg_confidence)
+
     # ========== Generate Part Number Candidates ==========
     # Normalize OCR lines and keep confidence for fallbacks
     ocr_lines = [r.text.strip() for r in ocr_response.results if r.text.strip()]
+    if bottom_image_data and 'bottom_ocr_response' in locals() and bottom_ocr_response.status != "error":
+        bottom_ocr_lines = [r.text.strip() for r in bottom_ocr_response.results if r.text.strip()]
+        ocr_lines.extend(bottom_ocr_lines)
+    
     cleaned_lines = [clean_text_for_part_number(line) for line in ocr_lines if clean_text_for_part_number(line)]
 
     candidates = generate_adjacent_combinations(cleaned_lines, MAX_ADJACENT_LINES)
@@ -225,7 +271,13 @@ async def scan_image(
     manufacturer_keywords = ['TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP', 
                             'INFINEON', 'ATMEL', 'FREESCALE', 'ON SEMI', 'ONSEMI', 'FAIRCHILD',
                             'NATIONAL', 'LINEAR', 'VISHAY', 'ROHM', 'TOSHIBA', 'RENESAS']
-    for text_segment in ocr_response.texts:
+    
+    # Check both top and bottom OCR texts for manufacturer
+    all_ocr_texts = [top_ocr_text]
+    if bottom_ocr_text:
+        all_ocr_texts.append(bottom_ocr_text)
+    
+    for text_segment in all_ocr_texts:
         upper_text = text_segment.upper()
         for keyword in manufacturer_keywords:
             if keyword in upper_text:
@@ -256,29 +308,54 @@ async def scan_image(
     
     detected_pins = 0
     is_vision_fallback = False
+    
+    # Analyze both images with LLM if available
+    image_paths_to_analyze = [str(top_image_path)]
+    if bottom_image_path:
+        image_paths_to_analyze.append(str(bottom_image_path))
+    
     try:
         llm_client = LLM()
-        llm_result = await asyncio.to_thread(llm_client.analyze_image, str(image_path))
-        print(str(image_path))
-        print(llm_result)
+        combined_llm_result = {}
         
-        if llm_result.get("_fallback"):
-            is_vision_fallback = True
-            logger.warning(f"Vision endpoint unavailable: {llm_result.get('_debug_message')}. Using fallback (0 pins).")
-        else:
-            logger.info(f"Vision analysis successful: {llm_result}")
+        for i, image_path in enumerate(image_paths_to_analyze):
+            view_name = "top" if i == 0 else "bottom"
+            logger.info(f"Running LLM analysis on {view_name} image: {image_path}")
+            llm_result = await asyncio.to_thread(llm_client.analyze_image, image_path)
+            print(f"{view_name.upper()} LLM result: {llm_result}")
+            
+            if llm_result.get("_fallback"):
+                is_vision_fallback = True
+                logger.warning(f"Vision endpoint unavailable for {view_name}: {llm_result.get('_debug_message')}. Using fallback (0 pins).")
+            else:
+                logger.info(f"Vision analysis successful for {view_name}: {llm_result}")
+            
+            # Combine results - prefer non-zero values
+            if not combined_llm_result.get("pin_count") or combined_llm_result["pin_count"] == 0:
+                combined_llm_result["pin_count"] = llm_result.get("pin_count", 0)
+            
+            if not combined_llm_result.get("manufacturer") or not combined_llm_result["manufacturer"].strip():
+                llm_manufacturer = llm_result.get("manufacturer", "").strip()
+                if llm_manufacturer:
+                    combined_llm_result["manufacturer"] = llm_manufacturer
+            
+            if not combined_llm_result.get("part_number") or combined_llm_result["part_number"].lower() == "unknown":
+                llm_part_number = llm_result.get("part_number", "").strip()
+                if llm_part_number and llm_part_number.lower() != "unknown":
+                    combined_llm_result["part_number"] = llm_part_number
         
-        detected_pins = _parse_pin_count(llm_result.get("pin_count", 0))
+        detected_pins = _parse_pin_count(combined_llm_result.get("pin_count", 0))
         
-        llm_manufacturer = llm_result.get("manufacturer", "").strip()
+        llm_manufacturer = combined_llm_result.get("manufacturer", "").strip()
         if llm_manufacturer:
             manufacturer_detected = llm_manufacturer
             logger.info(f"Using LLM-detected manufacturer: {manufacturer_detected}")
 
-        llm_part_number = llm_result.get("part_number", "").strip()
+        llm_part_number = combined_llm_result.get("part_number", "").strip()
         if llm_part_number and llm_part_number.lower() != "unknown":
             best_part_number = llm_part_number
             logger.info(f"Using LLM-detected part number: {best_part_number}")
+            
     except Exception as e:
         is_vision_fallback = True
         logger.warning(f"Vision analysis failed: {e}, using fallback (0 pins)")
@@ -296,11 +373,11 @@ async def scan_image(
     # ========== Create Scan Record ==========
     scan = await ScanService.create_extraction_scan(
         db=db,
-        ocr_text=ocr_text,
+        ocr_text=combined_ocr_text,
         part_number_detected=best_part_number,
         part_number_candidates=candidates,
         detected_pins=detected_pins,
-        confidence_score=avg_confidence,
+        confidence_score=combined_avg_confidence,
         manufacturer_detected=manufacturer_detected,
         status=status.value,
     )
@@ -314,8 +391,8 @@ async def scan_image(
         scan_id=scan.scan_id,
         status=status,
         action_required=action_required,
-        confidence_score=avg_confidence,
-        ocr_text=ocr_text,
+        confidence_score=combined_avg_confidence,
+        ocr_text=combined_ocr_text,
         part_number_detected=best_part_number,
         part_number_candidates=candidates,
         manufacturer_detected=manufacturer_detected,
@@ -506,6 +583,76 @@ async def manual_override(
         message="Part number corrected. Ready for verification.",
         scanned_at=scan.scanned_at,
     )
+
+
+@router.post("/scan/verify", response_model=ScanVerifyResult)
+async def verify_scan(
+    request: ScanVerifyRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    **Phase 2: Verify Against Database**
+
+    Verify extracted scan data against the IC database.
+    Performs comprehensive counterfeit detection using part number, pin count, and manufacturer.
+
+    **Verification Checks**:
+    - Part number matching (with fuzzy matching)
+    - Pin count verification
+    - Manufacturer validation (using LLM-detected data)
+
+    **Results**:
+    - MATCH_FOUND: All parameters match (Authentic)
+    - PIN_MISMATCH: Pin count doesn't match
+    - MANUFACTURER_MISMATCH: Manufacturer doesn't match
+    - COUNTERFEIT: Multiple mismatches (High confidence counterfeit)
+    - NOT_IN_DATABASE: Part number not found
+    """
+    # Get the scan record
+    scan = await ScanService.get_by_scan_id(db, request.scan_id)
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+
+    # Use provided overrides or scan data
+    part_number = request.part_number or scan.part_number_detected
+    detected_pins = request.detected_pins if request.detected_pins is not None else scan.detected_pins
+    manufacturer_detected = scan.manufacturer_detected
+
+    if not part_number:
+        raise HTTPException(status_code=400, detail="Part number is required for verification")
+
+    logger.info(
+        f"Verifying scan {request.scan_id}: part_number='{part_number}', "
+        f"pins={detected_pins}, manufacturer='{manufacturer_detected}'"
+    )
+
+    # Perform verification using the service
+    verification_result = await VerificationService.verify_ic(
+        db=db,
+        part_number=part_number,
+        detected_pins=detected_pins,
+        manufacturer_detected=manufacturer_detected,
+        scan_id=request.scan_id,
+    )
+
+    # Update scan record with verification results
+    scan.verification_status = verification_result.verification_status.value
+    scan.action_required = verification_result.action_required.value
+    scan.confidence_score = verification_result.confidence_score
+    scan.verified_at = verification_result.completed_at
+    scan.matched_ic_data = verification_result.matched_ic
+    scan.verification_checks = verification_result.verification_checks
+
+    await db.flush()
+    await db.refresh(scan)
+
+    logger.info(
+        f"Verification complete for scan {request.scan_id}: "
+        f"status={verification_result.verification_status.value}, "
+        f"confidence={verification_result.confidence_score:.1f}%"
+    )
+
+    return verification_result
 
 
 def _parse_pin_count(raw_pin_count) -> int:

@@ -10,7 +10,8 @@ import io
 
 import numpy as np
 import cv2
-from paddleocr import PaddleOCR
+# Lazy import to avoid network issues during startup
+# from paddleocr import PaddleOCR
 
 logger = logging.getLogger(__name__)
 
@@ -71,16 +72,21 @@ class ICChipOCR:
         self.target_height = target_height
         self.min_confidence = min_confidence
         self.fallback_confidence = fallback_confidence
-        self._ocr: Optional[PaddleOCR] = None
+        self._ocr = None  # Lazy-loaded PaddleOCR instance
         logger.info(f"ICChipOCR initialized with target_height={target_height}, min_confidence={min_confidence}")
     
     @property
-    def ocr(self) -> PaddleOCR:
+    def ocr(self):
         """Lazy-load PaddleOCR instance."""
         if self._ocr is None:
             logger.info("Initializing PaddleOCR engine...")
-            self._ocr = PaddleOCR(use_textline_orientation=True, lang='en')
-            logger.info("PaddleOCR engine initialized")
+            try:
+                from paddleocr import PaddleOCR
+                self._ocr = PaddleOCR(use_textline_orientation=True, lang='en')
+                logger.info("PaddleOCR engine initialized")
+            except Exception as e:
+                logger.error(f"Failed to initialize PaddleOCR: {e}")
+                raise
         return self._ocr
     
     def extract_text(

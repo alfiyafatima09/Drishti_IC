@@ -10,6 +10,8 @@ class VerificationStatus(str, Enum):
     """Verification result status."""
     MATCH_FOUND = "MATCH_FOUND"
     PIN_MISMATCH = "PIN_MISMATCH"
+    MANUFACTURER_MISMATCH = "MANUFACTURER_MISMATCH"
+    COUNTERFEIT = "COUNTERFEIT"
     NOT_IN_DATABASE = "NOT_IN_DATABASE"
 
 

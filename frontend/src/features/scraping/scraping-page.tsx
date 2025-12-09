@@ -69,7 +69,6 @@ export default function ScrapingPage() {
   // Fake registry count
   const [fakeCount, setFakeCount] = useState(0)
   const [transferLoading, setTransferLoading] = useState(false)
-  const [transferMessage, setTransferMessage] = useState<string | null>(null)
 
   // Status filter (multi-select)
   const [selectedStatuses, setSelectedStatuses] = useState<QueueStatusType[]>([])
@@ -78,7 +77,6 @@ export default function ScrapingPage() {
   const [syncStage, setSyncStage] = useState<SyncStage>('idle')
   const [currentIC, setCurrentIC] = useState('')
   const [progress, setProgress] = useState(0)
-  const [syncMessage, setSyncMessage] = useState('')
   const [pollTimer, setPollTimer] = useState<ReturnType<typeof setInterval> | null>(null)
 
   // Auto-poll toggle
@@ -166,17 +164,13 @@ export default function ScrapingPage() {
     if (!confirmed) return
 
     setTransferLoading(true)
-    setTransferMessage(null)
     try {
       const resp = await fetch(`${API_BASE}/fakes/transfer-to-queue`, { method: 'POST' })
       if (!resp.ok) throw new Error('Transfer failed')
-      const data = await resp.json()
-      setTransferMessage(data.message)
       // Refresh both counts
       await Promise.all([fetchQueue(queuePage), fetchFakeCount()])
     } catch (err) {
-      console.error('Transfer failed:', err)
-      setTransferMessage('Failed to transfer items. Please try again.')
+      console.error('Transfer error:', err)
     } finally {
       setTransferLoading(false)
     }
@@ -302,7 +296,6 @@ export default function ScrapingPage() {
       const resp = await fetch(`${API_BASE}/sync/status`)
       if (!resp.ok) throw new Error('Status failed')
       const data: SyncStatus = await resp.json()
-      setSyncMessage(data.message || '')
       setCurrentIC(data.current_item || '')
       setProgress(data.progress_percentage ?? 0)
 
@@ -358,8 +351,6 @@ export default function ScrapingPage() {
     try {
       setSyncStage('processing')
       setProgress(0)
-      setSyncMessage('')
-
       // Build request body with filters
       const requestBody: {
         max_items?: number
