@@ -189,6 +189,47 @@ export interface ICSearchResult {
 // COMMON SCHEMAS
 // ============================================================
 
+export interface BatchScanResult {
+  job_id: string
+  status: string
+  total_images: number
+  message: string
+}
+
+export interface BatchProgress {
+  job_id: string
+  status: 'processing' | 'completed' | 'failed'
+  progress_percentage: number
+  processed_images: number
+  total_images: number
+  results?: BatchImageResult[]
+  estimated_time_remaining?: number
+}
+
+export interface BatchImageResult {
+  image_path: string
+  classification: {
+    model_type: string
+    confidence: number
+    features: Record<string, any>
+    estimated_time: number
+  }
+  result: {
+    method: string
+    specs?: {
+      part_number?: string
+      manufacturer?: string
+      pin_count?: string
+    }
+    confidence: number
+    validation_status: string
+    is_counterfeit?: boolean
+  }
+  processing_time: number
+}
+
+// ============================================================
+
 export interface SuccessResponse {
   success: boolean
   message: string

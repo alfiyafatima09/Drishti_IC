@@ -1,10 +1,10 @@
 from contextlib import asynccontextmanager
 import os
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import logging
 
 from api.endpoints import datasheets
@@ -21,17 +21,9 @@ from api.endpoints import (
     sync_router,
     settings_router,
     system_router,
-    scan_router,
-    ic_router,
-    scans_history_router,
-    dashboard_router,
-    queue_router,
-    fakes_router,
-    sync_router,
-    settings_router,
-    system_router,
     camera_router,
     websockets,
+    batch_router,
 )
 from api.endpoints import images, datasheets, ic_analysis
 
@@ -63,13 +55,32 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS middleware - must be added FIRST
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+
+# Global exception handler to ensure CORS headers are always sent
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Handle all exceptions and ensure CORS headers are included."""
+    logger.error(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "type": type(exc).__name__},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
 
 app.include_router(scan_router)
 app.include_router(ic_router)
@@ -84,6 +95,7 @@ app.include_router(camera_router)
 app.include_router(websockets.router)
 app.include_router(images.router)
 app.include_router(datasheets.router)
+app.include_router(batch_router)
 # app.include_router(ic_analysis.router)
 app.include_router(digikey_router.router)
 

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", "")
     DATABASE_URL: str = os.environ.get("DATABASE_URL", "")
 
-    # GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
+    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "AIzaSyDxHomY9cWMZMT9ZklyV3RMR8AbhZ5igE0")
     
     # Use absolute paths based on project root
     # Handle both absolute and relative paths in env vars

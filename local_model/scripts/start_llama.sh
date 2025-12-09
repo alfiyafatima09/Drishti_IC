@@ -9,7 +9,7 @@ BASE_DIR="$(dirname "$SCRIPT_DIR")"
 HOST="0.0.0.0"
 PORT="8080"
 CONTEXT_SIZE="8192"  # Increased for image processing
-GPU_LAYERS="22"     # Reduced to leave memory for vision model
+GPU_LAYERS="0"     # Use CPU only for RTX 4050 (limited VRAM)
 THREADS="4"         # Reduced CPU threads
 
 echo "🚀 Starting Qwen3-VL Model Server (Optimized)..."

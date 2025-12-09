@@ -86,7 +86,7 @@ export function VideoFeed({ onCapture }: VideoFeedProps) {
           className={cn(
             'border-slate-200 hover:bg-slate-50',
             status === 'connected' &&
-              'border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700',
+            'border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700',
           )}
         >
           {status === 'connected' ? (
@@ -99,7 +99,7 @@ export function VideoFeed({ onCapture }: VideoFeedProps) {
       </div>
 
       {/* Video Container */}
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-950 shadow-inner">
+      <div className="relative flex-1 min-h-0 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-950 shadow-inner">
         {currentFrame ? (
           <img
             src={currentFrame}
