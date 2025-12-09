@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator'
 
 export default function DashboardPage() {
   const [currentScanResult, setCurrentScanResult] = useState<ScanResult | null>(null)
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [capturedImages, setCapturedImages] = useState<string[]>([])
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -23,17 +23,17 @@ export default function DashboardPage() {
    */
   const handleCapture = useCallback((imageUrl: string) => {
     console.log('[Dashboard] Image captured')
-    setCapturedImage(imageUrl)
+    setCapturedImages([imageUrl])
     setCurrentScanResult(null)
   }, [])
 
   /**
    * Handle file upload - just show image, don't analyze yet
    */
-  const handleFileSelect = useCallback((file: File) => {
-    console.log('[Dashboard] File selected')
-    const imageUrl = URL.createObjectURL(file)
-    setCapturedImage(imageUrl)
+  const handleFilesSelect = useCallback((files: File[]) => {
+    console.log('[Dashboard] Files selected')
+    const imageUrls = files.map(file => URL.createObjectURL(file))
+    setCapturedImages(imageUrls)
     setCurrentScanResult(null)
   }, [])
 
@@ -41,13 +41,14 @@ export default function DashboardPage() {
    * Analyze the captured/uploaded image
    */
   const handleAnalyze = useCallback(async () => {
-    if (!capturedImage || isAnalyzing) return
+    if (capturedImages.length === 0 || isAnalyzing) return
 
+    const imageToAnalyze = capturedImages[0]
     setIsAnalyzing(true)
 
     try {
       // Convert image URL to File
-      const response = await fetch(capturedImage)
+      const response = await fetch(imageToAnalyze)
       const blob = await response.blob()
       const file = new File([blob], 'ic-image.jpg', { type: 'image/jpeg' })
 
@@ -72,7 +73,7 @@ export default function DashboardPage() {
     } finally {
       setIsAnalyzing(false)
     }
-  }, [capturedImage, isAnalyzing])
+  }, [capturedImages, isAnalyzing])
 
   return (
     <div className="animate-in fade-in container mx-auto max-w-7xl p-6 duration-500">
@@ -116,7 +117,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <ImageUpload
-                  onFileSelect={handleFileSelect}
+                  onFilesSelect={handleFilesSelect}
                   fileInputRef={fileInputRef}
                   disabled={isAnalyzing}
                 />
@@ -127,7 +128,7 @@ export default function DashboardPage() {
           {/* Right Section - Analysis Panel */}
           <div className="lg:col-span-1">
             <AnalysisPanel
-              capturedImage={capturedImage}
+              capturedImage={capturedImages[0] || null}
               scanResult={currentScanResult}
               isAnalyzing={isAnalyzing}
               onAnalyze={handleAnalyze}
