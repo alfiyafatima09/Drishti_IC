@@ -28,14 +28,15 @@ def get_database_url() -> str:
 
 
 # Create async engine with connection pooling
-# Disable SQL query logging for performance (can be enabled via DEBUG if needed)
+# Supabase Free tier limits: Use small pool to avoid "MaxClientsInSessionMode"
 engine = create_async_engine(
     get_database_url(),
     echo=False,  # Disable SQL query logging for performance
-    pool_size=50,
-    max_overflow=20,
+    pool_size=3,  # Reduced for Supabase free tier
+    max_overflow=2,  # Allow only 2 extra connections
     pool_pre_ping=True,  # Verify connections before using
-    pool_recycle=3600,  # Recycle connections after 1 hour
+    pool_recycle=300,  # Recycle connections after 5 minutes
+    pool_timeout=30,  # Wait up to 30 seconds for a connection
 )
 
 # Create session factory

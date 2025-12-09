@@ -113,7 +113,7 @@ export function VerificationModal({ isOpen, onOpenChange, scanResult }: Verifica
       const result = await response.json()
 
       // Update checks with results
-      const updatedChecks = checks.map(check => {
+      const updatedChecks = checks.map((check) => {
         const checkResult = result.verification_checks?.[check.id]
         if (checkResult) {
           return {
@@ -135,7 +135,6 @@ export function VerificationModal({ isOpen, onOpenChange, scanResult }: Verifica
 
       // Notify parent of completion
       onVerificationComplete(result)
-
     } catch (error) {
       console.error('Verification error:', error)
       setStatus('idle')
