@@ -1,10 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -36,11 +31,7 @@ interface VerificationCheck {
   expectedValue: string | number | null
 }
 
-export function VerificationModal({
-  isOpen,
-  onOpenChange,
-  scanResult,
-}: VerificationModalProps) {
+export function VerificationModal({ isOpen, onOpenChange, scanResult }: VerificationModalProps) {
   const [status, setStatus] = useState<'idle' | 'verifying' | 'complete'>('idle')
   const [checks, setChecks] = useState<VerificationCheck[]>([])
   const [verdict, setVerdict] = useState<'authentic' | 'counterfeit' | null>(null)
@@ -91,10 +82,67 @@ export function VerificationModal({
       ])
 
       // Auto-start verification
-      // startVerification(scanResult.scan_id)
+      startVerification(scanResult.scan_id)
     }
   }, [isOpen, scanResult?.scan_id, status, verdict]) // Only depend on scan_id, not the whole object
 
+  const startVerification = async (scanId: string) => {
+    if (status === 'verifying') return
+
+    setStatus('verifying')
+    verifiedIdsRef.current.add(scanId)
+
+    try {
+      // Call verification API
+      const response = await fetch(`/api/v1/scan/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scan_id: scanId,
+          part_number: scanResult?.part_number_detected,
+          detected_pins: scanResult?.detected_pins,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Verification failed: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      // Update checks with results
+      const updatedChecks = checks.map(check => {
+        const checkResult = result.verification_checks?.[check.id]
+        if (checkResult) {
+          return {
+            ...check,
+            status: checkResult.status ? 'match' : 'mismatch',
+            expectedValue: checkResult.expected,
+          }
+        }
+        return check
+      })
+
+      setChecks(updatedChecks)
+
+      // Set verdict based on verification status
+      const isAuthentic = result.verification_status === 'MATCH_FOUND'
+      setVerdict(isAuthentic ? 'authentic' : 'counterfeit')
+
+      setStatus('complete')
+
+      // Notify parent of completion
+      onVerificationComplete(result)
+
+    } catch (error) {
+      console.error('Verification error:', error)
+      setStatus('idle')
+      // Reset for retry
+      verifiedIdsRef.current.delete(scanId)
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

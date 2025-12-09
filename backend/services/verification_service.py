@@ -122,6 +122,42 @@ class VerificationService:
         return verification_result, None
 
     @staticmethod
+    async def verify_ic(
+        db: AsyncSession,
+        part_number: str,
+        detected_pins: int,
+        manufacturer_detected: Optional[str],
+        scan_id: UUID,
+    ) -> ScanVerifyResult:
+        """
+        Verify an IC against the database with manufacturer information.
+
+        Args:
+            db: Database session
+            part_number: Detected part number
+            detected_pins: Number of pins detected
+            manufacturer_detected: Manufacturer detected by vision analysis
+            scan_id: Scan identifier
+
+        Returns:
+            ScanVerifyResult with verification outcome
+        """
+        # Update scan with manufacturer if provided
+        if manufacturer_detected:
+            scan = await VerificationService._get_scan(db, scan_id)
+            if scan:
+                scan.manufacturer_detected = manufacturer_detected
+                await db.flush()
+
+        # Perform verification
+        return await VerificationService._perform_verification(
+            db=db,
+            part_number=part_number,
+            detected_pins=detected_pins,
+            scan_id=scan_id,
+        )
+
+    @staticmethod
     async def _get_scan(db: AsyncSession, scan_id: UUID) -> Optional[ScanHistory]:
         """Get scan by ID."""
         from sqlalchemy import select
@@ -140,6 +176,14 @@ class VerificationService:
         """
         Perform verification checks and return detailed result with reasons.
         """
+        scan = await VerificationService._get_scan(db, scan_id)
+        if not scan:
+            error_msg = f"Scan with ID {scan_id} not found"
+            logger.error(error_msg)
+            return None, error_msg
+
+        detected_manufacturer = scan.manufacturer_detected
+
         ic_spec = await ICService.get_by_part_number(db, part_number)
 
         if not ic_spec:
@@ -173,6 +217,7 @@ class VerificationService:
 
         logger.info(f"Found IC in database: {ic_spec.part_number} ({ic_spec.manufacturer}), {ic_spec.pin_count} pins")
 
+        # Three verification checks
         part_number_match = True  
         
         pin_match = detected_pins == ic_spec.pin_count
@@ -186,20 +231,86 @@ class VerificationService:
             )
             logger.warning(pin_reason)
 
-        if pin_match:
+        # Manufacturer verification using LLM-detected manufacturer
+        manufacturer_match = True
+        manufacturer_reason = None
+        
+        if detected_manufacturer:
+            # Normalize both manufacturer names for comparison
+            detected_mfg_normalized = detected_manufacturer.lower().strip()
+            db_mfg_normalized = ic_spec.manufacturer.lower().strip()
+            
+            # Check if they match (allowing for common variations)
+            if detected_mfg_normalized != db_mfg_normalized:
+                # Check for common manufacturer name variations
+                manufacturer_aliases = {
+                    "texas instruments": ["ti", "texas", "national"],
+                    "stmicroelectronics": ["stm", "st"],
+                    "microchip technology": ["microchip", "atmel"],
+                    "analog devices": ["analog", "linear"],
+                    "nxp semiconductors": ["nxp", "freescale"],
+                    "on semiconductor": ["on", "on semi", "fairchild"],
+                    "infineon technologies": ["infineon"],
+                    "maxim integrated": ["maxim"],
+                    "intel corporation": ["intel"],
+                    "vishay intertechnology": ["vishay"],
+                    "rohm semiconductor": ["rohm"],
+                    "toshiba electronic devices & storage corporation": ["toshiba"],
+                    "renesas electronics": ["renesas"]
+                }
+                
+                detected_match = False
+                for canonical_name, aliases in manufacturer_aliases.items():
+                    if (detected_mfg_normalized == canonical_name or 
+                        detected_mfg_normalized in aliases or
+                        any(alias in detected_mfg_normalized for alias in aliases)):
+                        if (db_mfg_normalized == canonical_name or 
+                            db_mfg_normalized in aliases or
+                            any(alias in db_mfg_normalized for alias in aliases)):
+                            detected_match = True
+                            break
+                
+                if not detected_match:
+                    manufacturer_match = False
+                    manufacturer_reason = (
+                        f"Manufacturer mismatch. Database shows '{ic_spec.manufacturer}' "
+                        f"but vision analysis detected '{detected_manufacturer}'. "
+                        f"This may indicate a counterfeit or relabeled component."
+                    )
+                    logger.warning(manufacturer_reason)
+        else:
+            logger.info("No manufacturer detected by vision analysis, skipping manufacturer verification")
+
+        # Determine overall verification status
+        if pin_match and manufacturer_match:
             verification_status = VerificationStatus.MATCH_FOUND
             action_required = ActionRequired.NONE
-            overall_message = f"IC verified successfully. Part number and pin count match."
+            overall_message = f"IC verified successfully. All parameters match."
             confidence_score = 98.5
-        else:
+        elif not pin_match and manufacturer_match:
             verification_status = VerificationStatus.PIN_MISMATCH
             action_required = ActionRequired.MANUAL_REVIEW
             overall_message = (
-                f"Verification FAILED. Part number '{part_number}' found in database "
-                f"but pin count doesn't match. Expected {ic_spec.pin_count} pins, "
-                f"detected {detected_pins} pins."
+                f"Verification FAILED. Manufacturer matches but pin count doesn't. "
+                f"Expected {ic_spec.pin_count} pins, detected {detected_pins} pins."
             )
             confidence_score = 60.0
+        elif pin_match and not manufacturer_match:
+            verification_status = VerificationStatus.MANUFACTURER_MISMATCH
+            action_required = ActionRequired.MANUAL_REVIEW
+            overall_message = (
+                f"Verification FAILED. Pin count matches but manufacturer doesn't. "
+                f"Database: '{ic_spec.manufacturer}', Detected: '{detected_manufacturer}'."
+            )
+            confidence_score = 65.0
+        else:  # Both pin and manufacturer mismatch
+            verification_status = VerificationStatus.COUNTERFEIT
+            action_required = ActionRequired.MANUAL_REVIEW
+            overall_message = (
+                f"Verification FAILED. Both pin count and manufacturer mismatch. "
+                f"This strongly indicates a counterfeit or relabeled component."
+            )
+            confidence_score = 30.0
 
         # Helper to get manufacturer name safely
         try:
@@ -235,10 +346,10 @@ class VerificationService:
                     reason=None,
                 ),
                 "manufacturer_match": VerificationCheck(
-                    status=True,  # Simplified for now as we matched by part number which implies manufacturer
+                    status=manufacturer_match,
                     expected=ic_spec.manufacturer,
-                    actual=ic_spec.manufacturer, 
-                    reason=None,
+                    actual=detected_manufacturer or "Not detected",
+                    reason=manufacturer_reason,
                 ),
                 "pin_count_match": VerificationCheck(
                     status=pin_match,

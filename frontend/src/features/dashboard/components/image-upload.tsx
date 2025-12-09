@@ -4,12 +4,20 @@ import { Upload, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ImageUploadProps {
-  onFilesSelect: (files: File[]) => void
+  onFileSelect: (files: File[]) => void
   fileInputRef: RefObject<HTMLInputElement | null>
   disabled?: boolean
+  title?: string
+  multiple?: boolean
 }
 
-export function ImageUpload({ onFilesSelect, fileInputRef, disabled }: ImageUploadProps) {
+export function ImageUpload({
+  onFileSelect,
+  fileInputRef,
+  disabled,
+  title,
+  multiple = false,
+}: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
 
   const handleDragEnter = useCallback(
@@ -43,21 +51,20 @@ export function ImageUpload({ onFilesSelect, fileInputRef, disabled }: ImageUplo
       const files = e.dataTransfer.files
       if (files && files.length > 0) {
         const validFiles: File[] = []
-        // Limit to first 2 files
-        const count = Math.min(files.length, 2)
+        const maxFiles = multiple ? 2 : 1
 
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < Math.min(files.length, maxFiles); i++) {
           if (files[i].type.startsWith('image/')) {
             validFiles.push(files[i])
           }
         }
 
         if (validFiles.length > 0) {
-          onFilesSelect(validFiles)
+          onFileSelect(validFiles)
         }
       }
     },
-    [onFilesSelect, disabled],
+    [onFileSelect, disabled, multiple],
   )
 
   const handleFileChange = useCallback(
@@ -65,20 +72,19 @@ export function ImageUpload({ onFilesSelect, fileInputRef, disabled }: ImageUplo
       const files = e.target.files
       if (files && files.length > 0) {
         const validFiles: File[] = []
-        // Limit to first 2 files
-        const count = Math.min(files.length, 2)
+        const maxFiles = multiple ? 2 : 1
 
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < Math.min(files.length, maxFiles); i++) {
           validFiles.push(files[i])
         }
 
-        onFilesSelect(validFiles)
+        onFileSelect(validFiles)
       }
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
     },
-    [onFilesSelect, fileInputRef],
+    [onFileSelect, fileInputRef, multiple],
   )
 
   const handleClick = useCallback(() => {
@@ -89,11 +95,16 @@ export function ImageUpload({ onFilesSelect, fileInputRef, disabled }: ImageUplo
 
   return (
     <div className="w-full">
+      {title && (
+        <div className="mb-3">
+          <h4 className="text-sm font-medium text-gray-700">{title}</h4>
+        </div>
+      )}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        multiple
+        multiple={multiple}
         onChange={handleFileChange}
         className="hidden"
       />
@@ -121,7 +132,9 @@ export function ImageUpload({ onFilesSelect, fileInputRef, disabled }: ImageUplo
         </div>
         <div className="space-y-1">
           <p className="text-foreground text-sm font-medium">
-            {isDragging ? 'Drop images here' : 'Click or drag up to 2 images to upload'}
+            {isDragging
+              ? `Drop ${multiple ? 'images' : 'image'} here`
+              : `Click or drag ${multiple ? 'up to 2 images' : 'image'} to upload`}
           </p>
           <p className="text-muted-foreground text-xs">JPG or PNG (max 10MB)</p>
         </div>

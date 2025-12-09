@@ -26,7 +26,7 @@ import { API_BASE } from '@/lib/config'
 import { VerificationModal } from './verification-modal'
 
 interface AnalysisPanelProps {
-  capturedImage: string | null
+  capturedImages: string[]
   scanResult: ScanResult | null
   isAnalyzing: boolean
   onAnalyze: () => void
@@ -92,15 +92,20 @@ const STATUS_CONFIG: Record<
     label: 'Pin Mismatch',
     variant: 'destructive',
   },
+  MANUFACTURER_MISMATCH: {
+    icon: AlertTriangle,
+    label: 'Manufacturer Mismatch',
+    variant: 'destructive',
+  },
   NOT_IN_DATABASE: {
     icon: HelpCircle,
     label: 'Not in DB',
     variant: 'secondary',
-  }
+  },
 }
 
 export function AnalysisPanel({
-  capturedImage,
+  capturedImages,
   scanResult,
   isAnalyzing,
   onAnalyze,
@@ -120,20 +125,35 @@ export function AnalysisPanel({
     setLocalError(null)
   }, [scanResult?.scan_id, scanResult?.part_number_detected, scanResult?.part_number])
 
-  if (!capturedImage) {
+  const hasAnyImage = capturedImages.length > 0
+
+  if (!hasAnyImage) {
     return (
-      <Card className="h-full border-dashed shadow-none bg-muted/30">
-        <CardContent className="flex flex-col items-center justify-center h-full min-h-[400px] text-muted-foreground p-6 text-center">
-          <Cpu className="h-12 w-12 mb-4 opacity-20" />
-          <h3 className="text-lg font-semibold mb-2">No IC Captured</h3>
-          <p className="text-sm">Capture from camera or upload an image to begin analysis</p>
+      <Card className="bg-muted/30 h-full border-dashed shadow-none">
+        <CardContent className="text-muted-foreground flex h-full min-h-[400px] flex-col items-center justify-center p-6 text-center">
+          <Cpu className="mb-4 h-12 w-12 opacity-20" />
+          <h3 className="mb-2 text-lg font-semibold">No IC Captured</h3>
+          <p className="text-sm">Capture from camera or upload images to begin analysis</p>
+          <div className="mt-4 flex gap-2">
+            {capturedImages.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {capturedImages.map((_, index) => (
+                  <Badge key={index} variant="secondary">
+                    Image {index + 1} ✓
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     )
   }
 
   // Handle status config more gracefully for new statuses
-  const config = scanResult ? (STATUS_CONFIG[scanResult.status as ScanStatus] || STATUS_CONFIG['UNKNOWN']) : null
+  const config = scanResult
+    ? STATUS_CONFIG[scanResult.status as ScanStatus] || STATUS_CONFIG['UNKNOWN']
+    : null
   const StatusIcon = config?.icon
 
   const needsBottomScan =
@@ -211,10 +231,13 @@ export function AnalysisPanel({
 
       <Card className="flex h-full flex-col overflow-hidden rounded-2xl border-slate-200 bg-white shadow-lg shadow-slate-200/50">
         <CardHeader className="border-b border-slate-100 bg-white pb-4">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex w-full items-center justify-between">
             <CardTitle className="text-xl font-bold text-slate-900">Analysis</CardTitle>
             {scanResult && config && (
-              <Badge variant={config.variant} className={cn("px-2.5 py-0.5 font-bold", config.className)}>
+              <Badge
+                variant={config.variant}
+                className={cn('px-2.5 py-0.5 font-bold', config.className)}
+              >
                 {StatusIcon && <StatusIcon className="mr-1.5 h-3.5 w-3.5" />}
                 {config.label}
               </Badge>
@@ -225,27 +248,46 @@ export function AnalysisPanel({
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto space-y-6">
+        <CardContent className="flex-1 space-y-6 overflow-y-auto">
           {/* Image Preview */}
-          <div className="relative rounded-lg overflow-hidden border bg-muted">
-            <img
-              src={capturedImage}
-              alt="Captured IC"
-              className="aspect-video w-full object-contain"
-            />
-            {scanResult && (
-              <Badge className="absolute top-2 right-2 backdrop-blur-md bg-background/80 text-foreground hover:bg-background/90" variant="outline">
-                Confidence: {scanResult.confidence_score.toFixed(0)}%
-              </Badge>
-            )}
-          </div>
+          {capturedImages.length > 0 && (
+            <div className="space-y-4">
+              <div
+                className={`grid gap-4 ${capturedImages.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}
+              >
+                {capturedImages.map((imageUrl, index) => (
+                  <div key={index} className="bg-muted relative overflow-hidden rounded-lg border">
+                    <img
+                      src={imageUrl}
+                      alt={`Captured IC ${index + 1}`}
+                      className="aspect-video w-full object-contain"
+                    />
+                    <Badge
+                      className="bg-background/80 text-foreground hover:bg-background/90 absolute top-2 left-2 backdrop-blur-md"
+                      variant="outline"
+                    >
+                      Image {index + 1}
+                    </Badge>
+                    {scanResult && index === 0 && (
+                      <Badge
+                        className="bg-background/80 text-foreground hover:bg-background/90 absolute top-2 right-2 backdrop-blur-md"
+                        variant="outline"
+                      >
+                        Confidence: {scanResult.confidence_score.toFixed(0)}%
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Analyze Button */}
           {!scanResult && !isAnalyzing && (
             <Button
               onClick={onAnalyze}
               size="lg"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5"
+              className="w-full rounded-xl bg-blue-600 font-bold text-white shadow-md shadow-blue-600/20 transition-all hover:-translate-y-0.5 hover:bg-blue-700"
             >
               <Sparkles className="mr-2 h-4 w-4" />
               Analyze IC Image
@@ -254,8 +296,8 @@ export function AnalysisPanel({
 
           {/* Analyzing State */}
           {isAnalyzing && (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-              <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
+            <div className="text-muted-foreground flex flex-col items-center justify-center py-8 text-center">
+              <Loader2 className="text-primary mb-4 h-8 w-8 animate-spin" />
               <p className="font-medium">Processing Image...</p>
               <p className="text-sm">Extracting component features</p>
             </div>
@@ -263,26 +305,30 @@ export function AnalysisPanel({
 
           {/* Results */}
           {scanResult && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 p-1">
-
+            <div className="animate-in fade-in slide-in-from-bottom-5 space-y-6 p-1">
               {/* Verification Ready State Trigger */}
               {(scanResult.status === 'EXTRACTED' || scanResult.status === 'NEED_BOTTOM_SCAN') && (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
                   <div className="flex items-center gap-3">
-                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center border",
-                      "bg-blue-100 border-blue-200 text-blue-600"
-                    )}>
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-full border',
+                        'border-blue-200 bg-blue-100 text-blue-600',
+                      )}
+                    >
                       <Sparkles size={20} />
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900">Analysis Complete</h4>
-                      <p className="text-xs text-slate-500">Data extracted. Ready for validation.</p>
+                      <p className="text-xs text-slate-500">
+                        Data extracted. Ready for validation.
+                      </p>
                     </div>
                   </div>
 
                   <Button
                     onClick={() => setShowVerification(true)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5"
+                    className="h-11 w-full rounded-xl bg-blue-600 font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 hover:bg-blue-700"
                   >
                     Ready for Validation
                     <CheckCircle2 className="ml-2 h-4 w-4" />
@@ -291,17 +337,22 @@ export function AnalysisPanel({
               )}
 
               {/* Status Message */}
-              <div className={cn("px-4 py-3 rounded-xl border text-sm font-medium shadow-sm",
-                scanResult.message.includes("success") || scanResult.status === 'MATCH_FOUND' ? "bg-emerald-50 text-emerald-900 border-emerald-100" :
-                  scanResult.status?.includes('FAIL') || scanResult.status === 'COUNTERFEIT' ? "bg-red-50 text-red-900 border-red-100" :
-                    "bg-slate-50 text-slate-700 border-slate-200"
-              )}>
+              <div
+                className={cn(
+                  'rounded-xl border px-4 py-3 text-sm font-medium shadow-sm',
+                  scanResult.message.includes('success') || scanResult.status === 'MATCH_FOUND'
+                    ? 'border-emerald-100 bg-emerald-50 text-emerald-900'
+                    : scanResult.status?.includes('FAIL') || scanResult.status === 'COUNTERFEIT'
+                      ? 'border-red-100 bg-red-50 text-red-900'
+                      : 'border-slate-200 bg-slate-50 text-slate-700',
+                )}
+              >
                 <p>{scanResult.message}</p>
               </div>
 
               {/* Bottom Scan prompt */}
               {needsBottomScan && (
-                <div className="space-y-3 p-4 rounded-lg border border-amber-200 bg-amber-50">
+                <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
                   <div className="flex items-center gap-2 font-medium text-amber-800">
                     <AlertTriangle className="h-4 w-4" />
                     <span>Pins hidden. Bottom view required.</span>
@@ -320,7 +371,7 @@ export function AnalysisPanel({
                     <Button
                       variant="default"
                       size="sm"
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                      className="bg-amber-600 text-white hover:bg-amber-700"
                       disabled={bottomUploading}
                       onClick={() => bottomFileRef.current?.click()}
                     >
@@ -342,29 +393,38 @@ export function AnalysisPanel({
 
               {/* Parameters List - Compact */}
               <div className="space-y-4">
-                <h4 className="text-sm font-medium leading-none text-slate-900">Detected Information</h4>
+                <h4 className="text-sm leading-none font-medium text-slate-900">
+                  Detected Information
+                </h4>
                 <div className="grid grid-cols-2 gap-3">
-
                   {/* Part Number */}
                   <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Part Number</span>
-                    <div className="font-mono text-base font-bold text-slate-900 truncate">
+                    <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                      Part Number
+                    </span>
+                    <div className="truncate font-mono text-base font-bold text-slate-900">
                       {scanResult.part_number_detected || scanResult.part_number || 'N/A'}
                     </div>
                   </div>
 
                   {/* Manufacturer */}
                   <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Manufacturer</span>
+                    <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                      Manufacturer
+                    </span>
                     <div className="flex items-center gap-1.5 font-medium text-slate-900">
-                      <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                      <span className="break-words">{scanResult.manufacturer_detected || 'Unknown'}</span>
+                      <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="break-words">
+                        {scanResult.manufacturer_detected || 'Unknown'}
+                      </span>
                     </div>
                   </div>
 
                   {/* Pins */}
                   <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Pins Detected</span>
+                    <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                      Pins Detected
+                    </span>
                     <div className="flex items-center gap-1.5 font-bold text-slate-900">
                       <Cpu className="h-3.5 w-3.5 text-slate-400" />
                       <span>{scanResult.detected_pins}</span>
@@ -373,13 +433,14 @@ export function AnalysisPanel({
 
                   {/* Confidence */}
                   <div className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm transition-all hover:border-slate-300">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500">Confidence</span>
+                    <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">
+                      Confidence
+                    </span>
                     <div className="flex items-center gap-1.5 font-bold text-slate-900">
                       <Sparkles className="h-3.5 w-3.5 text-blue-500" />
                       <span>{scanResult.confidence_score.toFixed(1)}%</span>
                     </div>
                   </div>
-
                 </div>
               </div>
 
@@ -388,7 +449,7 @@ export function AnalysisPanel({
               {/* IC Specifications */}
               {scanResult.ic_specification && (
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium leading-none">Specifications</h4>
+                  <h4 className="text-sm leading-none font-medium">Specifications</h4>
 
                   <div className="grid gap-4 text-sm">
                     {scanResult.ic_specification.description && (
@@ -401,30 +462,42 @@ export function AnalysisPanel({
                       {scanResult.ic_specification.package_type && (
                         <div className="flex justify-between border-b pb-2">
                           <span className="text-muted-foreground">Package</span>
-                          <span className="font-medium">{scanResult.ic_specification.package_type}</span>
+                          <span className="font-medium">
+                            {scanResult.ic_specification.package_type}
+                          </span>
                         </div>
                       )}
 
                       {scanResult.ic_specification.pin_count && (
                         <div className="flex justify-between border-b pb-2">
                           <span className="text-muted-foreground">Spec Pins</span>
-                          <span className="font-medium">{scanResult.ic_specification.pin_count}</span>
+                          <span className="font-medium">
+                            {scanResult.ic_specification.pin_count}
+                          </span>
                         </div>
                       )}
 
-                      {(scanResult.ic_specification.voltage_min && scanResult.ic_specification.voltage_max) && (
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground">Voltage</span>
-                          <span className="font-medium">{scanResult.ic_specification.voltage_min}V - {scanResult.ic_specification.voltage_max}V</span>
-                        </div>
-                      )}
+                      {scanResult.ic_specification.voltage_min &&
+                        scanResult.ic_specification.voltage_max && (
+                          <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Voltage</span>
+                            <span className="font-medium">
+                              {scanResult.ic_specification.voltage_min}V -{' '}
+                              {scanResult.ic_specification.voltage_max}V
+                            </span>
+                          </div>
+                        )}
 
-                      {(scanResult.ic_specification.operating_temp_min && scanResult.ic_specification.operating_temp_max) && (
-                        <div className="flex justify-between border-b pb-2">
-                          <span className="text-muted-foreground">Temp</span>
-                          <span className="font-medium">{scanResult.ic_specification.operating_temp_min}°C to {scanResult.ic_specification.operating_temp_max}°C</span>
-                        </div>
-                      )}
+                      {scanResult.ic_specification.operating_temp_min &&
+                        scanResult.ic_specification.operating_temp_max && (
+                          <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Temp</span>
+                            <span className="font-medium">
+                              {scanResult.ic_specification.operating_temp_min}°C to{' '}
+                              {scanResult.ic_specification.operating_temp_max}°C
+                            </span>
+                          </div>
+                        )}
                     </div>
                   </div>
 
@@ -449,7 +522,7 @@ export function AnalysisPanel({
               {/* Manual Override */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <Edit3 className="h-4 w-4 text-muted-foreground" />
+                  <Edit3 className="text-muted-foreground h-4 w-4" />
                   <span>Manual Override</span>
                 </div>
                 <div className="space-y-3">
@@ -483,13 +556,15 @@ export function AnalysisPanel({
               </div>
 
               {localError && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive font-medium">
+                <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm font-medium">
                   {localError}
                 </div>
               )}
 
-              <div className="text-xs text-muted-foreground flex justify-between pt-2">
-                <span>Scan ID: <span className="font-mono">{scanResult.scan_id.slice(0, 8)}</span></span>
+              <div className="text-muted-foreground flex justify-between pt-2 text-xs">
+                <span>
+                  Scan ID: <span className="font-mono">{scanResult.scan_id.slice(0, 8)}</span>
+                </span>
                 <span>{new Date(scanResult.scanned_at).toLocaleTimeString()}</span>
               </div>
             </div>
