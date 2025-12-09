@@ -190,177 +190,201 @@ async def scan_image(
     if bottom_image_path:
         logger.info(f"Processing bottom file: {bottom_file.filename}, size: {len(bottom_image_data)} bytes")
 
-    # ========== OCR Processing ==========
-    logger.debug("Starting OCR extraction for top image...")
-    ocr_response = await asyncio.to_thread(extract_text_from_image, top_image_data, preprocess=True)
-    print(ocr_response)
+    # ========== Parallel Processing ==========
+    # Prepare all tasks to run concurrently
     
-    if ocr_response.status == "error":
-        logger.error(f"OCR failed: {ocr_response.error}")
+    # Task 1: Top Image OCR
+    # Task 2: Bottom Image OCR (optional)
+    # Task 3: Top Image LLM
+    # Task 4: Bottom Image LLM (optional)
+
+    llm_client = LLM()
+
+    async def safe_ocr(image_data):
+        try:
+            return await asyncio.to_thread(extract_text_from_image, image_data, preprocess=True)
+        except Exception as e:
+            logger.error(f"OCR Exception: {e}")
+            return None
+
+    async def safe_llm(image_path):
+        try:
+            return await asyncio.to_thread(llm_client.analyze_image, str(image_path))
+        except Exception as e:
+            logger.error(f"LLM Exception: {e}")
+            return None
+
+    # Define tasks
+    ocr_top_task = safe_ocr(top_image_data)
+    llm_top_task = safe_llm(top_image_path)
+    
+    ocr_bottom_task = safe_ocr(bottom_image_data) if bottom_image_data else None
+    llm_bottom_task = safe_llm(bottom_image_path) if bottom_image_path else None
+
+    # Gather results
+    logger.info("Starting parallel analysis tasks...")
+    
+    tasks = [ocr_top_task, llm_top_task]
+    if ocr_bottom_task: tasks.append(ocr_bottom_task)
+    if llm_bottom_task: tasks.append(llm_bottom_task)
+    
+    results = await asyncio.gather(*tasks)
+    
+    # Unpack results
+    ocr_response = results[0]
+    llm_top_result = results[1]
+    
+    bottom_ocr_response = results[2] if ocr_bottom_task else None
+    llm_bottom_result = results[3] if llm_bottom_task else (results[2] if ocr_bottom_task is None and llm_bottom_task else None)
+    # Note: The above unpacking logic for >2 depends on exact presence. Let's do it safer.
+    
+    # Re-index based on presence
+    idx = 2
+    if ocr_bottom_task:
+        bottom_ocr_response = results[idx]
+        idx += 1
+    else:
+        bottom_ocr_response = None
+        
+    if llm_bottom_task:
+        llm_bottom_result = results[idx]
+    else:
+        llm_bottom_result = None
+
+    # ========== Process OCR Results ==========
+    if not ocr_response or ocr_response.status == "error":
+        error_msg = ocr_response.error if ocr_response else "Unknown error"
+        logger.error(f"OCR failed: {error_msg}")
         raise HTTPException(
             status_code=500, 
-            detail=f"OCR processing failed: {ocr_response.error}"
+            detail=f"OCR processing failed: {error_msg}"
         )
     
-    # Get OCR text and calculate confidence for top image
     top_ocr_text = ocr_response.full_text
     logger.debug(f"Top OCR extracted text: {top_ocr_text}")
-    logger.debug(f"Top OCR results count: {len(ocr_response.results)}")
-    for i, result in enumerate(ocr_response.results):
-        logger.debug(f"  Top OCR segment {i+1}: '{result.text}' (confidence: {result.confidence:.2%})")
     
     top_avg_confidence = 0.0
     if ocr_response.results:
         top_avg_confidence = sum(r.confidence for r in ocr_response.results) / len(ocr_response.results) * 100
 
-    # Process bottom image OCR if provided
+    # Process bottom OCR
     bottom_ocr_text = ""
     bottom_avg_confidence = 0.0
     combined_ocr_text = top_ocr_text
     combined_avg_confidence = top_avg_confidence
     
-    if bottom_image_data:
-        logger.debug("Starting OCR extraction for bottom image...")
-        bottom_ocr_response = await asyncio.to_thread(extract_text_from_image, bottom_image_data, preprocess=True)
-        print(bottom_ocr_response)
-        
+    if bottom_ocr_response:
         if bottom_ocr_response.status == "error":
             logger.warning(f"Bottom OCR failed: {bottom_ocr_response.error}")
         else:
             bottom_ocr_text = bottom_ocr_response.full_text
             logger.debug(f"Bottom OCR extracted text: {bottom_ocr_text}")
-            logger.debug(f"Bottom OCR results count: {len(bottom_ocr_response.results)}")
-            for i, result in enumerate(bottom_ocr_response.results):
-                logger.debug(f"  Bottom OCR segment {i+1}: '{result.text}' (confidence: {result.confidence:.2%})")
             
             if bottom_ocr_response.results:
                 bottom_avg_confidence = sum(r.confidence for r in bottom_ocr_response.results) / len(bottom_ocr_response.results) * 100
             
-            # Combine OCR texts
             combined_ocr_text = f"{top_ocr_text}\n--- BOTTOM VIEW ---\n{bottom_ocr_text}"
-            # Use the higher confidence score
             combined_avg_confidence = max(top_avg_confidence, bottom_avg_confidence)
 
     # ========== Generate Part Number Candidates ==========
-    # Normalize OCR lines and keep confidence for fallbacks
     ocr_lines = [r.text.strip() for r in ocr_response.results if r.text.strip()]
-    if bottom_image_data and 'bottom_ocr_response' in locals() and bottom_ocr_response.status != "error":
+    if bottom_ocr_response and bottom_ocr_response.status != "error":
         bottom_ocr_lines = [r.text.strip() for r in bottom_ocr_response.results if r.text.strip()]
         ocr_lines.extend(bottom_ocr_lines)
     
     cleaned_lines = [clean_text_for_part_number(line) for line in ocr_lines if clean_text_for_part_number(line)]
 
     candidates = generate_adjacent_combinations(cleaned_lines, MAX_ADJACENT_LINES)
-    logger.info(f"Generated {len(candidates)} part number candidates")
-    
-    # Get best guess from scored candidates
     best_part_number, _ = get_best_guess_part_number(candidates)
-    # Fallback: if scoring returned UNKNOWN but we do have OCR lines, pick highest-confidence line
+    
     if (not best_part_number or best_part_number == "UNKNOWN") and ocr_response.results:
         top_result = max(ocr_response.results, key=lambda r: r.confidence)
         fallback_text = clean_text_for_part_number(top_result.text)
         if fallback_text:
             best_part_number = fallback_text
-    # ========== Placeholders for Vision Analysis ==========
-    # TODO: Integrate with pin detection service (Gemini Vision or local model)
-    detected_pins = 0  # Placeholder - would come from vision analysis
-    manufacturer_detected = None  # Placeholder - could be extracted from OCR or vision
+
+    # ========== Process LLM Results ==========
+    detected_pins = 0
+    calculated_manufacturers = []
+    calculated_part_numbers = []
     
-    # ========== Detect Manufacturer ==========
-    manufacturer_detected = None
+    # Helper to process LLM result
+    def process_llm_result(res):
+        if not res: return
+        if not res.get("_fallback"):
+            logger.info(f"Vision analysis successful: {res}")
+            p_cnt = res.get("pin_count", 0)
+            if p_cnt:
+                # Store potential pin counts (prefer larger non-zero)
+                nonlocal detected_pins
+                current_pins = _parse_pin_count(p_cnt)
+                if current_pins > detected_pins:
+                    detected_pins = current_pins
+            
+            man = res.get("manufacturer", "").strip()
+            if man: calculated_manufacturers.append(man)
+            
+            pn = res.get("part_number", "").strip()
+            if pn and pn.lower() != "unknown": calculated_part_numbers.append(pn)
+        else:
+            logger.warning(f"Vision endpoint unavailable: {res.get('_debug_message')}")
+
+    process_llm_result(llm_top_result)
+    process_llm_result(llm_bottom_result)
+
+    # Determine Final Manufacturer from LLM or OCR
     manufacturer_keywords = ['TEXAS', 'TI', 'STM', 'INTEL', 'MICROCHIP', 'ANALOG', 'MAXIM', 'NXP', 
                             'INFINEON', 'ATMEL', 'FREESCALE', 'ON SEMI', 'ONSEMI', 'FAIRCHILD',
                             'NATIONAL', 'LINEAR', 'VISHAY', 'ROHM', 'TOSHIBA', 'RENESAS']
     
-    # Check both top and bottom OCR texts for manufacturer
-    all_ocr_texts = [top_ocr_text]
-    if bottom_ocr_text:
-        all_ocr_texts.append(bottom_ocr_text)
+    manufacturer_detected = None
     
-    for text_segment in all_ocr_texts:
-        upper_text = text_segment.upper()
-        for keyword in manufacturer_keywords:
-            if keyword in upper_text:
-                manufacturer_detected = keyword
-                break
+    # 1. Try LLM first
+    if calculated_manufacturers:
+        manufacturer_detected = calculated_manufacturers[0]
+        logger.info(f"Using LLM-detected manufacturer: {manufacturer_detected}")
+    
+    # 2. Fallback to OCR if LLM empty
+    if not manufacturer_detected:
+        all_ocr_texts = [top_ocr_text]
+        if bottom_ocr_text: all_ocr_texts.append(bottom_ocr_text)
+        
+        for text_segment in all_ocr_texts:
+            upper_text = text_segment.upper()
+            for keyword in manufacturer_keywords:
+                if keyword in upper_text:
+                    manufacturer_detected = keyword
+                    break
+            if manufacturer_detected: break
+        
         if manufacturer_detected:
-            break
-    
-    if manufacturer_detected:
-        manufacturer_map = {
-            'TI': 'Texas Instruments', 'TEXAS': 'Texas Instruments',
-            'STM': 'STMicroelectronics',
-            'ATMEL': 'Microchip Technology', 'MICROCHIP': 'Microchip Technology',
-            'INTEL': 'Intel Corporation',
-            'ANALOG': 'Analog Devices',
-            'MAXIM': 'Maxim Integrated',
-            'NXP': 'NXP Semiconductors', 'FREESCALE': 'NXP Semiconductors',
-            'ON SEMI': 'ON Semiconductor', 'ONSEMI': 'ON Semiconductor', 'FAIRCHILD': 'ON Semiconductor',
-            'NATIONAL': 'Texas Instruments',
-            'LINEAR': 'Analog Devices',
-            'INFINEON': 'Infineon Technologies',
-            'VISHAY': 'Vishay Intertechnology',
-            'ROHM': 'ROHM Semiconductor',
-            'TOSHIBA': 'Toshiba Electronic Devices & Storage Corporation',
-            'RENESAS': 'Renesas Electronics'
-        }
-        manufacturer_detected = manufacturer_map.get(manufacturer_detected.upper(), manufacturer_detected)
-    
-    detected_pins = 0
-    is_vision_fallback = False
-    
-    # Analyze both images with LLM if available
-    image_paths_to_analyze = [str(top_image_path)]
-    if bottom_image_path:
-        image_paths_to_analyze.append(str(bottom_image_path))
-    
-    try:
-        llm_client = LLM()
-        combined_llm_result = {}
-        
-        for i, image_path in enumerate(image_paths_to_analyze):
-            view_name = "top" if i == 0 else "bottom"
-            logger.info(f"Running LLM analysis on {view_name} image: {image_path}")
-            llm_result = await asyncio.to_thread(llm_client.analyze_image, image_path)
-            print(f"{view_name.upper()} LLM result: {llm_result}")
-            
-            if llm_result.get("_fallback"):
-                is_vision_fallback = True
-                logger.warning(f"Vision endpoint unavailable for {view_name}: {llm_result.get('_debug_message')}. Using fallback (0 pins).")
-            else:
-                logger.info(f"Vision analysis successful for {view_name}: {llm_result}")
-            
-            # Combine results - prefer non-zero values
-            if not combined_llm_result.get("pin_count") or combined_llm_result["pin_count"] == 0:
-                combined_llm_result["pin_count"] = llm_result.get("pin_count", 0)
-            
-            if not combined_llm_result.get("manufacturer") or not combined_llm_result["manufacturer"].strip():
-                llm_manufacturer = llm_result.get("manufacturer", "").strip()
-                if llm_manufacturer:
-                    combined_llm_result["manufacturer"] = llm_manufacturer
-            
-            if not combined_llm_result.get("part_number") or combined_llm_result["part_number"].lower() == "unknown":
-                llm_part_number = llm_result.get("part_number", "").strip()
-                if llm_part_number and llm_part_number.lower() != "unknown":
-                    combined_llm_result["part_number"] = llm_part_number
-        
-        detected_pins = _parse_pin_count(combined_llm_result.get("pin_count", 0))
-        
-        llm_manufacturer = combined_llm_result.get("manufacturer", "").strip()
-        if llm_manufacturer:
-            manufacturer_detected = llm_manufacturer
-            logger.info(f"Using LLM-detected manufacturer: {manufacturer_detected}")
+            manufacturer_map = {
+                'TI': 'Texas Instruments', 'TEXAS': 'Texas Instruments',
+                'STM': 'STMicroelectronics',
+                'ATMEL': 'Microchip Technology', 'MICROCHIP': 'Microchip Technology',
+                'INTEL': 'Intel Corporation',
+                'ANALOG': 'Analog Devices',
+                'MAXIM': 'Maxim Integrated',
+                'NXP': 'NXP Semiconductors', 'FREESCALE': 'NXP Semiconductors',
+                'ON SEMI': 'ON Semiconductor', 'ONSEMI': 'ON Semiconductor', 'FAIRCHILD': 'ON Semiconductor',
+                'NATIONAL': 'Texas Instruments',
+                'LINEAR': 'Analog Devices',
+                'INFINEON': 'Infineon Technologies',
+                'VISHAY': 'Vishay Intertechnology',
+                'ROHM': 'ROHM Semiconductor',
+                'TOSHIBA': 'Toshiba Electronic Devices & Storage Corporation',
+                'RENESAS': 'Renesas Electronics'
+            }
+            manufacturer_detected = manufacturer_map.get(manufacturer_detected.upper(), manufacturer_detected)
 
-        llm_part_number = combined_llm_result.get("part_number", "").strip()
-        if llm_part_number and llm_part_number.lower() != "unknown":
-            best_part_number = llm_part_number
-            logger.info(f"Using LLM-detected part number: {best_part_number}")
-            
-    except Exception as e:
-        is_vision_fallback = True
-        logger.warning(f"Vision analysis failed: {e}, using fallback (0 pins)")
-        detected_pins = 0
-    
+    # Determine Final Part Number from LLM (override OCR if confident)
+    if calculated_part_numbers:
+        # If LLM found a part number, it's often more accurate than raw OCR assembly
+        llm_pn = calculated_part_numbers[0]
+        logger.info(f"Using LLM-detected part number: {llm_pn}")
+        best_part_number = llm_pn
+
+    # ========== Create Result ==========
     if detected_pins == 0:
         status = ScanStatus.NEED_BOTTOM_SCAN
         action_required = ActionRequired.SCAN_BOTTOM
@@ -370,7 +394,7 @@ async def scan_image(
         action_required = ActionRequired.VERIFY
         message = "Data extracted successfully. Ready for database verification."
     
-    # ========== Create Scan Record ==========
+    # Create Scan Record
     scan = await ScanService.create_extraction_scan(
         db=db,
         ocr_text=combined_ocr_text,

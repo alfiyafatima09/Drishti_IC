@@ -83,13 +83,17 @@ async def handle_desktop_connection(websocket: WebSocket):
     _desktop_clients.append(websocket)
     logger.info(f"Desktop client connected. Total: {len(_desktop_clients)}")
     
-    # Send current camera status
-    if _phone_client:
-        await websocket.send_json({"event": "CAMERA_CONNECTED", "timestamp": datetime.utcnow().isoformat()})
-    else:
-        await websocket.send_json({"event": "CAMERA_DISCONNECTED", "timestamp": datetime.utcnow().isoformat()})
-    
     try:
+        # Send current camera status - wrapped in try since connection could close
+        try:
+            if _phone_client:
+                await websocket.send_json({"event": "CAMERA_CONNECTED", "timestamp": datetime.utcnow().isoformat()})
+            else:
+                await websocket.send_json({"event": "CAMERA_DISCONNECTED", "timestamp": datetime.utcnow().isoformat()})
+        except Exception:
+            # Connection closed before we could send, just exit
+            return
+        
         while True:
             # Keep connection alive, handle any messages from desktop
             message = await websocket.receive_text()
@@ -102,6 +106,10 @@ async def handle_desktop_connection(websocket: WebSocket):
             except json.JSONDecodeError:
                 pass
     except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        logger.debug(f"Desktop connection error: {e}")
+    finally:
         if websocket in _desktop_clients:
             _desktop_clients.remove(websocket)
         logger.info(f"Desktop client disconnected. Total: {len(_desktop_clients)}")

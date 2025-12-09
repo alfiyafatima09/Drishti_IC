@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 // import { LoginPage } from '@/features/auth/login/login-page'
 import DashboardLayout from '@/features/dashboard/dashboard-layout'
 import DashboardPage from '@/features/dashboard/dashboard-page'
+import BatchPage from '@/features/dashboard/batch-page'
 import ScanHistoryPage from '@/features/dashboard/scan-history-page'
 import DashboardHome from '@/features/dashboard/dashboard-home'
 import ScrapingPage from '@/features/scraping/scraping-page'
@@ -16,6 +17,9 @@ function App() {
         <Route path="/" element={<Navigate to="/scan" replace />} />
         <Route path="/scan" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
+        </Route>
+        <Route path="/batch" element={<DashboardLayout />}>
+          <Route index element={<BatchPage />} />
         </Route>
         <Route path="/ic" element={<DashboardLayout />}>
           <Route index element={<ICDatabasePage />} />
