@@ -146,7 +146,7 @@ DEFAULT_SETTINGS = [
     ("pin_detection_model", "yolov8", "STRING", "Vision model for pin counting"),
     ("ocr_model", "paddleocr", "STRING", "OCR engine to use"),
     ("max_scrape_retries", "3", "INTEGER", "Max retries before marking IC as fake"),
-    ("scrape_timeout_seconds", "30", "INTEGER", "Timeout for each scrape request"),
+    ("scrape_timeout_seconds", "5", "INTEGER", "Timeout for each scrape request"),
 ]
 
 # Sample IC data

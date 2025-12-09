@@ -145,8 +145,11 @@ class SyncService:
             
             for queue_item in all_items:
                 if SyncService._cancel_requested:
-                    logger.info(f"Sync job {job_id} cancelled by user")
-                    break
+                    logger.info(f"Sync job {job_id} was cancelled - exiting processing loop")
+                    # Job status already updated in cancel_sync(), just exit
+                    SyncService._active_job_id = None
+                    SyncService._cancel_requested = False
+                    return
                 
                 part_number = queue_item.part_number
                 logger.info(f"Processing: {part_number} ({processed + 1}/{len(all_items)})")
@@ -245,16 +248,20 @@ class SyncService:
                             }]
                     
                 except Exception as e:
+                    # Rollback the transaction to recover from the error
                     logger.error(f"Error processing {part_number}: {e}")
+                    await db.rollback()
+                    
+                    # Now update the queue item in a fresh transaction
                     queue_item.status = "FAILED"
-                    queue_item.error_message = str(e)
+                    queue_item.error_message = str(e)[:500]  # Limit error message length
                     queue_item.retry_count += 1
                     failed += 1
                     
                     job.log = job.log + [{
                         "part_number": part_number,
                         "result": "ERROR",
-                        "error": str(e),
+                        "error": str(e)[:200],  # Limit error in log
                         "timestamp": datetime.utcnow().isoformat()
                     }]
                
@@ -264,14 +271,15 @@ class SyncService:
                 job.failed_count = failed
                 job.fake_count = fake
                 
-                await db.commit()
+                try:
+                    await db.commit()
+                except Exception as commit_error:
+                    logger.error(f"Failed to commit after processing {part_number}: {commit_error}")
+                    await db.rollback()
             
           
-            if SyncService._cancel_requested:
-                job.status = "CANCELLED"
-                job.error_message = f"Cancelled by user. Processed {processed}/{len(all_items)} items."
-            else:
-                job.status = "COMPLETED"
+            # Cancellation is now immediate, so this code path is only for completion
+            job.status = "COMPLETED"
             
             job.current_item = None
             job.completed_at = datetime.utcnow()
@@ -279,7 +287,11 @@ class SyncService:
             SyncService._active_job_id = None
             SyncService._cancel_requested = False
             
-            await db.commit()
+            try:
+                await db.commit()
+            except Exception as final_commit_error:
+                logger.error(f"Failed to commit final job status: {final_commit_error}")
+                await db.rollback()
             
             logger.info(
                 f"Sync job {job_id} completed: "
@@ -289,7 +301,13 @@ class SyncService:
         except Exception as e:
             logger.exception(f"Sync job {job_id} failed with error: {e}")
             
-           
+            # Rollback any failed transaction first
+            try:
+                await db.rollback()
+            except Exception:
+                pass
+            
+            # Try to update job status in a fresh transaction
             try:
                 result = await db.execute(
                     select(SyncJob).where(SyncJob.job_id == job_id)
@@ -297,12 +315,16 @@ class SyncService:
                 job = result.scalar_one_or_none()
                 if job:
                     job.status = "ERROR"
-                    job.error_message = str(e)
+                    job.error_message = str(e)[:500]  # Limit error message
                     job.completed_at = datetime.utcnow()
                     job.current_item = None
                     await db.commit()
-            except Exception:
-                pass
+            except Exception as update_error:
+                logger.error(f"Failed to update job error status: {update_error}")
+                try:
+                    await db.rollback()
+                except Exception:
+                    pass
             
             SyncService._active_job_id = None
             SyncService._cancel_requested = False
@@ -333,13 +355,27 @@ class SyncService:
 
     @staticmethod
     async def cancel_sync(db: AsyncSession) -> Optional[SyncJob]:
-        """Cancel the running sync job."""
+        """Cancel the running sync job immediately."""
         active = await SyncService.get_active_job(db)
         if not active:
             return None
+        
+        # Set cancellation flag for the loop to detect
         SyncService._cancel_requested = True
-
-        logger.info(f"Cancellation requested for sync job {active.job_id}")
+        
+        # Immediately update job status in database
+        active.status = "CANCELLED"
+        active.error_message = f"Cancelled by user at {datetime.utcnow().isoformat()}"
+        active.completed_at = datetime.utcnow()
+        active.current_item = None
+        
+        try:
+            await db.commit()
+            logger.info(f"Sync job {active.job_id} cancelled immediately")
+        except Exception as e:
+            logger.error(f"Failed to update cancelled job status: {e}")
+            await db.rollback()
+        
         return active
 
     @staticmethod
