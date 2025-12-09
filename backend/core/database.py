@@ -32,8 +32,8 @@ def get_database_url() -> str:
 engine = create_async_engine(
     get_database_url(),
     echo=False,  # Disable SQL query logging for performance
-    pool_size=3,  # Reduced for Supabase free tier
-    max_overflow=2,  # Allow only 2 extra connections
+    pool_size=1,  # Reduced for Supabase free tier
+    max_overflow=0,  # Allow no extra connections
     pool_pre_ping=True,  # Verify connections before using
     pool_recycle=300,  # Recycle connections after 5 minutes
     pool_timeout=30,  # Wait up to 30 seconds for a connection

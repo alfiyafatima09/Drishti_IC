@@ -13,7 +13,6 @@ import {
 } from 'recharts'
 import {
   TrendingUp,
-  TrendingDown,
   Cpu,
   ShieldCheck,
   ShieldAlert,
@@ -35,15 +34,23 @@ import { API_BASE } from '@/lib/config'
 
 interface DashboardStats {
   total_scans: number
-  authentic_count: number
-  counterfeit_count: number
+  scans_today: number
+  scans_this_week: number
+  pass_count: number
+  fail_count: number
   unknown_count: number
+  counterfeit_count: number
+  pass_rate_percentage: number
+  queue_size: number
+  fake_registry_size: number
+  database_ic_count: number
+  last_sync_at?: string
+  last_sync_status?: string
+  recent_counterfeits: Array<{
+    part_number: string
+    scanned_at?: string
+  }>
 }
-
-// Hardcoded values for demo
-const DEMO_AUTHENTIC = 8
-const DEMO_COUNTERFEIT = 2
-const TOTAL_IC_DATABASE = 257
 
 // Chart configurations
 const scanChartConfig = {
@@ -83,17 +90,12 @@ export default function DashboardHome() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${API_BASE}/scans/list?limit=500`)
+        const res = await fetch(`${API_BASE}/dashboard/stats`)
         if (res.ok) {
           const data = await res.json()
-          const totalScans = data.total_count || (data.scans || []).length
-          // Use hardcoded values for authentic/counterfeit, but real total scans
-          setStats({
-            total_scans: totalScans,
-            authentic_count: DEMO_AUTHENTIC,
-            counterfeit_count: DEMO_COUNTERFEIT,
-            unknown_count: totalScans - DEMO_AUTHENTIC - DEMO_COUNTERFEIT,
-          })
+          setStats(data)
+        } else {
+          console.error('Failed to fetch dashboard stats:', res.status)
         }
       } catch (error) {
         console.error('Failed to fetch stats:', error)
@@ -108,59 +110,57 @@ export default function DashboardHome() {
   const weeklyData = [
     {
       day: 'Mon',
-      scans: Math.floor((stats?.total_scans || 0) * 0.12),
-      authentic: Math.floor(DEMO_AUTHENTIC * 0.15),
+      scans: Math.floor((stats?.scans_this_week || 0) * 0.12),
+      authentic: Math.floor((stats?.pass_count || 0) * 0.15),
     },
     {
       day: 'Tue',
-      scans: Math.floor((stats?.total_scans || 0) * 0.18),
-      authentic: Math.floor(DEMO_AUTHENTIC * 0.2),
+      scans: Math.floor((stats?.scans_this_week || 0) * 0.18),
+      authentic: Math.floor((stats?.pass_count || 0) * 0.2),
     },
     {
       day: 'Wed',
-      scans: Math.floor((stats?.total_scans || 0) * 0.15),
-      authentic: Math.floor(DEMO_AUTHENTIC * 0.12),
+      scans: Math.floor((stats?.scans_this_week || 0) * 0.15),
+      authentic: Math.floor((stats?.pass_count || 0) * 0.12),
     },
     {
       day: 'Thu',
-      scans: Math.floor((stats?.total_scans || 0) * 0.22),
-      authentic: Math.floor(DEMO_AUTHENTIC * 0.25),
+      scans: Math.floor((stats?.scans_this_week || 0) * 0.22),
+      authentic: Math.floor((stats?.pass_count || 0) * 0.25),
     },
     {
       day: 'Fri',
-      scans: Math.floor((stats?.total_scans || 0) * 0.2),
-      authentic: Math.floor(DEMO_AUTHENTIC * 0.18),
+      scans: Math.floor((stats?.scans_this_week || 0) * 0.2),
+      authentic: Math.floor((stats?.pass_count || 0) * 0.18),
     },
     {
       day: 'Sat',
-      scans: Math.floor((stats?.total_scans || 0) * 0.08),
-      authentic: Math.floor(DEMO_AUTHENTIC * 0.06),
+      scans: Math.floor((stats?.scans_this_week || 0) * 0.08),
+      authentic: Math.floor((stats?.pass_count || 0) * 0.06),
     },
     {
       day: 'Sun',
-      scans: Math.floor((stats?.total_scans || 0) * 0.05),
-      authentic: Math.floor(DEMO_AUTHENTIC * 0.04),
+      scans: Math.floor((stats?.scans_this_week || 0) * 0.05),
+      authentic: Math.floor((stats?.pass_count || 0) * 0.04),
     },
   ]
 
   const pieData = [
-    { name: 'Authentic', value: DEMO_AUTHENTIC, fill: '#10b981' },
-    { name: 'Counterfeit', value: DEMO_COUNTERFEIT, fill: '#ef4444' },
+    { name: 'Authentic', value: stats?.pass_count || 0, fill: '#10b981' },
+    { name: 'Counterfeit', value: stats?.counterfeit_count || 0, fill: '#ef4444' },
     { name: 'Pending', value: stats?.unknown_count || 0, fill: '#94a3b8' },
   ]
 
   const barData = [
     { month: 'Oct', authentic: 45, counterfeit: 3 },
     { month: 'Nov', authentic: 62, counterfeit: 5 },
-    { month: 'Dec', authentic: DEMO_AUTHENTIC, counterfeit: DEMO_COUNTERFEIT },
+    { month: 'Dec', authentic: stats?.pass_count || 0, counterfeit: stats?.counterfeit_count || 0 },
   ]
-
-  const authenticRate = Math.round((DEMO_AUTHENTIC / (DEMO_AUTHENTIC + DEMO_COUNTERFEIT)) * 100)
 
   return (
     <div className="@container/main flex h-full w-full flex-col overflow-auto p-4 lg:p-6">
       {/* Stats Cards Row */}
-      <div className="mb-6 grid grid-cols-2 gap-4 @xl/main:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-4 @xl/main:grid-cols-6">
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs">Total Scans</CardDescription>
@@ -178,9 +178,24 @@ export default function DashboardHome() {
 
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
+            <CardDescription className="text-xs">Scans Today</CardDescription>
+            <CardTitle className="text-2xl font-bold tabular-nums">
+              {loading ? '—' : stats?.scans_today || 0}
+            </CardTitle>
+          </CardHeader>
+          <CardFooter className="pt-0">
+            <div className="text-muted-foreground flex items-center gap-1 text-xs">
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span>Daily activity</span>
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card className="rounded-2xl">
+          <CardHeader className="pb-2">
             <CardDescription className="text-xs">Authentic</CardDescription>
             <CardTitle className="text-2xl font-bold text-emerald-600 tabular-nums">
-              {loading ? '—' : DEMO_AUTHENTIC}
+              {loading ? '—' : stats?.pass_count || 0}
             </CardTitle>
           </CardHeader>
           <CardFooter className="pt-0">
@@ -198,7 +213,7 @@ export default function DashboardHome() {
           <CardHeader className="pb-2">
             <CardDescription className="text-xs">Counterfeit</CardDescription>
             <CardTitle className="text-2xl font-bold text-red-600 tabular-nums">
-              {loading ? '—' : DEMO_COUNTERFEIT}
+              {loading ? '—' : stats?.counterfeit_count || 0}
             </CardTitle>
           </CardHeader>
           <CardFooter className="pt-0">
@@ -211,9 +226,24 @@ export default function DashboardHome() {
 
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
+            <CardDescription className="text-xs">Queue Size</CardDescription>
+            <CardTitle className="text-2xl font-bold text-orange-600 tabular-nums">
+              {loading ? '—' : stats?.queue_size || 0}
+            </CardTitle>
+          </CardHeader>
+          <CardFooter className="pt-0">
+            <Badge variant="outline" className="gap-1 border-orange-200 bg-orange-50 text-orange-700">
+              <Activity className="h-3 w-3" />
+              Pending items
+            </Badge>
+          </CardFooter>
+        </Card>
+
+        <Card className="rounded-2xl">
+          <CardHeader className="pb-2">
             <CardDescription className="text-xs">IC Database</CardDescription>
             <CardTitle className="text-2xl font-bold text-blue-600 tabular-nums">
-              {loading ? '—' : TOTAL_IC_DATABASE}
+              {loading ? '—' : stats?.database_ic_count || 0}
             </CardTitle>
           </CardHeader>
           <CardFooter className="pt-0">

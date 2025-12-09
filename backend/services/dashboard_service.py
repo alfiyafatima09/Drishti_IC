@@ -27,8 +27,8 @@ class DashboardService:
         ic_count = await ICService.get_count(db)
         
         # Get queue size
-        queue_items, pending_count, failed_count = await QueueService.list_queue(db)
-        queue_size = len(queue_items)
+        queue_items, total_count, pending_count, failed_count = await QueueService.list_queue(db)
+        queue_size = total_count
         
         # Get fake registry size
         fake_count = await FakeService.get_count(db)

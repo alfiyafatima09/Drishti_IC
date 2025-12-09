@@ -72,7 +72,7 @@ async def get_system_status(
         pass
     
     # Get queue status
-    queue_items, pending_count, failed_count = await QueueService.list_queue(db)
+    queue_items, total_count, pending_count, failed_count = await QueueService.list_queue(db)
     
     # Get storage info
     datasheet_folder = settings.DATASHEET_FOLDER
