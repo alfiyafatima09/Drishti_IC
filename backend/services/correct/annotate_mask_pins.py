@@ -198,21 +198,27 @@ def run(input_path: Path, output_path: Path, mask_ratio: float, min_area: float 
     counts = count_pins_by_side(pins, w / 2.0, h / 2.0)
 
     from collections import Counter
-    left_count = counts["left"]
-    if left_count > 0:
-        best_side = "left"
-        best_count = left_count
+    c=Counter(counts)
+    counts_by_side=list(c.values())
+    if len(set(counts_by_side))<4:
+        counter=Counter(counts_by_side)
+        best_count=counter.most_common(1)[0][0]
     else:
-        best_side = max(counts, key=lambda s: (counts[s], s))
-        best_count = counts[best_side]
+        left_count = counts["right"]
+        if left_count > 0:
+            best_side = "right"
+            best_count = left_count
+        else:
+            best_side = max(counts, key=lambda s: (counts[s], s))
+            best_count = counts[best_side]
     estimated_total = best_count * 4
-    print(f"Detected pins: {len(pins)}")
-    print(
-        f"Per side -> top: {counts['top']}, right: {counts['right']}, "
-        f"bottom: {counts['bottom']}, left: {counts['left']}"
-    )
-    print(f"Best side: {best_side} -> estimated total pins = {estimated_total}")
-    print("Pin labels (idx: x, y, side, area):")
+    # print(f"Detected pins: {len(pins)}")
+    # print(
+    #     f"Per side -> top: {counts['top']}, right: {counts['right']}, "
+    #     f"bottom: {counts['bottom']}, left: {counts['left']}"
+    # )
+    # print(f"Best side:  -> estimated total pins = {estimated_total}")
+    # print("Pin labels (idx: x, y, side, area):")
     for idx, (px, py, area) in enumerate(pins, start=1):
         side = pin_side(px, py, w / 2.0, h / 2.0)
         print(f"  {idx}: {int(px)}, {int(py)}, {side}, area={area:.1f}")

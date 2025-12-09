@@ -35,7 +35,7 @@ def run_moon(input_image: str, debug_dir: str) -> str:
     Returns:
         Path to the generated edges image (e.g., square/b7_07_edges.png)
     """
-    print(f"[Pipeline] Running moon.py edge detection...")
+    # print(f"[Pipeline] Running moon.py edge detection...")
     
     result = count_ic_pins_opencv(input_image, debug_dir)
     
@@ -45,7 +45,7 @@ def run_moon(input_image: str, debug_dir: str) -> str:
     if not edges_path.exists():
         raise FileNotFoundError(f"Expected edges image not found: {edges_path}")
     
-    print(f"[Pipeline] Edge detection complete.")
+    # print(f"[Pipeline] Edge detection complete.")
     return str(edges_path)
 
 
@@ -59,13 +59,13 @@ def run_classifier(edges_image: str, debug: bool = False) -> Dict[str, Any]:
         - sides_with_pins: list like ["top", "bottom"] or ["left", "right"]
         - spike_counts: dict with counts per side
     """
-    print(f"[Pipeline] Running classifier on {edges_image}...")
+    # print(f"[Pipeline] Running classifier on {edges_image}...")
     
     result = detect_ic_pins_enhanced(edges_image, debug=debug)
     
-    print(f"[Pipeline] Classification: {result['classification']}")
-    print(f"[Pipeline] Sides with pins: {result['sides_with_pins']}")
-    print(f"[Pipeline] Detection method: {result['detection_method']}")
+    # print(f"[Pipeline] Classification: {result['classification']}")
+    # print(f"[Pipeline] Sides with pins: {result['sides_with_pins']}")
+    # print(f"[Pipeline] Detection method: {result['detection_method']}")
     
     return result
 
@@ -98,20 +98,20 @@ def run_annotate_mask_pins(edges_image: str, debug_dir: str) -> int:
     Returns:
         Estimated total pin count
     """
-    from services.correct.annotate_mask_pins import run, find_pin_centers, count_pins_by_side, side_regularity
+    from correct.annotate_mask_pins import run, find_pin_centers, count_pins_by_side, side_regularity
     import cv2
     
     base_name = Path(edges_image).stem
     output_path = Path(debug_dir) / f"{base_name}_pins_masked.png"
     
-    print(f"[Pipeline] Running annotate_mask_pins (left/right pins)...")
+    # print(f"[Pipeline] Running annotate_mask_pins (left/right pins)...")
     
     img = cv2.imread(edges_image, cv2.IMREAD_COLOR)
     if img is None:
-        print(f"[Pipeline] Error: Could not read {edges_image}")
+        # print(f"[Pipeline] Error: Could not read {edges_image}")
         return 0
     
-    pins = find_pin_centers(img, min_area=250.0)
+    pins = find_pin_centers(img, min_area=400.0)
     h, w = img.shape[:2]
     cx, cy = w / 2.0, h / 2.0
     
@@ -126,13 +126,12 @@ def run_annotate_mask_pins(edges_image: str, debug_dir: str) -> int:
     
     estimated_total = best_count * 4
     
-    run(Path(edges_image), output_path, mask_ratio=0.55, min_area=250.0)
+    estimated_total=run(Path(edges_image), output_path, mask_ratio=0.55, min_area=400.0)
     
-    print(f"[Pipeline] Best side: {best_side} with {best_count} pins")
-    print(f"[Pipeline] Estimated total (×2): {estimated_total}")
+    # print(f"[Pipeline] Best side: {best_side} with {best_count} pins")
+    # print(f"[Pipeline] Estimated total : {estimated_total}")
     
     return estimated_total
-
 
 # def run_count_pins_qfp(edges_image: str, debug_dir: str) -> int:
 #     """
@@ -167,53 +166,53 @@ async def run_pipeline(input_image: str, debug_dir: str = "debug", classifier_de
     Returns:
         Estimated total pin count
     """
-    print(f"\n{'='*60}")
-    print(f"IC PIN COUNTING PIPELINE")
-    print(f"{'='*60}")
-    print(f"Input: {input_image}")
-    print(f"Debug dir: {debug_dir}")
-    print(f"{'='*60}\n")
+    # print(f"\n{'='*60}")
+    # print(f"IC PIN COUNTING PIPELINE")
+    # print(f"{'='*60}")
+    # print(f"Input: {input_image}")
+    # print(f"Debug dir: {debug_dir}")
+    # print(f"{'='*60}\n")
     
     os.makedirs(debug_dir, exist_ok=True)
     
     qwen_client = LLM()
     qwen_result = await asyncio.to_thread(qwen_client.analyze_image, str(input_image))
-    print(f"[Pipeline] Qwen result: {qwen_result}")
+    # print(f"[Pipeline] Qwen result: {qwen_result}")
     classification_result = run_classifier(input_image, debug=classifier_debug)
     
     classification = classification_result['classification']
     sides_with_pins = classification_result['sides_with_pins']
-    print(f"[Step 1] Result: {classification} - sides: {sides_with_pins}\n")
+    # print(f"[Step 1] Result: {classification} - sides: {sides_with_pins}\n")
     estimated_total = qwen_result.get("pin_count", 0)
-    print("[Step 2] Generating edge-detected image...")
+    # print("[Step 2] Generating edge-detected image...")
     edges_image = run_moon(input_image, debug_dir)
-    print(f"[Step 2] Edges image: {edges_image}\n")
-    print(f"[Step 3] Running pin counting on edges image...")
+    # print(f"[Step 2] Edges image: {edges_image}\n")
+    # print(f"[Step 3] Running pin counting on edges image...")
     print(classification)
     print(run_annotate_mask_pins(edges_image, debug_dir))
     if classification == "LQFN":
-        print("[Pipeline] LQFN detected - using count_pins.py")
+        # print("[Pipeline] LQFN detected - using count_pins.py")
         estimated_total = run_annotate_mask_pins(edges_image, debug_dir)
         
     elif classification == "QFN_SINGLE_SIDE" or classification == "QFN_DUAL_SIDE":
         return qwen_result
 
     elif classification == "QFN_4_SIDE":
-        print("[Pipeline] QFN_4_SIDE detected - using annotate_mask_pins.py")
+        # print("[Pipeline] QFN_4_SIDE detected - using annotate_mask_pins.py")
         estimated_total = run_annotate_mask_pins(edges_image, debug_dir)
         
     else:
-        print(f"[Pipeline] Unknown classification: {classification}")
+        # print(f"[Pipeline] Unknown classification: {classification}")
         estimated_total = 0
     
     # Final result
-    print(f"\n{'='*60}")
-    print(f"PIPELINE RESULT")
-    print(f"{'='*60}")
-    print(f"Classification: {classification}")
-    print(f"Sides with pins: {sides_with_pins}")
-    print(f"Estimated Total Pins: {estimated_total}")
-    print(f"{'='*60}\n")
+    # print(f"\n{'='*60}")
+    # print(f"PIPELINE RESULT")
+    # print(f"{'='*60}")
+    # print(f"Classification: {classification}")
+    # print(f"Sides with pins: {sides_with_pins}")
+    # print(f"Estimated Total Pins: {estimated_total}")
+    # print(f"{'='*60}\n")
     print(estimated_total)
     qwen_result["pin_count"] = estimated_total
     return qwen_result
