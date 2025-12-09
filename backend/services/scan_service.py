@@ -91,7 +91,24 @@ class ScanService:
             scanned_at=datetime.utcnow(),
         )
         db.add(scan)
+        await db.flush()  # Flush to generate scan_id
+        await db.refresh(scan)  # Refresh to get the generated UUID
+        
         logger.info(f"Created extraction scan object: {scan.scan_id}")
+        
+        # Broadcast creation
+        await manager.broadcast({
+            "type": "scan_created",
+            "data": {
+                "scan_id": str(scan.scan_id),
+                "part_number": scan.part_number_detected,
+                "status": scan.status,
+                "scanned_at": scan.scanned_at.isoformat() if scan.scanned_at else None,
+                "confidence_score": scan.confidence_score,
+                "detected_pins": scan.detected_pins
+            }
+        })
+        
         return scan
 
     @staticmethod

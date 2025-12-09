@@ -9,6 +9,7 @@ from models import ScanHistory, ICSpecification
 from core.constants import get_manufacturer_name
 from services.ic_service import ICService
 from services.queue_service import QueueService
+from services.websocket_manager import manager
 from schemas.common import ScanStatus
 from schemas.scan_verify import (
     VerificationStatus,
@@ -104,6 +105,19 @@ class VerificationService:
 
         await db.flush()
         await db.refresh(scan)
+        
+        # Broadcast update
+        await manager.broadcast({
+            "type": "scan_updated",
+            "data": {
+                "scan_id": str(scan.scan_id),
+                "part_number": scan.part_number_verified or scan.part_number_detected,
+                "status": scan.status,
+                "scanned_at": scan.scanned_at.isoformat() if scan.scanned_at else None,
+                "confidence_score": scan.confidence_score,
+                "detected_pins": scan.detected_pins
+            }
+        })
 
         return verification_result, None
 

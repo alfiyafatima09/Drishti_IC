@@ -17,7 +17,7 @@ from core.database import get_db
 from services import ScanService, ICService
 from services.ocr import extract_text_from_image
 from services.verification_service import VerificationService
-# from services.llm import LLM
+from services.llm import LLM
 from schemas.scan_verify import (
     ScanExtractResult,
     ScanVerifyRequest,
@@ -147,6 +147,7 @@ def _parse_pin_count(raw_pin_count) -> int:
 @router.post("/scan", response_model=ScanExtractResult)
 async def scan_image(
     file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     **Phase 1: Extract & Detect**
@@ -305,12 +306,12 @@ async def scan_image(
     )
     
     logger.info(
-        f"Extraction complete - scan_id: {scan_id}, "
+        f"Extraction complete - scan_id: {scan.scan_id}, "
         f"part_number: {best_part_number}, pins: {detected_pins}, status: {status}"
     )
     
     return ScanExtractResult(
-        scan_id=scan_id,
+        scan_id=scan.scan_id,
         status=status,
         action_required=action_required,
         confidence_score=avg_confidence,
@@ -320,7 +321,7 @@ async def scan_image(
         manufacturer_detected=manufacturer_detected,
         detected_pins=detected_pins,
         message=message,
-        scanned_at=scanned_at,
+        scanned_at=scan.scanned_at,
     )
 
 
