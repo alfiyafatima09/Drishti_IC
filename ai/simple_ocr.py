@@ -49,17 +49,12 @@ def preprocess_and_ocr(image_path: str, target_height: int = 640, show_confidenc
     
     # === FULL PREPROCESSING PIPELINE ===
     
-    # Step 1: Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Step 2: Bilateral filter (preserves edges while reducing noise)
     filtered = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
     
-    # Step 3: CLAHE for better contrast (handles various lighting conditions)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     enhanced = clahe.apply(filtered)
     
-    # Step 4: Deskew (detect and correct rotation)
     coords = np.column_stack(np.where(enhanced > 0))
     if len(coords) > 0:
         angle = cv2.minAreaRect(coords)[-1]
@@ -68,7 +63,6 @@ def preprocess_and_ocr(image_path: str, target_height: int = 640, show_confidenc
         else:
             angle = -angle
         
-        # Only deskew if angle is significant (more than 2 degrees)
         if abs(angle) > 2.0:
             (h, w) = enhanced.shape[:2]
             center = (w // 2, h // 2)
@@ -81,30 +75,22 @@ def preprocess_and_ocr(image_path: str, target_height: int = 640, show_confidenc
     else:
         deskewed = enhanced
     
-    # Step 5: Skip auto-crop for better text detection
-    # (aggressive cropping can remove important text)
     cropped = deskewed
     
-    # Step 6: Resize to optimal height
     h, w = cropped.shape[:2]
     aspect_ratio = w / h
     new_width = int(target_height * aspect_ratio)
     resized = cv2.resize(cropped, (new_width, target_height), interpolation=cv2.INTER_CUBIC)
     
-    # Step 7: Final bilateral filtering
     final = cv2.bilateralFilter(resized, d=5, sigmaColor=50, sigmaSpace=50)
     
-    # Convert back to BGR for PaddleOCR
     preprocessed = cv2.cvtColor(final, cv2.COLOR_GRAY2BGR)
     
-    # Initialize OCR (suppress output)
     try:
         ocr = PaddleOCR(use_textline_orientation=True, lang='en')
         
-        # Try preprocessed image first
         result = ocr.predict(preprocessed)
         
-        # Extract text and confidence
         results = []
         if result and len(result) > 0:
             result_dict = result[0]
@@ -115,11 +101,9 @@ def preprocess_and_ocr(image_path: str, target_height: int = 640, show_confidenc
                 text = rec_texts[i]
                 score = rec_scores[i] if i < len(rec_scores) else 0.0
                 
-                # Filter out empty strings and very low confidence
                 if text and text.strip() and score > 0.5:
                     results.append((text, score))
         
-        # If no good results, try original image with simple resize
         if len(results) == 0:
             h_orig, w_orig = image.shape[:2]
             aspect_ratio = w_orig / h_orig
@@ -136,12 +120,10 @@ def preprocess_and_ocr(image_path: str, target_height: int = 640, show_confidenc
                 for i in range(len(rec_texts)):
                     text = rec_texts[i]
                     score = rec_scores[i] if i < len(rec_scores) else 0.0
-                    
-                    # Lower threshold for fallback
+                        
                     if text and text.strip() and score > 0.3:
                         results.append((text, score))
         
-        return results
         return results
         
     except Exception as e:
@@ -172,16 +154,13 @@ Examples:
     
     args = parser.parse_args()
     
-    # Run OCR
     results = preprocess_and_ocr(args.image_path, args.height, not args.no_confidence)
     
     if not results:
         print("No text detected.", file=sys.stderr)
         sys.exit(1)
     
-    # Print results
     for text, confidence in results:
-        # Filter by minimum confidence
         if confidence < args.min_confidence:
             continue
         
