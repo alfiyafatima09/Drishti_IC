@@ -61,14 +61,17 @@ class ScanListItem(BaseModel):
     scan_id: UUID
     part_number: Optional[str] = None
     part_number_detected: Optional[str] = None
+    part_number_candidates: Optional[list[str]] = None  # Added
     part_number_verified: Optional[str] = None
     status: ScanStatus
     action_required: ActionRequired = ActionRequired.NONE
     confidence_score: Optional[float] = None
     detected_pins: Optional[int] = None
+    expected_pins: Optional[int] = None  # Added
     has_bottom_scan: bool = False
     was_manual_override: bool = False
     manufacturer_detected: Optional[str] = None
+    message: Optional[str] = None  # Added - important for showing scan results
     scanned_at: datetime
     completed_at: Optional[datetime] = None
     batch_id: Optional[str] = None
@@ -91,16 +94,21 @@ class ScanDetails(BaseModel):
     scan_id: UUID
     ocr_text_raw: Optional[str] = None
     part_number_detected: Optional[str] = None
+    part_number_candidates: Optional[list[str]] = None  # Added
     part_number_verified: Optional[str] = None
     status: ScanStatus
     confidence_score: Optional[float] = None
     detected_pins: Optional[int] = None
     expected_pins: Optional[int] = None
     manufacturer_detected: Optional[str] = None
+    batch_id: Optional[str] = None  # Added
+    batch_vender: Optional[str] = None  # Added
     action_required: ActionRequired = ActionRequired.NONE
     has_bottom_scan: bool = False
     was_manual_override: bool = False
+    operator_note: Optional[str] = None  # Added
     match_details: Optional[MatchDetails] = None
+    verification_checks: Optional[dict] = None  # Added - detailed verification results
     failure_reasons: Optional[list[str]] = None
     message: Optional[str] = None
     scanned_at: datetime

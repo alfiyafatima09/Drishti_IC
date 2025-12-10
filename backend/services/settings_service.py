@@ -20,7 +20,7 @@ DEFAULT_SETTINGS = {
     "pin_detection_model": ("yolov8", "STRING"),
     "ocr_model": ("paddleocr", "STRING"),
     "max_scrape_retries": ("3", "INTEGER"),
-    "scrape_timeout_seconds": ("30", "INTEGER"),
+    "scrape_timeout_seconds": ("5", "INTEGER"),
 }
 
 

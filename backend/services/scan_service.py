@@ -179,9 +179,6 @@ class ScanService:
             db.add(scan)
             await db.flush()
             await db.refresh(scan)
-            db.add(scan)
-            await db.flush()
-            await db.refresh(scan)
             
             # Broadcast
             await manager.broadcast({
@@ -218,8 +215,6 @@ class ScanService:
                 completed_at=datetime.utcnow(),
             )
             db.add(scan)
-            await db.flush()
-            await db.refresh(scan)
             await db.flush()
             await db.refresh(scan)
             
@@ -312,7 +307,7 @@ class ScanService:
             completed_at=datetime.utcnow(),
         )
         db.add(scan)
-        await db.refresh(scan)
+        await db.flush()
         await db.refresh(scan)
         
         # Broadcast success/fail
@@ -393,6 +388,7 @@ class ScanService:
         }
         scan.failure_reasons = [pin_reason] if pin_reason else None
 
+        await db.flush()
         await db.refresh(scan)
         return scan
 
@@ -456,7 +452,7 @@ class ScanService:
         scan.action_required = ActionRequired.NONE.value
         scan.completed_at = datetime.utcnow()
 
-        await db.refresh(scan)
+        await db.flush()
         await db.refresh(scan)
         
         # Broadcast override

@@ -89,8 +89,8 @@ export interface ScanResult {
   fake_registry_info?: FakeRegistryInfo | null
   scanned_at: string
   completed_at?: string | null
-  part_number?: string
-  part_number_detected?: string
+  part_number?: string | null
+  part_number_detected?: string | null
 }
 
 // ============================================================
@@ -140,11 +140,23 @@ export interface DashboardStats {
 
 export interface ScanListItem {
   scan_id: string
-  part_number: string
+  part_number: string | null
+  part_number_detected: string | null
+  part_number_candidates?: string[] | null
+  part_number_verified: string | null
   status: ScanStatus
-  confidence_score: number
-  detected_pins: number
+  action_required: ActionRequired
+  confidence_score: number | null
+  detected_pins: number | null
+  expected_pins?: number | null
+  has_bottom_scan: boolean
+  was_manual_override: boolean
+  manufacturer_detected: string | null
+  message: string | null
   scanned_at: string
+  completed_at: string | null
+  batch_id: string | null
+  batch_vender: string | null
 }
 
 export interface ScanListResult {
@@ -155,12 +167,17 @@ export interface ScanListResult {
 }
 
 export interface ScanDetails extends ScanResult {
-  ocr_text_raw?: string
-  part_number_detected?: string
-  part_number_verified?: string
+  ocr_text_raw?: string | null
+  part_number_detected?: string | null
+  part_number_candidates?: string[] | null
+  part_number_verified?: string | null
   expected_pins?: number | null
+  batch_id?: string | null
+  batch_vender?: string | null
   has_bottom_scan?: boolean
   was_manual_override?: boolean
+  operator_note?: string | null
+  verification_checks?: Record<string, any> | null
   failure_reasons?: string[] | null
 }
 
@@ -183,6 +200,26 @@ export interface ICSearchResult {
   total_count: number
   limit: number
   offset: number
+}
+
+// ============================================================
+// SYNC HISTORY SCHEMAS
+// ============================================================
+
+export interface SyncHistoryItem {
+  job_id: string
+  status: 'COMPLETED' | 'ERROR' | 'CANCELLED'
+  started_at: string
+  completed_at: string
+  total_items: number
+  success_count: number
+  failed_count: number
+  fake_count: number
+}
+
+export interface SyncHistoryResult {
+  sync_jobs: SyncHistoryItem[]
+  total_count: number
 }
 
 // ============================================================

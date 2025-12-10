@@ -24,6 +24,7 @@ from api.endpoints import (
     camera_router,
     websockets,
     batch_router,
+     sampling_theory,   
 )
 from api.endpoints import images, datasheets, ic_analysis
 
@@ -98,6 +99,7 @@ app.include_router(datasheets.router)
 app.include_router(batch_router)
 # app.include_router(ic_analysis.router)
 app.include_router(digikey_router.router)
+app.include_router(sampling_theory.router)
 
 
 @app.get("/", tags=["Root"])
