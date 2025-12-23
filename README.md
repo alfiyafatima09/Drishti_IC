@@ -1,8 +1,13 @@
 # Drishti IC
-### Counterfeit IC Detection Using Marking Verification
 
-## Overview
+
+<img width="400" alt="Project Logo" src="https://github.com/user-attachments/assets/91866100-5a2b-440d-8450-3bd5bf19d4e3" align="right" />
+
+### Counterfeit IC Detection Using Marking Verification
 **Drishti IC** is an automated system designed to detect counterfeit integrated circuits (ICs) by analyzing IC markings, package characteristics, and manufacturer-specific parameters. The solution focuses on marking-based verification and supports both offline and online operation, making it suitable for secure and restricted environments.
+
+<br />
+
 
 ## Problem Statement
 **PS25162 – Counterfeit IC Detection**
